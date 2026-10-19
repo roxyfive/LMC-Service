@@ -19,6 +19,11 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 - `docs/` guida deploy, PDF clienti/admin, kit social, scaletta video · `video/` intro 16:9 e 9:16, tutorial
 - `tests/test_e2e.py` test end-to-end: `python -m tests.test_e2e`
 
+## Design e voce
+Tema chiaro (avorio/antracite, oro e blu notte), titoli Playfair Display e testi Inter (font locali in `app/static/fonts/`, licenza OFL).
+L'intro usa solo musica + didascalie animate: **nessuna voce sintetica del browser**. Per una voce reale metti `app/static/media/voce.mp3`
+(istruzioni e copione in `docs/voce-script.md`). Analisi e ricerca del redesign: `docs/ANALISI-DESIGN.md`. Con `APP_MODE=demo` i testi/foto generici sono marcati DEMO.
+
 ## ⚠️ Foto DEMO da sostituire
 Le foto in `foto/organizzate/` (1 hero, 1 galleria, 3 installazioni) sono **immagini demo temporanee**, non lavori di LMC Service
 (vedi `foto/organizzate/CREDITI.md`). Per sostituirle: copia le foto vere nella stessa cartella **con lo stesso nome**

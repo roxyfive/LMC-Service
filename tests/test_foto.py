@@ -73,7 +73,13 @@ check("hero reale", 'class="hs kb0 on" src="/media/' in home and "logo-1600" not
 check("sezione skill con 5 foto", home.count('class="skill reveal"') == 5 and home.count('class="skill-ph"><img') == 5)
 check("hero con slide dalle cartelle", home.count('class="hs ') >= 2)
 check("intro cinematografica con 7 passi", home.count('class="slide kb') == 7 and 'id="introData"' in home and "Entra nello show" not in home)
-check("senza voce.mp3 usa la voce di sistema", '"voce":""' in home.replace(" ", ""))
+js = open("app/static/js/site.js", encoding="utf-8").read()
+check("nessuna voce sintetica del browser", "speechSynthesis" not in js and "SpeechSynthesisUtterance" not in js and "Risposta vocale" not in home)
+check("font locali, niente CDN", "/static/fonts/playfair-display" in home and "googleapis" not in home)
+check("sezione contatti con CTA preventivo", 'id="contatti"' in home and 'class="btn btn-night" href="#preventivo">Richiedi un preventivo' in home)
+check("footer con rivedi intro e privacy", "Rivedi l'intro" in home and 'href="/privacy"' in home)
+check("un solo h1", home.count("<h1") == 1)
+check("voce.mp3 assente = nessuna voce", '"voce":""' in home.replace(" ", ""))
 check("video reale", 'class="lazyvid"' in home and "/static/media/loop1.mp4" not in home)
 from backend.foto_sync import sync
 with app.app_context():

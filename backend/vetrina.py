@@ -1,4 +1,4 @@
-"""Contenuti della home animata: slide hero, foto delle skill, passi dell'intro cinematografica.
+"""Contenuti della home: slide hero, foto delle skill, galleria, passi dell'intro.
 
 Le foto arrivano sempre da foto/organizzate/ (tabella `media`, vedi foto_sync.py): quando le foto demo
 vengono sostituite la home si aggiorna da sola. I testi sotto sono BOZZE descrittive e generiche
@@ -23,22 +23,16 @@ SKILLS = [
      r"concert|event|festa|matrimon|serata|pubblico|live|show"),
 ]
 
-# (skill della foto, didascalia, sottotitolo, testo della voce narrante)
+# (skill della foto, didascalia, sottotitolo): solo testo animato, niente voce sintetica.
+# BOZZE generiche da far confermare al titolare (nessun numero, cliente o premio inventato).
 INTRO_STEPS = [
-    ("hero", "Napoli · Dal 16 febbraio 2025", "La Music Company Service",
-     "Benvenuti in La Music Company Service. Siamo a Napoli e lavoriamo in tutta Italia."),
-    ("allestimenti", "Il lato tecnico del tuo evento", "Progettazione e allestimenti",
-     "Progettiamo e realizziamo la parte tecnica dei vostri eventi, dal palco al meeting."),
-    ("audio", "Audio", "L'impianto giusto per ogni sala",
-     "Impianti audio pensati per la sala e per il pubblico, perché ogni parola e ogni nota arrivino chiare."),
-    ("ledwall", "Ledwall e luci", "Il palco prende vita",
-     "Ledwall e luci trasformano un palco in uno spettacolo."),
-    ("videosorveglianza", "Videosorveglianza", "Telecamere per eventi, locali e aziende",
-     "E se serve, installiamo impianti di videosorveglianza per tenere sotto controllo spazi ed eventi."),
-    ("eventi", "Eventi in tutta Italia", "Matrimoni, live, congressi",
-     "Matrimoni, feste private, concerti e congressi: ovunque ci sia un evento, noi portiamo la tecnica."),
-    ("hero", "Il tuo evento, sotto i riflettori", "Prenota un appuntamento o chiedi un preventivo",
-     "Raccontateci il vostro evento: prenotate un appuntamento o richiedete un preventivo. Vi aspettiamo."),
+    ("hero", "Napoli · Dal 16 febbraio 2025", "La Music Company Service"),
+    ("allestimenti", "Il lato tecnico del tuo evento", "Progettazione e allestimenti"),
+    ("audio", "Audio", "L'impianto giusto per ogni sala"),
+    ("ledwall", "Ledwall e luci", "Il palco prende vita"),
+    ("videosorveglianza", "Videosorveglianza", "Telecamere per eventi, locali e aziende"),
+    ("eventi", "Eventi in tutta Italia", "Matrimoni, eventi privati, live e congressi"),
+    ("hero", "Il tuo evento, sotto i riflettori", "Prenota un appuntamento o chiedi un preventivo"),
 ]
 
 _man = {"mtime": None, "data": {}}
@@ -106,9 +100,9 @@ def build(media):
                    alt=(photos[s]["title"] if s in photos else n)) for s, n, t, _k in SKILLS]
     hero_pool = _uniq(by("hero") + [m for m in pool if m["featured"]] + hero_slides)
     steps = []
-    for i, (sk, cap, sub, voce) in enumerate(INTRO_STEPS):
+    for i, (sk, cap, sub) in enumerate(INTRO_STEPS):
         m = photos.get(sk) if sk != "hero" else (hero_pool[(i // 6) % len(hero_pool)] if hero_pool else None)
-        steps.append(dict(cap=cap, sub=sub, voce=voce, img=f"/media/{m['filename']}_1600.webp" if m else ""))
+        steps.append(dict(cap=cap, sub=sub, img=f"/media/{m['filename']}_1600.webp" if m else ""))
     voce_file = Path(ROOT) / "app" / "static" / "media" / "voce.mp3"
     return dict(hero_slides=hero_slides, skills=skills, intro_steps=steps,
                 voce_url="/static/media/voce.mp3" if voce_file.is_file() else "")

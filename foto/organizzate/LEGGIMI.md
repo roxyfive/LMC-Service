@@ -41,6 +41,5 @@ Ogni file nuovo viene ottimizzato (webp 480/960/1600) e pubblicato automaticamen
   la foto che nel **nome file o nella didascalia** contiene una parola chiave: *telecamera/sorveglianza*, *ledwall*, *audio/casse/mixer*,
   *allestimento/palco/truss*, *concerto/evento/matrimonio*. Esempio: `ledwall-matrimonio.jpg`. Senza parole chiave usa le altre foto a rotazione.
   Con `importa_social.py` il nome originale resta in `_manifest.json` e viene usato allo stesso modo.
-- **Voce narrante dell'intro:** di default usa la voce del browser (Web Speech API, italiano). Per una voce registrata metti il file
-  `app/static/media/voce.mp3` (circa 40-60 secondi): se esiste viene usato al posto della voce di sistema. I testi della narrazione
-  sono in `backend/vetrina.py` (`INTRO_STEPS`).
+- **Intro:** solo musica (`music.mp3`) e didascalie animate (testi in `backend/vetrina.py`, `INTRO_STEPS`). Se esiste
+  `app/static/media/voce.mp3` viene usato come voce narrante: vedi `docs/voce-script.md` per copione e generazione con ElevenLabs.
