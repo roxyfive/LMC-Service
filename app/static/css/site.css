@@ -303,3 +303,5 @@ fieldset{border:1px solid #bdb298;display:flex;gap:1rem;flex-wrap:wrap;padding:.
 .foot-social a:hover,.foot-social a:focus-visible{color:#fff;transform:translateX(3px)}
 .foot-social a:hover .soc-ico,.foot-social a:focus-visible .soc-ico{background:var(--gold);color:var(--night);border-color:var(--gold);box-shadow:0 0 0 4px #c4a15a26}
 @media(prefers-reduced-motion:reduce){.foot-social a{transition:none}}
+.soc-t{min-width:0}.soc-n{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;letter-spacing:.01em}
+.foot-social a{min-width:0}

@@ -232,7 +232,7 @@ TEXT_FIELDS = [("claim", "Claim", "text"), ("tagline", "Sottotitolo", "text"), (
                ("zone", "Zone coperte", "text"), ("telefono", "Telefono", "text"), ("whatsapp", "WhatsApp (solo numeri, con prefisso 39)", "text"),
                ("email", "Email", "text"), ("indirizzo", "Indirizzo / città", "text"), ("orari", "Orari", "text"),
                ("instagram", "Instagram – URL del profilo", "text"), ("facebook", "Facebook – URL della pagina", "text"),
-               ("facebook_nome", "Facebook – nome pagina mostrato nel footer", "text"), ("sito_url", "Sito ufficiale – URL (footer \"Seguici\")", "text"), ("tiktok", "TikTok", "text"),
+               ("facebook_nome", "Facebook – nome pagina mostrato nel footer", "text"), ("sito_url", "Sito ufficiale – URL (footer \"Seguici\")", "text"), ("tiktok", "TikTok – URL", "text"),
                ("threads", "Threads", "text"), ("x", "X", "text"), ("linktree", "Linktree", "text"),
                ("privacy", "Informativa privacy", "area")]
 
