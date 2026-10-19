@@ -47,6 +47,23 @@ check("nomi ordinati", {"hero/hero-01.jpg", "installazioni/installazione-01.jpg"
                         "video/video-01.mp4"} <= set(names))
 check("messaggi privati esclusi", len(names) == 5)  # 4 media + manifest
 
+# cartella semplice (WhatsApp/Drive): niente struttura Meta
+plain = tmp / "plain"
+(plain / "Allestimento Teatro").mkdir(parents=True)
+(plain / "profile").mkdir()
+for n, sz in [("IMG-20250316-WA0004.jpg", (1600, 1200)), ("IMG-20250317-WA0005.jpg", (2000, 1000)),
+              ("IMG-20250320-WA0006.jpg", (1500, 1000)), ("IMG-20250321-WA0007.jpg", (1500, 1000)),
+              ("Allestimento Teatro/img1.jpg", (1200, 900)), ("profile/serata.jpg", (1000, 1000))]:
+    (plain / n).write_bytes(jpg(*sz, (n.__hash__() % 200, 20, 20)))
+(plain / "VID-20250318-WA0001.mp4").write_bytes(b"\x00\x00\x00\x18ftypmp42" + b"1" * 300)
+(plain / "iphone.HEIC").write_bytes(b"x" * 50)
+out2 = tmp / "out2"
+check("cartella semplice ok", importa_social.main([str(plain), "--out", str(out2)]) == 0)
+check("semplice: smistamento", (out2 / "installazioni/installazione-01.jpg").exists()
+      and (out2 / "video/video-01.mp4").exists() and (out2 / "hero/hero-01.jpg").exists()
+      and not (out2 / "hero/hero-02.jpg").exists() and len(list((out2 / "galleria").iterdir())) == 4)
+check("semplice: HEIC non importato", not any(p.suffix.lower() == ".heic" for p in out2.rglob("*")))
+
 app = create_app()
 c = app.test_client()
 home = c.get("/").get_data(as_text=True)

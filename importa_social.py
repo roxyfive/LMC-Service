@@ -3,6 +3,11 @@
 
     python importa_social.py instagram-export.zip [facebook-export.zip ...] [opzioni]
 
+Funziona anche con una cartella (o ZIP di Drive/WhatsApp) di semplici jpg/mp4 SENZA struttura Meta:
+in quel caso non applica i filtri Instagram/Facebook, ricava la data da EXIF o dal nome file
+(IMG-20250316-WA0004.jpg) e legge nomi di file e sottocartelle come "didascalia"
+(es. una cartella "Allestimento Teatro Mercadante" manda le foto in installazioni/).
+
 Accetta uno o più ZIP (anche i "pezzi" 1/2/3 in cui Meta divide gli export grandi) oppure cartelle
 già estratte. Estrae SOLO foto e video pubblicati (post, reel, album), li rinomina in ordine
 (hero-01.jpg, galleria-01.jpg, installazione-01.jpg, video-01.mp4) e li copia in
@@ -149,14 +154,37 @@ def lookup(meta, tails, name):
     return {}
 
 
-def image_size(data):
+def image_info(data):
+    """(larghezza, altezza, timestamp EXIF o 0) oppure None se non è un'immagine leggibile."""
     if Image is None:
         return None
     try:
-        im = ImageOps.exif_transpose(Image.open(BytesIO(data)))
-        return im.size
+        raw = Image.open(BytesIO(data))
+        ts = 0
+        try:
+            d = raw.getexif().get_ifd(0x8769).get(0x9003) or raw.getexif().get(0x0132)  # DateTimeOriginal / DateTime
+            if d:
+                ts = datetime.strptime(str(d)[:19], "%Y:%m:%d %H:%M:%S").replace(tzinfo=timezone.utc).timestamp()
+        except Exception:
+            pass
+        w, h = ImageOps.exif_transpose(raw).size
+        return w, h, ts
     except Exception:
         return None
+
+
+NAME_DATE = re.compile(r"(?<!\d)(20\d{2})[-_.]?(0[1-9]|1[0-2])[-_.]?(0[1-9]|[12]\d|3[01])(?!\d)")
+JUNK = re.compile(r"(^|/)(__MACOSX|\.[^/]*|thumbs\.db|desktop\.ini|\.thumbnails)(/|$)", re.I)
+
+
+def name_date(name):
+    m = NAME_DATE.search(Path(name).name)
+    if not m:
+        return 0
+    try:
+        return datetime(int(m[1]), int(m[2]), int(m[3]), tzinfo=timezone.utc).timestamp()
+    except ValueError:
+        return 0
 
 
 def existing_state(out):
@@ -182,7 +210,7 @@ def existing_state(out):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Estrae foto e video da un export Instagram/Facebook (ZIP o cartella).")
-    ap.add_argument("export", nargs="+", help="file ZIP (o cartelle) dell'esportazione dati")
+    ap.add_argument("export", nargs="+", help="ZIP o cartelle: export Instagram/Facebook oppure semplici jpg/mp4 (WhatsApp, Drive)")
     ap.add_argument("--out", default=str(ROOT / "foto" / "organizzate"), help="cartella di destinazione")
     ap.add_argument("--hero", type=int, default=3, help="quante foto orizzontali grandi mettere in hero/ (default 3)")
     ap.add_argument("--con-storie", action="store_true", help="includi anche le storie (di solito escluse)")
@@ -206,29 +234,40 @@ def main(argv=None):
     hashes, last = existing_state(out)
     seen, items, skipped = set(hashes), [], {"già presenti/duplicati": 0, "messaggi/profilo/sticker": 0,
                                            "storie": 0, "troppo piccole": 0, "formato non supportato": 0}
+    unsupported = []
     for s in sources:
+        # export Meta = contiene JSON con i metadati; altrimenti è una cartella "semplice" (WhatsApp, Drive, telefono)
+        plain = not any(n.lower().endswith(".json") for n in s.files)
+        if plain:
+            log(f"'{s.path.name}': nessuna struttura Meta, la tratto come cartella di foto/video semplici.")
         for name, (size, mtime) in sorted(s.files.items()):
             ext = Path(name).suffix.lower()
             if ext not in IMG_EXT | VID_EXT:
-                if ext in (".heic", ".heif", ".gif", ".avi", ".3gp"):
+                if ext in (".heic", ".heif", ".gif", ".avi", ".3gp", ".mkv"):
                     skipped["formato non supportato"] += 1
+                    unsupported.append(name)
                 continue
-            if BLOCK.search(name) or not ALLOW.search(name):
-                skipped["messaggi/profilo/sticker"] += 1
-                continue
-            if STORIES.search(name) and not a.con_storie:
-                skipped["storie"] += 1
-                continue
+            if plain:
+                if JUNK.search(name):
+                    continue
+            else:
+                if BLOCK.search(name) or not ALLOW.search(name):
+                    skipped["messaggi/profilo/sticker"] += 1
+                    continue
+                if STORIES.search(name) and not a.con_storie:
+                    skipped["storie"] += 1
+                    continue
             if size > MAX_MEMBER or size == 0:
                 continue
             kind = "video" if ext in VID_EXT else "image"
-            w = h = 0
+            w = h = exif_ts = 0
             if kind == "image":
-                sz = image_size(s.read(name))
-                if sz is None:
+                info = image_info(s.read(name))
+                if info is None:
                     skipped["formato non supportato"] += 1
+                    unsupported.append(name)
                     continue
-                w, h = sz
+                w, h, exif_ts = info
                 if max(w, h) < a.min_px:
                     skipped["troppo piccole"] += 1
                     continue
@@ -237,16 +276,24 @@ def main(argv=None):
                 skipped["già presenti/duplicati"] += 1
                 continue
             seen.add(digest)
-            m = lookup(meta, tails, name)
-            ts = m.get("ts") or mtime or 0
+            m = {} if plain else lookup(meta, tails, name)
+            ts = m.get("ts") or exif_ts or name_date(name) or mtime or 0
+            caption = (m.get("caption") or "")[:500]
+            # testo su cui cercare le parole chiave: didascalia + sottocartelle + nome file
+            text = f"{caption} {' '.join(Path(name).parent.parts[-3:])} {Path(name).stem}".replace("_", " ").replace("-", " ")
             items.append({"src": s, "name": name, "kind": kind, "ext": ".jpg" if ext == ".jpeg" else ext, "w": w, "h": h,
-                          "ts": ts, "caption": (m.get("caption") or "")[:500], "sha1": digest})
+                          "ts": ts, "caption": caption, "text": text, "sha1": digest})
 
     # classificazione
     imgs = [i for i in items if i["kind"] == "image"]
     wide = sorted((i for i in imgs if i["w"] >= 1400 and i["w"] / max(i["h"], 1) >= 1.5),
                   key=lambda i: -(i["w"] * i["h"]))
-    need_hero = max(0, a.hero - last["hero"])
+    # al massimo 1 foto su 4 va in hero (restano visibili anche in galleria quelle migliori)
+    need_hero = max(0, min(a.hero, max(1, len(imgs) // 4)) - last["hero"])
+    if len(wide) < need_hero:  # poche panoramiche: ripiega sulle foto orizzontali più grandi
+        extra = sorted((i for i in imgs if i not in wide and i["w"] >= 1000 and i["w"] / max(i["h"], 1) >= 1.2),
+                       key=lambda i: -(i["w"] * i["h"]))
+        wide += extra
     for i in wide[:need_hero]:
         i["dest"], i["prefix"] = "hero", "hero"
     for i in items:
@@ -254,7 +301,7 @@ def main(argv=None):
             continue
         if i["kind"] == "video":
             i["dest"], i["prefix"] = "video", "video"
-        elif inst_re.search(i["caption"]):
+        elif inst_re.search(i["text"]):
             i["dest"], i["prefix"] = "installazioni", "installazione"
         else:
             i["dest"], i["prefix"] = "galleria", "galleria"
@@ -277,6 +324,9 @@ def main(argv=None):
     for k, v in skipped.items():
         if v:
             log(f"  ignorati - {k}: {v}")
+    if unsupported:
+        log(f"  Non importabili (es. HEIC iPhone): {', '.join(unsupported[:8])}{' …' if len(unsupported) > 8 else ''}"
+            "\n  -> fatti reinviare come JPG/MP4 (WhatsApp li converte già; da Drive scegli 'Più compatibile' su iPhone).")
     if not items:
         log("\nNessun file nuovo da importare. Controlla di aver scaricato l'export in formato JSON/HTML con foto e video inclusi.")
         return 0
