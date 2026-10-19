@@ -19,10 +19,15 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 - `docs/` guida deploy, PDF clienti/admin, kit social, scaletta video · `video/` intro 16:9 e 9:16, tutorial
 - `tests/test_e2e.py` test end-to-end: `python -m tests.test_e2e`
 
+## Team e Contatti (da admin)
+Admin › **Team e Contatti**: nome, ruolo, telefono, email, nota, visibilità e ordine di ogni collaboratore. Si salva nel database: compare
+nella sezione Contatti del sito e l'assistente risponde con questi dati ("numero di Pasquale?"). Precaricato: Pasquale (titolare, +39 366 178 2548, aperto 24 ore).
+Telefono principale, WhatsApp e orari si modificano in Admin › Testi. Numeri della sezione "In cifre": DEMO finché non si imposta `stats` nelle impostazioni.
+
 ## Design e voce
 Tema chiaro (avorio/antracite, oro e blu notte), titoli Playfair Display e testi Inter (font locali in `app/static/fonts/`, licenza OFL).
-L'intro usa solo musica + didascalie animate: **nessuna voce sintetica del browser**. Per una voce reale metti `app/static/media/voce.mp3`
-(istruzioni e copione in `docs/voce-script.md`). Analisi e ricerca del redesign: `docs/ANALISI-DESIGN.md`. Con `APP_MODE=demo` i testi/foto generici sono marcati DEMO.
+L'intro usa musica + didascalie animate: **nessuna voce sintetica del browser**. `app/static/media/voce.mp3` (voce italiana ElevenLabs, 44 s) è già inclusa e `voce.json` ne sincronizza le slide;
+per cambiarla vedi `docs/voce-script.md`. Test audio in un vero browser: `python -m tests.test_audio`. Analisi e ricerca del redesign: `docs/ANALISI-DESIGN.md`. Con `APP_MODE=demo` i testi/foto generici sono marcati DEMO.
 
 ## ⚠️ Foto DEMO da sostituire
 Le foto in `foto/organizzate/` (1 hero, 1 galleria, 3 installazioni) sono **immagini demo temporanee**, non lavori di LMC Service

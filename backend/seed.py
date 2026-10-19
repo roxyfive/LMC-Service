@@ -52,6 +52,16 @@ def seed():
             v = json.dumps(v, ensure_ascii=False)
         cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", (k, v))
     cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('slot_minutes','60')")
+    # dati reali del cliente: sostituiscono solo i segnaposto, mai ciò che l'admin ha già modificato
+    for k in ("telefono", "whatsapp", "orari", "zone"):
+        cur.execute("UPDATE settings SET value=? WHERE key=? AND (value='' OR value LIKE '[DA%' OR (key='zone' AND value LIKE 'Tutta Italia%'))",
+                    (base[k], k))
+    cur.execute("UPDATE settings SET value=? WHERE key='servizi' AND value LIKE '%Impianti audio per eventi, meeting e show.%'",
+                (json.dumps(base["servizi"], ensure_ascii=False),))
+    # team: il titolare è precaricato, il resto si gestisce da Admin > Team e Contatti
+    if not cur.execute("SELECT 1 FROM team").fetchone():
+        cur.execute("INSERT INTO team(name,role,phone,email,note,visible,sort) VALUES(?,?,?,?,?,?,?)",
+                    ("Pasquale", "Titolare", base["telefono"], "", "Aperto 24 ore", "si", 0))
     # admin: password da .env solo al primo avvio, altrimenti casuale mostrata una volta
     if not cur.execute("SELECT 1 FROM admin_users").fetchone():
         user = os.getenv("ADMIN_USER", "admin")

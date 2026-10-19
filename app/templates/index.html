@@ -8,7 +8,8 @@
 <meta name="theme-color" content="#0e1a30">
 <meta name="csrf" content="{{ csrf_token() }}">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/static/img/icon-192.png">
+<link rel="icon" href="/static/img/logo-lmc.svg" type="image/svg+xml">
+<link rel="icon" href="/static/img/icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="/static/img/icon-192.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LMC Service – Audio · Video · Luci | Napoli">
@@ -51,6 +52,7 @@
 </svg>
 {%- endmacro %}
 
+{% include "_logo.html" %}
 <div class="scroll-progress" id="sp" aria-hidden="true"></div>
 <a class="skip-link" href="#main">Vai al contenuto</a>
 
@@ -62,7 +64,7 @@
   <div class="intro-vig"></div>
   <div class="beams"></div>
   <div class="intro-frame"></div>
-  <img src="/static/img/logo-480.webp" alt="La Music Company Service" class="intro-logo" width="140" height="79">
+  <svg class="intro-logo logo-mark" viewBox="0 0 240 240" role="img" aria-label="La Music Company Service"><use href="#lmc-logo"/></svg>
   <div class="intro-copy">
     <p class="intro-count" aria-hidden="true"><span id="introNum">01</span> / {{ '%02d' % v.intro_steps|length }}</p>
     <div id="introCap" class="intro-cap" aria-live="polite"></div>
@@ -70,14 +72,16 @@
   </div>
   <div class="intro-bars" id="introBars" aria-hidden="true">{% for st in v.intro_steps %}<i><b></b></i>{% endfor %}</div>
   <div class="intro-ctrl">
-    <button id="introAudio" class="chip pulse" aria-pressed="false">♪ Attiva la musica{{ ' e la voce' if v.voce_url }}</button>
+    <button id="introAudio" class="chip pulse" aria-pressed="false"><span id="introAudioTxt">♪ Attiva musica{{ ' e voce' if v.voce_url }}</span></button>
     <button id="introSkip" class="btn btn-gold">Entra nel sito</button>
   </div>
-  <script id="introData" type="application/json">{{ {"steps": v.intro_steps, "voce": v.voce_url}|tojson }}</script>
+  <audio id="introMusic" src="/static/media/music.mp3" loop preload="none"></audio>
+  {% if v.voce_url %}<audio id="introVoce" src="{{ v.voce_url }}" preload="metadata"></audio>{% endif %}
+  <script id="introData" type="application/json">{{ {"steps": v.intro_steps, "voce": v.voce_url, "cues": v.voce_cues}|tojson }}</script>
 </div>
 
 <header class="nav" id="top">
-  <a class="brand" href="#top"><img src="/static/img/icon-192.png" alt="" width="36" height="36"><span>LMC <b>Service</b></span></a>
+  <a class="brand" href="#top" aria-label="LMC Service – torna in alto"><svg class="logo-mark" viewBox="0 0 240 240" aria-hidden="true"><use href="#lmc-logo"/></svg><span>LMC <b>Service</b></span></a>
   <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="menu">☰</button>
   <nav id="menu" aria-label="Principale">
     <a href="#chi-siamo">Chi siamo</a><a href="#skill">Skill</a><a href="#eventi">Eventi</a>
@@ -93,8 +97,10 @@
          {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} width="1600" height="900">
     {% else %}<img class="hs on" src="/static/img/logo-1600.webp" alt="La Music Company Service" width="1600" height="900" fetchpriority="high">{% endfor %}
   </div>
+  <div class="hero-lights" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="hero-shade"></div>
   <div class="beams"></div>
+  <canvas id="heroFx" class="hero-fx" aria-hidden="true"></canvas>
   <div class="hero-in">
     <p class="eyebrow rise" style="--d:.1s">{{ s.city }} · Service per eventi</p>
     {% set cl = s.claim.split('. ', 1) %}
@@ -125,6 +131,7 @@
   </div>
 </section>
 
+<div class="orn" aria-hidden="true"><i></i></div>
 <div class="band" id="skill-band"><section id="skill" class="sec" aria-labelledby="skill-h">
   <div class="sec-head reveal"><p class="kicker">Cosa facciamo</p><hr class="rule"><h2 id="skill-h">Le nostre skill</h2>
     {% if demo %}<p class="note"><span class="demo-tag">Demo</span> Descrizioni e foto sono indicative e verranno sostituite con quelle reali di LMC Service.</p>{% endif %}</div>
@@ -139,6 +146,14 @@
   </div>
 </section></div>
 
+{% if v.stats %}
+<section id="cifre" class="sec stats" aria-label="In cifre">
+  <ul class="stat-grid">
+    {% for st in v.stats %}<li class="stat reveal" style="--i:{{ loop.index0 }}" data-anim="zoom"><b class="num" data-to="{{ st.value }}" data-suffix="{{ st.suffix }}">{{ st.value }}{{ st.suffix }}</b><span>{{ st.label }}</span>{% if st.demo %}<span class="demo-tag">Numero demo</span>{% endif %}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+<div class="orn" aria-hidden="true"><i></i></div>
 <section id="eventi" class="sec" aria-labelledby="eventi-h">
   <div class="sec-head reveal"><p class="kicker">Portfolio</p><hr class="rule"><h2 id="eventi-h">Eventi realizzati</h2></div>
   {% if cats|length > 1 %}<div class="filters" role="group" aria-label="Filtra per categoria">
@@ -157,6 +172,7 @@
   {% if demo %}<p class="note" style="margin-top:1.4rem"><span class="demo-tag">Demo</span> Foto dimostrative: le foto reali vanno in <code>foto/organizzate/</code> (o dal pannello admin) e il sito si aggiorna da solo.</p>{% endif %}
 </section>
 
+<div class="orn" aria-hidden="true"><i></i></div>
 <div class="band"><section id="show-demo" class="sec" aria-labelledby="show-h">
   <div class="sec-head reveal"><p class="kicker">In movimento</p><hr class="rule"><h2 id="show-h">Show demo</h2></div>
   {% if videos %}
@@ -220,26 +236,33 @@
   </div>
 </section></div>
 
+<div class="orn" aria-hidden="true"><i></i></div>
 <section id="contatti" class="sec" aria-labelledby="contatti-h">
+  {% set lead = (s.team|selectattr('phone')|list|first) if s.team else none %}
+  {% set call = lead.phone if lead else tel %}
   <div class="contact">
     <div class="reveal" data-anim="left">
       <p class="kicker">Contatti</p><hr class="rule">
       <h2 id="contatti-h">Raccontaci il tuo evento</h2>
-      <p class="big">Dal palco al meeting, in tutta Italia. Scrivici data, luogo e servizi che ti servono: ti rispondiamo con un preventivo su misura.</p>
+      <p class="big">Noleggio attrezzature, organizzazione eventi e allestimenti a Napoli e in tutta Italia.{% if orari %} {{ orari }}.{% endif %} Scrivici data, luogo e servizi che ti servono: ti rispondiamo con un preventivo su misura.</p>
       <div class="cta">
         <a class="btn btn-night" href="#preventivo">Richiedi un preventivo</a>
-        <a class="btn btn-line" href="#prenota">Prenota un appuntamento</a>
-        {% if tel %}<a class="btn btn-line" href="tel:{{ tel|replace(' ','') }}">Chiama</a>{% endif %}
-        {% if s.whatsapp %}<a class="btn btn-line" href="https://wa.me/{{ s.whatsapp }}" rel="noopener">WhatsApp</a>{% endif %}
+        {% if call %}<a class="btn btn-line" href="tel:{{ call|replace(' ','') }}">Chiama{{ ' ' ~ lead.name if lead }}</a>{% endif %}
+        {% if s.whatsapp %}<a class="btn btn-line" href="https://wa.me/{{ s.whatsapp }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+        <a class="btn btn-line" href="#prenota">Prenota</a>
       </div>
       {% if s.instagram %}<p style="margin-top:1.2rem;color:var(--muted)">Preventivi anche in DM su <a href="{{ s.instagram }}" target="_blank" rel="noopener">Instagram</a>.</p>{% endif %}
     </div>
     <div class="contact-card reveal" data-anim="right">
       <dl>
-        <div><dt>Telefono</dt><dd>{% if tel %}<a href="tel:{{ tel|replace(' ','') }}">{{ tel }}</a>{% else %}<span class="todo">Da comunicare</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div>
-        <div><dt>Email</dt><dd>{% if mail %}<a href="mailto:{{ mail }}">{{ mail }}</a>{% else %}<span class="todo">Da comunicare</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div>
-        <div><dt>Sede</dt><dd>{{ s.indirizzo }} · {{ s.zone }}</dd></div>
-        <div><dt>Orari</dt><dd>{% if orari %}{{ orari }}{% else %}<span class="todo">Su appuntamento</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div>
+        <div><dt>Team</dt><dd>
+          {% if s.team %}<ul class="team">{% for m in s.team %}<li><strong>{{ m.name }}</strong>{% if m.role %} <span class="role">{{ m.role }}</span>{% endif %}
+            {% if m.phone %}<br><a href="tel:{{ m.phone|replace(' ','') }}">{{ m.phone }}</a>{% endif %}{% if m.email %}<br><a href="mailto:{{ m.email }}">{{ m.email }}</a>{% endif %}{% if m.note %}<br><span class="note-s">{{ m.note }}</span>{% endif %}</li>{% endfor %}</ul>
+          {% elif tel %}<a href="tel:{{ tel|replace(' ','') }}">{{ tel }}</a>
+          {% else %}<span class="todo">Da comunicare</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div>
+        {% if mail %}<div><dt>Email</dt><dd><a href="mailto:{{ mail }}">{{ mail }}</a></dd></div>{% endif %}
+        <div><dt>Orari</dt><dd>{% if orari %}{{ orari }}{% else %}<span class="todo">Su appuntamento</span>{% endif %}</dd></div>
+        <div><dt>Sede</dt><dd>{% if s.zone and s.indirizzo and s.indirizzo.lower() in s.zone.lower() %}{{ s.zone }}{% else %}{{ s.indirizzo }} · {{ s.zone }}{% endif %}</dd></div>
         <div><dt>Social</dt><dd class="social">
           {% for k,l in [('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok'),('threads','Threads'),('x','X'),('linktree','Linktree')] %}
           {% if s[k] %}<a href="{{ s[k] }}" target="_blank" rel="noopener">{{ l }}</a>{% endif %}{% endfor %}</dd></div>
@@ -252,7 +275,7 @@
 <footer class="foot">
   <div class="foot-in">
     <div>
-      <img class="fl" src="/static/img/logo-480.webp" alt="La Music Company Service" width="160" height="90" loading="lazy">
+      <svg class="fl logo-mark" viewBox="0 0 240 240" role="img" aria-label="La Music Company Service"><use href="#lmc-logo"/></svg>
       <p>{{ s.brand }}<br>Service per eventi · {{ s.city }} · dal {{ s.founded }}</p>
     </div>
     <nav aria-label="Esplora"><p class="foot-h">Esplora</p>

@@ -8,18 +8,29 @@
  "city": "Napoli",
  "chi_siamo": "La Music Company Service nasce a Napoli il 16 febbraio 2025, fondata da Pasquale Toppi. Siamo un service per eventi: portiamo audio, video e luci dove serve, in tutta Italia, e curiamo anche la progettazione tecnica di ogni serata. Lavoriamo per matrimoni, eventi privati, live e congressi. Preventivi su richiesta.",
  "servizi": [
-  {"nome": "Audio", "testo": "Impianti audio per eventi, meeting e show."},
-  {"nome": "Luci", "testo": "Illuminazione scenica e fasci di luce per palchi ed eventi."},
-  {"nome": "Video", "testo": "Soluzioni video per eventi e spettacoli."},
-  {"nome": "Progettazione", "testo": "Progettazione tecnica dell'allestimento su misura per ogni evento."},
-  {"nome": "Allestimenti", "testo": "Allestimenti per matrimoni, eventi privati, live e congressi."}
+  {
+   "nome": "Noleggio attrezzature",
+   "testo": "Noleggio di attrezzature audio, video e luci per eventi, meeting e show."
+  },
+  {
+   "nome": "Organizzazione eventi",
+   "testo": "Dall'idea alla serata: organizziamo e coordiniamo la parte tecnica del tuo evento."
+  },
+  {
+   "nome": "Allestimenti",
+   "testo": "Allestimenti per matrimoni, eventi privati, live e congressi."
+  },
+  {
+   "nome": "Progettazione",
+   "testo": "Progettazione tecnica su misura per ogni evento."
+  }
  ],
- "zone": "Tutta Italia (sede a Napoli)",
- "telefono": "[DA INSERIRE: telefono]",
- "whatsapp": "",
+ "zone": "Napoli e tutta Italia",
+ "telefono": "+39 366 178 2548",
+ "whatsapp": "393661782548",
  "email": "[DA INSERIRE: email]",
  "indirizzo": "Napoli",
- "orari": "[DA INSERIRE: orari]",
+ "orari": "Aperto 24 ore",
  "instagram": "https://www.instagram.com/lamusicompany.service/",
  "facebook": "https://www.facebook.com/share/15A1Ci9nBu/",
  "tiktok": "https://www.tiktok.com/@l.m.c..service",

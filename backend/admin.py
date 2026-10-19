@@ -31,6 +31,10 @@ MODULES = {
     "prima-nota": {"table": "journal", "title": "Prima nota", "fields": [
         ("date", "Data", "date"), ("description", "Descrizione", "text"), ("type", "Tipo", "select:entrata,uscita"),
         ("amount", "Importo €", "number"), ("notes", "Note", "area")]},
+    "team": {"table": "team", "title": "Team e Contatti", "order": "sort, id", "fields": [
+        ("name", "Nome", "text"), ("role", "Ruolo", "text"), ("phone", "Telefono / WhatsApp", "text"), ("email", "Email", "text"),
+        ("note", "Nota (es. orari, disponibilità)", "area"), ("visible", "Mostra sul sito e all'assistente", "select:si,no"),
+        ("sort", "Ordine (0 = primo)", "number")]},
     "recensioni": {"table": "reviews", "title": "Dicono di noi", "fields": [
         ("author", "Autore", "text"), ("text", "Testo (solo recensioni reali)", "area"), ("source", "Fonte", "text")]},
 }
@@ -267,7 +271,7 @@ def mod_list(mod):
         ex(f"INSERT INTO {c['table']}({','.join(cols)}) VALUES({','.join('?' * len(cols))})",
            tuple(request.form.get(k, "")[:2000] for k in cols))
         return redirect(url_for("admin.mod_list", mod=mod))
-    rows = q(f"SELECT * FROM {c['table']} ORDER BY id DESC")
+    rows = q(f"SELECT * FROM {c['table']} ORDER BY {c.get('order', 'id DESC')}")
     clients = q("SELECT id,name FROM clients ORDER BY name")
     extra = {}
     if mod == "prima-nota":

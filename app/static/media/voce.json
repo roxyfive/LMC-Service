@@ -1,0 +1,2 @@
+{"duration": 44.15, "cues": [0, 6.2, 12.05, 19.3, 23.65, 30.25, 37.3],
+ "nota": "Inizio (in secondi) di ciascuna delle 7 slide dell'intro, ricavato dalle pause di voce.mp3. Se sostituisci voce.mp3, aggiorna questi valori o cancella il file: in quel caso le slide si dividono in parti uguali."}

@@ -2,11 +2,16 @@
   'use strict';
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-  const CSRF = $('meta[name=csrf]').content;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const csrfMeta = $('meta[name=csrf]');
+  const send = (url, data) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfMeta.content }, body: JSON.stringify(data) });
   const post = async (url, data) => {
     try {
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF }, body: JSON.stringify(data) });
+      let r = await send(url, data);
+      if (r.status === 400) {          // token scaduto: ne chiede uno nuovo e ritenta
+        const t = await (await fetch('/api/csrf', { cache: 'no-store' })).json();
+        if (t.token) { csrfMeta.content = t.token; r = await send(url, data); }
+      }
       return { ok: r.ok, data: await r.json().catch(() => ({})) };
     } catch (e) { return { ok: false, data: { error: 'Connessione assente. Riprova.' } }; }
   };
@@ -157,7 +162,46 @@
     D.forEach((d, k) => d.addEventListener('click', () => { go(k); start(); }));
   })();
 
-  /* ---------- intro: musica + didascalie animate (voce.mp3 solo se presente) ---------- */
+  /* ---------- contatori animati ---------- */
+  (function () {
+    const nums = $$('.num[data-to]'); if (!nums.length) return;
+    const fmt = (el, v) => { el.textContent = v.toLocaleString('it-IT') + (el.dataset.suffix || ''); };
+    const cio = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return; cio.unobserve(e.target);
+      const el = e.target, to = +el.dataset.to, t0 = performance.now(), D = 1700;
+      if (reduce) return fmt(el, to);
+      (function step(t) { const k = Math.min(1, (t - t0) / D), v = Math.round(to * (1 - Math.pow(1 - k, 3))); fmt(el, v); if (k < 1) requestAnimationFrame(step); })(t0);
+    }), { threshold: .6 });
+    nums.forEach(n => { n.setAttribute('aria-label', n.textContent); if (!reduce) fmt(n, 0); cio.observe(n); });
+  })();
+
+  /* ---------- particelle dorate nella hero (leggere: sprite pre-renderizzato, pausa fuori vista) ---------- */
+  (function () {
+    const cv = $('#heroFx'), hero = $('#hero'); if (!cv || reduce) return;
+    const g = cv.getContext('2d'), sprite = document.createElement('canvas'); sprite.width = sprite.height = 32;
+    const sg = sprite.getContext('2d'), gr = sg.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gr.addColorStop(0, 'rgba(255,236,190,1)'); gr.addColorStop(.35, 'rgba(230,207,154,.45)'); gr.addColorStop(1, 'rgba(230,207,154,0)');
+    sg.fillStyle = gr; sg.fillRect(0, 0, 32, 32);
+    let W = 0, H = 0, P = [], run = false, last = 0;
+    const N = () => (innerWidth < 700 ? 14 : 30);
+    const fit = () => { W = cv.width = hero.clientWidth; H = cv.height = hero.clientHeight;
+      P = Array.from({ length: N() }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 3 + Math.random() * 8, vy: 6 + Math.random() * 14, vx: (Math.random() - .5) * 6, ph: Math.random() * 6.28, a: .25 + Math.random() * .5 })); };
+    fit(); addEventListener('resize', fit);
+    const frame = t => {
+      if (!run) return; const dt = Math.min(.05, (t - last) / 1000); last = t;
+      g.clearRect(0, 0, W, H);
+      for (const p of P) {
+        p.y -= p.vy * dt; p.x += p.vx * dt; p.ph += dt * 1.6; if (p.y < -20) { p.y = H + 20; p.x = Math.random() * W; }
+        g.globalAlpha = p.a * (.55 + .45 * Math.sin(p.ph)); g.drawImage(sprite, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+      }
+      requestAnimationFrame(frame);
+    };
+    const upd = vis => { const go = vis && !document.hidden; if (go && !run) { run = true; last = performance.now(); requestAnimationFrame(frame); } else if (!go) run = false; };
+    let vis = true; new IntersectionObserver(es => { vis = es[0].isIntersecting; upd(vis); }, { threshold: .05 }).observe(hero);
+    document.addEventListener('visibilitychange', () => upd(vis));
+  })();
+
+  /* ---------- intro: musica + didascalie animate (voce.mp3 e voce.json solo se presenti) ---------- */
   const intro = $('#intro');
   let data = {}; try { data = JSON.parse($('#introData').textContent || '{}'); } catch (e) { }
   const steps = data.steps || [];
@@ -169,13 +213,20 @@
   function startIntro() {
     document.body.style.overflow = 'hidden';
     const slides = $$('.slide', intro), cap = $('#introCap'), sub = $('#introSub'), num = $('#introNum'),
-      bars = $$('#introBars i'), btnAudio = $('#introAudio'), btnSkip = $('#introSkip');
-    const STEP = 4800, sleep = ms => new Promise(r => setTimeout(r, ms));
-    const music = new Audio('/static/media/music.mp3'); music.loop = true; music.volume = .55; music.preload = 'none';
-    const voce = data.voce ? new Audio(data.voce) : null; if (voce) voce.preload = 'metadata';
-    let sound = false, run = 0, cur = -1, ended = false;
+      bars = $$('#introBars i'), btnAudio = $('#introAudio'), txtAudio = $('#introAudioTxt'), btnSkip = $('#introSkip');
+    const music = $('#introMusic'), voce = $('#introVoce'), cues = data.cues || [];
+    const STEP = 4800, MUSIC_VOL = .75, DUCK_VOL = .2, sleep = ms => new Promise(r => setTimeout(r, ms));
+    let sound = false, run = 0, cur = -1, ended = false, fade = null;
     setTimeout(() => slides.forEach(s => { if (!s.src && s.dataset.src) s.src = s.dataset.src; }), 500);
     btnSkip.focus({ preventScroll: true });
+
+    /* volume con dissolvenza (su iOS il volume è fisso: lì la musica resta al livello pieno) */
+    const fadeTo = (el, v, ms = 600) => {
+      if (!el) return; clearInterval(fade); const from = el.volume, n = Math.max(1, ms / 40); let k = 0;
+      fade = setInterval(() => { k++; el.volume = Math.min(1, Math.max(0, from + (v - from) * k / n)); if (k >= n) clearInterval(fade); }, 40);
+    };
+    const label = (t, state) => { txtAudio.textContent = t; btnAudio.dataset.state = state; btnAudio.setAttribute('aria-pressed', state === 'on'); };
+    music.addEventListener('error', () => { sound = false; label('♪ Audio non disponibile · riprova', 'error'); });
 
     const reset = () => { slides.forEach(s => s.classList.remove('on', 'leaving')); void intro.offsetWidth; cur = -1; bars.forEach(b => b.classList.remove('on', 'done')); };
     const showStep = (i, ms) => {
@@ -190,28 +241,54 @@
     };
     async function play() {
       const my = ++run; reset();
-      if (sound && voce) { voce.currentTime = 0; voce.play().catch(() => { }); music.volume = .22; }
-      const ms = sound && voce && isFinite(voce.duration) && voce.duration > 3 ? voce.duration * 1000 / steps.length : STEP;
-      for (let i = 0; i < steps.length; i++) { if (my !== run) return; showStep(i, ms); await sleep(ms); }
-      if (my === run) { await sleep(900); if (my === run) endIntro(); }
+      const withVoice = sound && voce && !voce.error;
+      if (withVoice) { voce.currentTime = 0; try { await voce.play(); fadeTo(music, DUCK_VOL, 500); } catch (e) { } }
+      const dur = withVoice && isFinite(voce.duration) ? voce.duration : 0;
+      for (let i = 0; i < steps.length; i++) {
+        if (my !== run) return;
+        let ms = STEP;
+        if (withVoice && dur > 3) {   // con la voce: ogni slide dura quanto la sua frase (cue da voce.json, altrimenti parti uguali)
+          const t0 = cues.length === steps.length ? cues[i] : dur * i / steps.length;
+          const t1 = i + 1 < steps.length ? (cues.length === steps.length ? cues[i + 1] : dur * (i + 1) / steps.length) : dur + .6;
+          ms = Math.max(1200, (t1 - Math.max(t0, voce.currentTime || 0)) * 1000);
+        }
+        showStep(i, ms); await sleep(ms);
+      }
+      if (my === run) { await sleep(700); if (my === run) endIntro(); }
     }
     function endIntro() {
       if (ended) return; ended = true; run++;
       if (voce) voce.pause();
-      const f = setInterval(() => { music.volume = Math.max(0, music.volume - .05); if (music.volume <= .01) { music.pause(); clearInterval(f); } }, 90);
-      intro.classList.add('out'); document.body.style.overflow = ''; ready();
-      setTimeout(() => { intro.hidden = true; }, 1200);
+      clearInterval(fade); const f = setInterval(() => { music.volume = Math.max(0, music.volume - .05); if (music.volume <= .01) { music.pause(); clearInterval(f); } }, 60);
+      intro.classList.add('out'); document.body.style.overflow = '';
+      setTimeout(ready, 350);                      // il titolo della hero parte mentre la "tenda" si alza
+      setTimeout(() => { intro.hidden = true; }, 1500);
       try { sessionStorage.setItem('introSeen', '1'); } catch (e) { }
     }
     btnSkip.onclick = endIntro;
     document.addEventListener('keydown', e => { if (!ended && e.key === 'Escape') endIntro(); });
-    btnAudio.onclick = () => {
-      sound = !sound; btnAudio.setAttribute('aria-pressed', sound); btnAudio.classList.add('live');
-      if (sound) {
-        btnAudio.textContent = '♪ Musica attiva'; music.volume = voce ? .22 : .55; music.play().catch(() => { });
-        if (voce) play();                          // con voce.mp3 si riparte da capo per sincronizzare
-      } else {
-        btnAudio.textContent = '♪ Musica disattivata'; music.pause(); if (voce) voce.pause();
+    if (voce) voce.addEventListener('ended', () => fadeTo(music, MUSIC_VOL, 800));
+
+    btnAudio.onclick = async () => {
+      btnAudio.classList.add('live');
+      if (sound) {                                  // spegni
+        sound = false; music.pause(); if (voce) voce.pause(); label('♪ Audio disattivato · tocca per riattivare', 'off'); return;
+      }
+      try {
+        music.volume = voce ? DUCK_VOL : MUSIC_VOL; music.currentTime = 0;
+        label('♪ Caricamento audio…', 'loading');
+        const started = new Promise((res, rej) => {        // "attivo" solo quando il suono parte davvero
+          const done = ok => { clearTimeout(tm); music.removeEventListener('playing', yes); music.removeEventListener('error', no); ok ? res() : rej(new Error('audio')); };
+          const yes = () => done(true), no = () => done(false), tm = setTimeout(no, 9000);
+          music.addEventListener('playing', yes); music.addEventListener('error', no);
+          if (!music.paused && music.readyState > 2 && music.currentTime > 0) yes();
+        });
+        await music.play();
+        await started;
+        sound = true; label('♪ Audio attivo · tocca per spegnere', 'on');
+        if (voce) play();                           // con la voce si riparte da capo: immagini e frasi restano sincronizzate
+      } catch (e) {
+        sound = false; music.pause(); label('♪ Audio non riproducibile · riprova', 'error');
       }
     };
     play();

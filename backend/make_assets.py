@@ -32,28 +32,37 @@ def logos():
 
 
 def music(sec=48, sr=44100):
-    """Pad ambientale cinematografico + battito sub, interamente generato: nessun diritto d'autore."""
+    """Pad cinematografico + arpeggio + pulsazione, interamente generato (nessun diritto d'autore).
+    Il contenuto sta soprattutto tra 200 Hz e 3 kHz: gli altoparlanti dei telefoni non riproducono i bassi."""
     MED.mkdir(parents=True, exist_ok=True)
     t = np.linspace(0, sec, sec * sr, endpoint=False)
-    chords = [(110.0, 164.81, 220.0, 261.63), (87.31, 130.81, 174.61, 220.0),
-              (98.0, 146.83, 196.0, 246.94), (110.0, 164.81, 220.0, 277.18)]
+    chords = [(220.0, 329.63, 440.0, 523.25), (174.61, 261.63, 349.23, 440.0),
+              (196.0, 293.66, 392.0, 493.88), (220.0, 329.63, 440.0, 554.37)]
     seg = sec / 8
     sig = np.zeros_like(t)
     for i in range(8):
         a, b = int(i * seg * sr), int((i + 1) * seg * sr)
         tt = t[a:b]
-        env = np.minimum(1, np.minimum((tt - tt[0]) / 2.0, (tt[-1] - tt) / 2.0))
+        env = np.minimum(1, np.minimum((tt - tt[0]) / 1.5, (tt[-1] - tt) / 1.5))
         for f in chords[i % 4]:
-            for det in (-0.4, 0.4):
-                sig[a:b] += env * np.sin(2 * np.pi * (f + det) * tt) * 0.06
-    # pulsazione 72 bpm
+            for det in (-0.5, 0.5):
+                for h, amp in ((1, 1.0), (2, 0.45), (3, 0.22), (4, 0.1)):
+                    sig[a:b] += env * np.sin(2 * np.pi * (f * h + det) * tt) * 0.045 * amp
+        # arpeggio a crome sulle note dell'accordo (pizzicato morbido)
+        notes = [chords[i % 4][k % 4] * (2 if k % 8 >= 4 else 1) for k in range(16)]
+        step = seg / 16
+        for k, f in enumerate(notes):
+            a2 = a + int(k * step * sr)
+            n = int(min(step * 2.2, seg - k * step) * sr)
+            tn = np.arange(n) / sr
+            pl = np.sin(2 * np.pi * f * 2 * tn) * np.exp(-tn * 5) * 0.16 + np.sin(2 * np.pi * f * 4 * tn) * np.exp(-tn * 9) * 0.05
+            sig[a2:a2 + n] += pl[: max(0, min(n, len(sig) - a2))]
     beat = (t * 72 / 60) % 1
-    sig += np.sin(2 * np.pi * 55 * t) * np.exp(-beat * 7) * 0.35
-    sig += np.sin(2 * np.pi * 440 * t) * np.exp(-((t * 36 / 60) % 1) * 12) * 0.02
+    sig += np.sin(2 * np.pi * 90 * t) * np.exp(-beat * 8) * 0.22 + np.sin(2 * np.pi * 180 * t) * np.exp(-beat * 10) * 0.08
+    sig += np.sin(2 * np.pi * 1760 * t) * np.exp(-((t * 36 / 60) % 1) * 10) * 0.025
     sig /= max(1e-6, np.abs(sig).max())
-    sig *= 0.8
-    # loop senza click: dissolvenza finale
-    fade = int(sr * 1.5)
+    sig *= 0.9
+    fade = int(sr * 1.5)          # loop senza click
     sig[-fade:] *= np.linspace(1, 0, fade)
     sig[:fade] *= np.linspace(0, 1, fade)
     pcm = (sig * 32767).astype(np.int16)
@@ -64,7 +73,18 @@ def music(sec=48, sr=44100):
         w.writeframes(pcm.tobytes())
 
 
+def music_mp3():
+    """Genera music.wav e lo converte in music.mp3 (loudnorm: volume uniforme e ben udibile)."""
+    import shutil
+    import subprocess
+    music()
+    if shutil.which("ffmpeg"):
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(MED / "music.wav"), "-af", "loudnorm=I=-16:TP=-1.5:LRA=7",
+                        "-ar", "44100", "-ac", "1", "-b:a", "128k", str(MED / "music.mp3")], check=True)
+        (MED / "music.wav").unlink()
+
+
 if __name__ == "__main__":
     logos()
-    music()
+    music_mp3()
     print("asset ok")

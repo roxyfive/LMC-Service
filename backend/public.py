@@ -7,7 +7,7 @@ from flask import (Blueprint, render_template, request, jsonify, send_from_direc
                    Response, url_for)
 from .db import q, ex, get_setting, all_settings
 from .config import UPLOADS, CATEGORIES
-from .security import check_csrf
+from .security import check_csrf, csrf_token
 from .mailer import send_mail
 from . import ai
 from . import vetrina
@@ -77,8 +77,10 @@ def index():
     videos = [m for m in media if m["kind"] == "video"]
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
     reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
+    s["team"] = q("SELECT * FROM team WHERE visible='si' ORDER BY sort, id")
     used = {m["category"] for m in gallery}
     v = vetrina.build(media)
+    v["stats"] = vetrina.stats(s, os.getenv("APP_MODE", "demo") == "demo")
     return render_template("index.html", s=s, gallery=gallery, home=home, intro=intro, videos=videos, v=v,
                            hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
                            has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
@@ -176,6 +178,14 @@ def api_preventivo():
               f"{name} – {phone} – {email}\n{d.get('event_type')} il {d.get('event_date')} a {d.get('place')}, "
               f"{d.get('guests')} ospiti\nServizi: {services}\n{d.get('notes')}")
     return jsonify(ok=True)
+
+
+@bp.route("/api/csrf")
+def api_csrf():
+    """Token fresco: serve alle pagine rimaste aperte o in cache oltre la durata della sessione."""
+    r = jsonify(token=csrf_token())
+    r.headers["Cache-Control"] = "no-store"
+    return r
 
 
 @bp.route("/api/chat", methods=["POST"])

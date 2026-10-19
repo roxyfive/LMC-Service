@@ -35,6 +35,10 @@ INTRO_STEPS = [
     ("hero", "Il tuo evento, sotto i riflettori", "Prenota un appuntamento o chiedi un preventivo"),
 ]
 
+# Numeri della sezione "In cifre": DEMO finché il titolare non fornisce quelli veri (settings.stats = JSON [{label,value,suffix}]).
+# "24 ore" invece è reale (dati del cliente: aperto 24 ore).
+STATS_DEMO = [("Eventi realizzati", 150, "+", True), ("Impianti attivi", 24, "", True), ("Aperti 24 ore su 24", 24, " h", False)]
+
 _man = {"mtime": None, "data": {}}
 
 
@@ -103,6 +107,27 @@ def build(media):
     for i, (sk, cap, sub) in enumerate(INTRO_STEPS):
         m = photos.get(sk) if sk != "hero" else (hero_pool[(i // 6) % len(hero_pool)] if hero_pool else None)
         steps.append(dict(cap=cap, sub=sub, img=f"/media/{m['filename']}_1600.webp" if m else ""))
-    voce_file = Path(ROOT) / "app" / "static" / "media" / "voce.mp3"
-    return dict(hero_slides=hero_slides, skills=skills, intro_steps=steps,
-                voce_url="/static/media/voce.mp3" if voce_file.is_file() else "")
+    media_dir = Path(ROOT) / "app" / "static" / "media"
+    cues = []
+    try:   # voce.json: inizio (in secondi) di ogni slide, ricavato dalle pause della voce
+        cues = [float(x) for x in json.loads((media_dir / "voce.json").read_text(encoding="utf-8"))["cues"]]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    if len(cues) != len(steps):
+        cues = []
+    return dict(hero_slides=hero_slides, skills=skills, intro_steps=steps, voce_cues=cues,
+                voce_url="/static/media/voce.mp3" if (media_dir / "voce.mp3").is_file() else "")
+
+
+def stats(settings, demo):
+    """Lista numeri da mostrare: reali da settings.stats, altrimenti quelli DEMO (solo in modalità demo)."""
+    try:
+        real = json.loads(settings.get("stats", "") or "[]")
+        out = [dict(label=str(x["label"])[:40], value=int(x["value"]), suffix=str(x.get("suffix", ""))[:6], demo=False) for x in real]
+        if out:
+            return out
+    except (ValueError, KeyError, TypeError):
+        pass
+    if not demo:
+        return [dict(label=l, value=v, suffix=sf, demo=False) for l, v, sf, d in STATS_DEMO if not d]
+    return [dict(label=l, value=v, suffix=sf, demo=d) for l, v, sf, d in STATS_DEMO]

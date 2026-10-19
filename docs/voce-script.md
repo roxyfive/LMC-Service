@@ -1,5 +1,8 @@
 # Copione per la voce narrante (voce.mp3)
 
+> **Stato**: `app/static/media/voce.mp3` è già stato generato (ElevenLabs, voce italiana "Thomas", modello Multilingual v2, 44 s) con questo copione.
+> `voce.json` contiene l'inizio di ogni slide in secondi: se rigeneri la voce, aggiorna i valori (o cancella `voce.json` → slide in parti uguali).
+
 Sono **7 paragrafi, uno per slide dell'intro**: il sito divide la durata del file in 7 parti uguali, quindi tieni i paragrafi
 di lunghezza simile (circa 15-25 parole ciascuno, file totale 35-50 secondi). I testi sono **bozze generiche**: fai confermare
 a Pasquale quello che dichiara (in particolare la videosorveglianza).
