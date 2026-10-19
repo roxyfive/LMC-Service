@@ -236,14 +236,15 @@
   </div>
 </section>
 <div class="band"><section id="richieste" class="sec" aria-label="Prenotazioni e preventivi">
-  <div class="sec-head reveal"><p class="kicker">Parliamone</p><hr class="rule"></div>
-  <div class="forms">
+  <div class="forms-head reveal"><p class="kicker">Parliamone</p><div class="orn-line" aria-hidden="true"><i></i><b></b><i></i></div>
+    <h2>Il tuo evento, <em>dalla prima idea</em><br>alla serata perfetta</h2><p class="forms-lead">Scegli come preferisci iniziare: fissa un appuntamento con noi oppure descrivici l’evento e ti prepariamo un preventivo su misura.</p></div>
+  <div class="forms reveal">
     <div id="prenota" class="reveal" data-anim="left">
       <form id="bookForm" class="form" novalidate>
-        <h2>Prenota un appuntamento</h2>
+        <header class="form-h"><span class="num" aria-hidden="true">01</span><h3>Prenota un appuntamento</h3></header>
         <div class="row">
           <label>Giorno<input type="date" name="date" required></label>
-          <label>Orario<select name="time" required><option value="">Scegli prima il giorno</option></select></label>
+          <label>Orario<select name="time" required><option value="">Scegli il giorno</option></select></label>
         </div>
         <div id="slotInfo" class="note" aria-live="polite" hidden></div>
         <div class="row"><label>Nome<input name="name" required autocomplete="name"></label><label>Telefono<input name="phone" type="tel" required autocomplete="tel"></label></div>
@@ -252,21 +253,22 @@
         <div class="row"><label>Data dell'evento<input type="date" name="event_date"></label></div>
         <label>Note<textarea name="notes" rows="3" maxlength="800"></textarea></label>
         <label class="chk"><input type="checkbox" name="consent" required> <span>Ho letto l'<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati.</span></label>
-        <button class="btn btn-night" type="submit">Conferma appuntamento</button>
+        <button class="btn btn-gold btn-lg" type="submit">Conferma appuntamento</button>
         <p class="msg" aria-live="polite"></p>
       </form>
     </div>
+    <div class="forms-sep" aria-hidden="true"><i></i><b></b><i></i></div>
     <div id="preventivo" class="reveal" data-anim="right">
       <form id="quoteForm" class="form" novalidate>
-        <h2>Richiedi un preventivo</h2>
+        <header class="form-h"><span class="num" aria-hidden="true">02</span><h3>Richiedi un preventivo</h3></header>
         <div class="row"><label>Nome<input name="name" required autocomplete="name"></label><label>Telefono<input name="phone" type="tel" required autocomplete="tel"></label></div>
         <div class="row"><label>Email<input name="email" type="email" required autocomplete="email"></label>
           <label>Tipo di evento<select name="event_type">{% for e in event_types %}<option>{{ e }}</option>{% endfor %}</select></label></div>
         <div class="row"><label>Data evento<input type="date" name="event_date"></label><label>Luogo<input name="place"></label><label>N. ospiti<input name="guests" type="number" min="1" max="100000"></label></div>
-        <fieldset><legend>Servizi richiesti</legend>{% for sv in services %}<label class="chk"><input type="checkbox" name="services" value="{{ sv }}"> {{ sv }}</label>{% endfor %}</fieldset>
+        <fieldset class="chips"><legend>Servizi richiesti</legend>{% for sv in services %}<label class="chip"><input type="checkbox" name="services" value="{{ sv }}"><span>{{ sv }}</span></label>{% endfor %}</fieldset>
         <label>Note<textarea name="notes" rows="3" maxlength="800"></textarea></label>
         <label class="chk"><input type="checkbox" name="consent" required> <span>Ho letto l'<a href="/privacy" target="_blank" rel="noopener">informativa privacy</a> e acconsento al trattamento dei dati.</span></label>
-        <button class="btn btn-gold" type="submit">Invia richiesta</button>
+        <button class="btn btn-gold btn-lg" type="submit">Invia richiesta</button>
         <p class="msg" aria-live="polite"></p>
       </form>
     </div>
@@ -337,7 +339,7 @@
 
 <!-- EMERGENZA 24h -->
 {% if emg.on %}
-<a id="sos" class="sos {{ '' if emg.open_now else 'closed' }}" href="tel:{{ emg.number }}" aria-haspopup="dialog" aria-label="Emergenza 24 ore: chiama {{ emg.number }}"><span class="dot" aria-hidden="true"></span><span class="t">Emergenza 24h</span></a>
+<a id="sos" class="sos {{ '' if emg.open_now else 'closed' }}" href="tel:{{ emg.number }}" aria-haspopup="dialog" aria-label="Emergenza 24 ore: parla subito con l'assistente AI (in alternativa chiama {{ emg.number }})"><span class="mic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></span><span class="t"><small>Emergenza 24h</small><b>Parla con l’AI</b></span></a>
 <div id="sosSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sosTitle" hidden>
   <div class="sheet-in">
     <button class="sheet-x" id="sosX" aria-label="Chiudi">✕</button>
@@ -360,9 +362,9 @@
 {% endif %}
 
 <!-- CHAT + assistente vocale -->
-<button id="chatBtn" class="chat-btn" aria-label="Apri assistente" aria-expanded="false">Assistente</button>
-<div id="chat" class="chat" hidden role="dialog" aria-label="Assistente LMC">
-  <div class="chat-h"><b>Assistente LMC</b><button id="chatX" aria-label="Chiudi">✕</button></div>
+<button id="chatBtn" class="chat-btn" aria-label="Apri Assistente LMC AI" aria-expanded="false" data-tip="Assistente LMC AI"><img src="/static/img/logo-3d-128.webp" srcset="/static/img/logo-3d-256.webp 2x" width="56" height="56" alt=""><span class="ai-badge" aria-hidden="true">AI</span></button>
+<div id="chat" class="chat" hidden role="dialog" aria-label="Assistente LMC AI">
+  <div class="chat-h"><span class="chat-id"><img src="/static/img/logo-3d-128.webp" width="34" height="34" alt=""><b>Assistente LMC AI</b></span><button id="chatX" aria-label="Chiudi">✕</button></div>
   <p class="chat-note">Assistente automatico (non una persona). I messaggi servono a rispondere e, se lo chiedi, vengono inoltrati al team. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></p>
   <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi, appuntamenti o contatti: puoi scrivere oppure parlare.</p></div>
   <div id="chatAct"></div>

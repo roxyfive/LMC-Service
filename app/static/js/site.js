@@ -240,11 +240,18 @@
     const form = $('#sosForm'), msg = $('#sosMsg'), vbtn = $('#sosVapi');
     const open = () => { sheet.hidden = false; document.body.style.overflow = 'hidden'; $('.sheet-call', sheet).focus(); };
     const close = () => { sheet.hidden = true; document.body.style.overflow = ''; sos.focus(); };
-    sos.addEventListener('click', e => { e.preventDefault(); open(); });
+    /* tocco: chiamata vocale con l'assistente AI se Vapi è configurato; altrimenti chiamata diretta (o richiamo se fuori orario) */
+    sos.addEventListener('click', async e => {
+      e.preventDefault();
+      const c = await cfgReady;
+      if (c.vapi && c.vapi.enabled) { toggleChat(true); if (await startVapi(true)) return; }
+      if (c.emergency && c.emergency.open_now === false) return open();
+      location.href = sos.getAttribute('href');
+    });
     $('#sosX').onclick = close; sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
     document.addEventListener('keydown', e => { if (!sheet.hidden && e.key === 'Escape') close(); });
     cfgReady.then(c => { if (c.vapi.enabled) vbtn.hidden = false; if (c.emergency && c.emergency.open_now === false) sos.classList.add('closed'); });
-    vbtn.onclick = async () => { close(); toggleChat(true); if (!(await startVapi(true))) add('bot', 'Per un’urgenza chiama direttamente il numero indicato nel pulsante rosso.'); };
+    vbtn.onclick = async () => { close(); toggleChat(true); if (!(await startVapi(true))) add('bot', 'Per un’urgenza chiama direttamente il numero indicato.'); };
     form.addEventListener('submit', async e => {
       e.preventDefault(); const d = Object.fromEntries(new FormData(form));
       if (!d.phone.trim()) { msg.textContent = 'Inserisci il numero su cui richiamarti.'; msg.className = 'msg err'; return; }
