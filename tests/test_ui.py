@@ -64,5 +64,13 @@ check("chip: toccabili, spariscono scrivendo", "function renderSug" in js and "i
 check("voce: microfono sempre visibile + onde animate", 'id="mic"' in home and "mic.style.display" not in js and 'id="wave"' in home and "wave[data-state=speak]" in css)
 check("voce: permessi microfono con messaggi chiari, Vapi o Web Speech", "async function ensureMic" in js and "NotAllowed" in js and "c.vapi && c.vapi.enabled) vapiBtn.click(); else voiceBtn.click()" in js)
 check("voce: trascrizione live e scelta miglior voce italiana", "interimResults = true" in js and "const voiceScore" in js and "speechSynthesis" in js)
+# intro: leggibilità (la misura reale è in tests/test_intro_contrasto.py)
+check("intro: scrim scuro forte + controlli su fondo scuro", ".intro-vig{background:" in css and "rgba(8,15,32,.97)" in css and ".intro .chip{background:rgba(8,15,32,.82)" in css and ".intro-bars i{height:5px" in css)
+check("chip dei form non sporcano più altri pulsanti (.chips .chip)", ".chips .chip span{" in css and "\n.chip span{" not in css)
+# migliorie da esperto
+check("fascia di fiducia sotto la hero con dati reali", 'class="trust"' in home and "24/7" in home and "Napoli e tutta Italia" in home and "Risponde direttamente Pasquale" in home)
+check("banda CTA strategica con preventivo, chiamata e WhatsApp", 'class="cta-band dark"' in home and "Blocchiamola" in home and "wa.me/393661782548" in home.split('class="cta-band dark"')[1].split("</section>")[0])
+check("dati strutturati FAQPage per Google", '"FAQPage"' in home and '"Question"' in home and "Dove lavorate?" in home.split('"FAQPage"')[1])
+check("FAQ emergenza aggiornata al nuovo pulsante AI", "assistente AI" in home.split("Siete disponibili per le urgenze?")[1][:400])
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

@@ -112,6 +112,16 @@
   <a class="scroll-cue" href="#chi-siamo" aria-label="Scorri verso il basso"><span></span></a>
 </section>
 
+{% set _real_orari = s.orari and '[DA' not in s.orari %}
+<section class="trust" aria-label="In breve">
+  <ul class="trust-in">
+    <li><b>24/7</b><span>{{ s.orari if _real_orari else 'Sempre raggiungibili' }}</span></li>
+    <li><b>IT</b><span>{{ s.city }} e tutta Italia</span></li>
+    <li><b>1:1</b><span>Risponde direttamente {{ s.owner.split(' ')[0] if s.owner else 'il titolare' }}</span></li>
+    <li><b>A→Z</b><span>Dal progetto all’assistenza in sala</span></li>
+  </ul>
+</section>
+
 <section id="chi-siamo" class="sec">
   <div class="two">
     <div class="reveal" data-anim="left">
@@ -208,19 +218,37 @@
 </section>
 {% endif %}
 
-<div class="band"><section id="faq" class="sec" aria-labelledby="faq-h">
-  <div class="sec-head reveal"><p class="kicker">Domande frequenti</p><hr class="rule"><h2 id="faq-h">Prima di scriverci</h2></div>
-  <div class="faq reveal">
-    {% for qq, aa in [('Dove lavorate?', 'Siamo a ' ~ s.city ~ ' e lavoriamo in tutta Italia.'),
+{% set _lead = (s.team|selectattr('phone')|list|first) if s.team else none %}{% set _call = _lead.phone if _lead else tel %}
+<section class="cta-band dark" aria-labelledby="ctaH">
+  <div class="cta-band-in reveal">
+    <div>
+      <p class="kicker">Hai una data in mente?</p>
+      <h2 id="ctaH">Blocchiamola<br>prima che la prenda<br>qualcun altro.</h2>
+      <p>Raccontaci evento, luogo e servizi: {{ s.owner.split(' ')[0] if s.owner else 'il titolare' }} ti risponde con un preventivo su misura{% if _real_orari %}. {{ s.orari }}{% endif %}.</p>
+    </div>
+    <div class="cta-band-btns">
+      <a class="btn btn-gold" href="#preventivo">Richiedi un preventivo</a>
+      {% if _call %}<a class="btn btn-line" href="tel:{{ _call|replace(' ','') }}">Chiama{{ ' ' ~ _lead.name if _lead }}</a>{% endif %}
+      {% if s.whatsapp %}<a class="btn btn-line" href="https://wa.me/{{ s.whatsapp }}" target="_blank" rel="noopener">Scrivi su WhatsApp</a>{% endif %}
+    </div>
+  </div>
+</section>
+{% set faqs = [('Dove lavorate?', 'Siamo a ' ~ s.city ~ ' e lavoriamo in tutta Italia.'),
                       ('Che servizi offrite?', 'Noleggio di attrezzature audio, video e luci, ledwall, organizzazione eventi, allestimenti e progettazione tecnica. Ci occupiamo anche di impianti di videosorveglianza.'),
                       ('Per quali eventi?', 'Matrimoni, eventi privati, live e congressi.'),
                       ('Quanto costa?', 'Non pubblichiamo prezzi fissi perché ogni evento è diverso: richiedi un preventivo indicando evento, data, luogo, ospiti e servizi.'),
                       ('Come vi contatto?', 'Dal modulo preventivo, da WhatsApp, per telefono' ~ (' al ' ~ tel if tel else '') ~ ' oppure in DM su Instagram.'),
-                      ('Siete disponibili per le urgenze?', (orari ~ '. ' if orari else '') ~ 'Per un guasto o un’urgenza usa il pulsante rosso “Emergenza 24h”: chiama direttamente o lascia il tuo numero e ti richiamiamo.')] %}
+                      ('Siete disponibili per le urgenze?', (orari ~ '. ' if orari else '') ~ 'Per un guasto o un’urgenza usa il pulsante rosso “Emergenza 24h”: parli subito con l’assistente AI, che raccoglie la richiesta e avvisa chi è di turno; in alternativa chiami direttamente o lasci il tuo numero e ti richiamiamo.')] %}
+<div class="band"><section id="faq" class="sec" aria-labelledby="faq-h">
+  <div class="sec-head reveal"><p class="kicker">Domande frequenti</p><hr class="rule"><h2 id="faq-h">Prima di scriverci</h2></div>
+  <div class="faq reveal">
+    {% for qq, aa in faqs %}}
     <details><summary>{{ qq }}</summary><p>{{ aa }}</p></details>
     {% endfor %}
   </div>
 </section></div>
+{% set fq = [] %}{% for qq, aa in faqs %}{% set _ = fq.append({"@type":"Question","name":qq,"acceptedAnswer":{"@type":"Answer","text":aa}}) %}{% endfor %}
+<script type="application/ld+json">{{ {"@context":"https://schema.org","@type":"FAQPage","mainEntity":fq}|tojson }}</script>
 <div class="orn" aria-hidden="true"><i></i></div>
 <section id="configuratore" class="sec" aria-labelledby="conf-h">
   <div class="sec-head reveal"><p class="kicker">Configuratore</p><hr class="rule"><h2 id="conf-h">Costruisci il tuo evento</h2>
