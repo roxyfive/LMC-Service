@@ -95,15 +95,22 @@
     else setMsg(qf, r.data.error || 'Errore, riprova.', false);
   });
 
-  /* ---------- chat (solo testo: nessuna voce sintetica) ---------- */
+  /* ---------- configurazione pubblica (nessun segreto) ---------- */
+  let CFG = { wa_ready: false, admin: false, vapi: { enabled: false }, emergency: { on: false }, contact_wa: '' };
+  const cfgReady = fetch('/api/config', { cache: 'no-store' }).then(r => r.json()).then(c => { CFG = c; return c; }).catch(() => CFG);
+
+  /* ---------- chat + assistente vocale ---------- */
   const chat = $('#chat'), log = $('#chatLog'), act = $('#chatAct'), inp = $('#chatIn'), chatBtn = $('#chatBtn');
-  const toggleChat = open => { chat.hidden = !open; chatBtn.setAttribute('aria-expanded', open); if (open) inp.focus(); };
+  const voiceBtn = $('#voiceBtn'), vapiBtn = $('#vapiBtn'), waBtn = $('#waBtn'), waForm = $('#waForm'), vStatus = $('#voiceStatus');
+  const toggleChat = open => { chat.hidden = !open; chatBtn.setAttribute('aria-expanded', open); if (open) { inp.focus(); initTools(); } else stopVoice(); };
   chatBtn.onclick = () => toggleChat(chat.hidden);
   $('#chatX').onclick = () => { toggleChat(false); chatBtn.focus(); };
   const hist = [];
   const add = (cls, t) => { const p = document.createElement('p'); p.className = cls; p.textContent = t; log.appendChild(p); log.scrollTop = log.scrollHeight; };
+  const setStatus = t => { vStatus.hidden = !t; vStatus.textContent = t || ''; };
+
   async function ask(text) {
-    if (!text.trim()) return;
+    if (!text.trim()) return '';
     add('me', text); hist.push({ role: 'user', content: text }); act.innerHTML = '';
     const r = await post('/api/chat', { messages: hist });
     const reply = r.ok ? r.data.reply : 'Al momento non riesco a rispondere. Usa la sezione Contatti.';
@@ -112,14 +119,173 @@
       const b = document.createElement('a'); b.className = 'btn btn-gold'; b.href = r.data.action === 'prenota' ? '#prenota' : '#preventivo';
       b.textContent = r.data.action === 'prenota' ? 'Prenota ora' : 'Richiedi preventivo'; b.onclick = () => toggleChat(false); act.appendChild(b);
     }
+    showSummaryBtn(r.ok && !!r.data.action);
+    return reply;
   }
   $('#chatForm').addEventListener('submit', e => { e.preventDefault(); const t = inp.value; inp.value = ''; ask(t); });
+
+  /* dettatura singola (microfono nel campo di testo) */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $('#mic');
-  if (SR) {   // dettatura (input vocale dell'utente): non produce alcuna voce
+  if (SR) {
     const rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = false;
     rec.onresult = e => ask(e.results[0][0].transcript); rec.onend = () => mic.classList.remove('rec');
     mic.onclick = () => { try { mic.classList.add('rec'); rec.start(); } catch (e) { mic.classList.remove('rec'); } };
   } else mic.style.display = 'none';
+
+  /* conversazione a voce: ascolta (riconoscimento del browser) -> risponde -> legge la risposta -> ascolta ancora.
+     Parte SOLO quando il cliente tocca "Parla con l'assistente"; la sintesi vocale del browser è la base, Vapi dà una voce più naturale. */
+  const synth = window.speechSynthesis;
+  let voiceOn = false, curRec = null, tts = null;
+  const pickVoice = () => {
+    const vs = (synth ? synth.getVoices() : []).filter(v => /^it/i.test(v.lang));
+    return vs.find(v => /(natural|neural|online|premium)/i.test(v.name)) || vs.find(v => /(google|elsa|isabella|alice|luca|cosimo)/i.test(v.name)) || vs[0] || null;
+  };
+  const speak = text => new Promise(res => {
+    if (!synth) return res();
+    const u = new SpeechSynthesisUtterance(text.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' '));
+    u.lang = 'it-IT'; u.rate = .98; const v = pickVoice(); if (v) u.voice = v;
+    let done = false; const fin = () => { if (!done) { done = true; clearTimeout(tm); tts = null; res(); } };
+    const tm = setTimeout(fin, 25000); u.onend = fin; u.onerror = fin; tts = fin;
+    synth.cancel(); synth.speak(u);
+  });
+  const listenOnce = () => new Promise(res => {
+    const r = new SR(); curRec = r; r.lang = 'it-IT'; r.interimResults = false; r.maxAlternatives = 1;
+    let out = '', err = '';
+    r.onresult = e => { out = e.results[0][0].transcript; };
+    r.onerror = e => { err = e.error; };
+    r.onend = () => { curRec = null; res({ text: out, err }); };
+    try { r.start(); } catch (e) { res({ text: '', err: 'start' }); }
+  });
+  function stopVoice(msg) {
+    voiceOn = false; voiceBtn.setAttribute('aria-pressed', 'false'); voiceBtn.textContent = '🎙️ Parla con l\'assistente';
+    if (curRec) { try { curRec.abort(); } catch (e) { } } if (synth) synth.cancel(); if (tts) tts(); setStatus(msg || '');
+    if (vapiCall) { try { vapiCall.stop(); } catch (e) { } vapiCall = null; if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'false'); }
+  }
+  async function voiceLoop() {
+    let silent = 0;
+    while (voiceOn) {
+      setStatus('Ti ascolto… parla pure');
+      const { text, err } = await listenOnce();
+      if (!voiceOn) return;
+      if (err === 'not-allowed' || err === 'service-not-allowed') return stopVoice('Il microfono è bloccato: consentilo nelle impostazioni del browser, oppure scrivi.');
+      if (!text) { if (++silent >= 2) return stopVoice('Non ti sento: tocca di nuovo "Parla con l\'assistente" per riprovare.'); continue; }
+      silent = 0; setStatus('Sto pensando…');
+      const reply = await ask(text);
+      if (!voiceOn) return;
+      setStatus('Sto rispondendo…'); await speak(reply);
+    }
+  }
+  voiceBtn.onclick = async () => {
+    if (voiceOn) return stopVoice();
+    if (!SR) { add('bot', 'Il tuo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari, oppure scrivi qui sotto.'); return; }
+    if (!window.isSecureContext) { add('bot', 'Il microfono funziona solo su connessione sicura (https). Puoi scrivere qui sotto.'); return; }
+    voiceOn = true; voiceBtn.setAttribute('aria-pressed', 'true'); voiceBtn.textContent = '⏹ Termina conversazione vocale';
+    if (synth && !synth.getVoices().length) await new Promise(r => { synth.onvoiceschanged = r; setTimeout(r, 600); });
+    voiceLoop();
+  };
+
+  /* voce naturale con Vapi (solo se configurato in Admin); il SDK si scarica solo al tocco */
+  let vapiCall = null, vapiLoaded = null;
+  const loadVapi = () => vapiLoaded || (vapiLoaded = new Promise((res, rej) => {
+    const sc = document.createElement('script'); sc.src = '/static/vendor/vapi-web.js'; sc.onload = () => res(window.VapiWeb); sc.onerror = () => rej(new Error('vapi')); document.head.appendChild(sc);
+  }));
+  async function startVapi(emergency) {
+    const c = await cfgReady; if (!c.vapi.enabled) return false;
+    try {
+      const Vapi = await loadVapi(); const v = new Vapi(c.vapi.public_key); vapiCall = v;
+      setStatus('Mi collego all\'assistente vocale…');
+      v.on('call-start', () => { setStatus('In linea: parla pure. Tocca di nuovo per terminare.'); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'true'); });
+      v.on('call-end', () => { vapiCall = null; setStatus(''); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'false'); });
+      v.on('message', m => { if (m && m.type === 'transcript' && m.transcriptType === 'final' && m.transcript) { const me = m.role === 'user'; add(me ? 'me' : 'bot', m.transcript); hist.push({ role: me ? 'user' : 'assistant', content: m.transcript }); showSummaryBtn(false); } });
+      v.on('error', () => { vapiCall = null; setStatus(''); add('bot', 'La voce naturale non è disponibile in questo momento: puoi usare la conversazione vocale standard o scrivere.'); });
+      await v.start((emergency && c.vapi.emergency_assistant_id) || c.vapi.assistant_id);
+      return true;
+    } catch (e) { vapiCall = null; setStatus(''); add('bot', 'Non riesco ad avviare la voce naturale. Uso la conversazione vocale standard.'); return false; }
+  }
+  vapiBtn.onclick = async () => { if (vapiCall) return stopVoice(); if (voiceOn) stopVoice(); if (!(await startVapi(false))) voiceBtn.click(); };
+
+  /* riepilogo su WhatsApp */
+  let summaryShown = false;
+  function showSummaryBtn(highlight) {
+    const users = hist.filter(m => m.role === 'user').length;
+    if (users < 1 || !waBtn) return; waBtn.hidden = false;
+    waBtn.classList.toggle('pulse', highlight || users >= 3);
+  }
+  async function initTools() {
+    if (summaryShown) return; summaryShown = true;
+    const c = await cfgReady;
+    vapiBtn.hidden = !c.vapi.enabled;
+    if (!c.wa_ready && c.admin) {          // chi gestisce il sito vede come attivarlo
+      waBtn.textContent = 'Configura WhatsApp'; waBtn.dataset.admin = '1';
+    }
+  }
+  waBtn.onclick = () => { if (waBtn.dataset.admin) { location.href = '/admin/impostazioni#wa'; return; } waForm.hidden = !waForm.hidden; if (!waForm.hidden) waForm.phone.focus(); };
+  waForm.addEventListener('submit', async e => {
+    e.preventDefault(); const m = $('#waMsg');
+    const d = Object.fromEntries(new FormData(waForm)); d.consent = waForm.consent.checked; d.messages = hist;
+    if (!d.phone.trim() || !d.consent) { m.textContent = 'Inserisci il telefono e dai il consenso.'; m.className = 'msg err'; return; }
+    const r = await post('/api/chat/riepilogo', d);
+    if (!r.ok) { m.textContent = r.data.error || 'Invio non riuscito, riprova.'; m.className = 'msg err'; return; }
+    waForm.hidden = true; waBtn.hidden = true;
+    if (r.data.configured && r.data.sent > 0) add('bot', 'Perfetto! Ho inviato il riepilogo al team su WhatsApp: ti richiamiamo al più presto.');
+    else {
+      add('bot', 'Ho registrato la tua richiesta. Per essere più veloce puoi anche scriverci direttamente su WhatsApp con il riepilogo già pronto:');
+      if (r.data.wa_link) { const a = document.createElement('a'); a.className = 'btn btn-gold'; a.href = r.data.wa_link; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Apri WhatsApp'; act.innerHTML = ''; act.appendChild(a); }
+    }
+  });
+
+  /* ---------- pulsante Emergenza 24h ---------- */
+  (function () {
+    const sos = $('#sos'), sheet = $('#sosSheet'); if (!sos || !sheet) return;
+    const form = $('#sosForm'), msg = $('#sosMsg'), vbtn = $('#sosVapi');
+    const open = () => { sheet.hidden = false; document.body.style.overflow = 'hidden'; $('.sheet-call', sheet).focus(); };
+    const close = () => { sheet.hidden = true; document.body.style.overflow = ''; sos.focus(); };
+    sos.addEventListener('click', e => { e.preventDefault(); open(); });
+    $('#sosX').onclick = close; sheet.addEventListener('click', e => { if (e.target === sheet) close(); });
+    document.addEventListener('keydown', e => { if (!sheet.hidden && e.key === 'Escape') close(); });
+    cfgReady.then(c => { if (c.vapi.enabled) vbtn.hidden = false; if (c.emergency && c.emergency.open_now === false) sos.classList.add('closed'); });
+    vbtn.onclick = async () => { close(); toggleChat(true); if (!(await startVapi(true))) add('bot', 'Per un’urgenza chiama direttamente il numero indicato nel pulsante rosso.'); };
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); const d = Object.fromEntries(new FormData(form));
+      if (!d.phone.trim()) { msg.textContent = 'Inserisci il numero su cui richiamarti.'; msg.className = 'msg err'; return; }
+      msg.textContent = 'Invio in corso…'; msg.className = 'msg';
+      const r = await post('/api/emergenza', d);
+      if (r.ok) { msg.textContent = r.data.configured && r.data.sent > 0 ? 'Richiesta inviata: chi è di turno ti richiama subito.' : 'Richiesta registrata. Se è urgente chiama anche il numero qui sopra.'; msg.className = 'msg ok'; form.reset(); }
+      else { msg.textContent = r.data.error || 'Invio non riuscito: chiama il numero indicato.'; msg.className = 'msg err'; }
+    });
+    if (/[?&]sos=1/.test(location.search)) setTimeout(open, 400);   // scorciatoia dell'app installata
+  })();
+
+  /* ---------- configuratore evento (nessun prezzo: prepara la richiesta di preventivo) ---------- */
+  (function () {
+    const root = $('#conf'); if (!root) return;
+    const val = { tipo: '', ospiti: '', servizi: new Set() }, out = $('#confOut'), go = $('#confGo');
+    const HINT = {
+      Audio: 'impianto audio dimensionato su sala e pubblico, microfoni e regia', Luci: 'luci d\'atmosfera e scenografiche con programmazione',
+      Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico', Videosorveglianza: 'telecamere e controllo degli spazi',
+      Progettazione: 'progetto tecnico su misura con sopralluogo'
+    };
+    const render = () => {
+      const s = [...val.servizi]; go.disabled = !(val.tipo && s.length);
+      if (!val.tipo || !s.length) { out.innerHTML = '<p class="mut">Seleziona almeno tipo di evento e servizi: qui comparirà la tua proposta.</p>'; return; }
+      out.innerHTML = '<h3>La tua proposta di partenza</h3><p><b>' + val.tipo + '</b>' + (val.ospiti ? ' · ' + val.ospiti + ' ospiti' : '') + '</p><ul>' +
+        s.map(x => '<li>' + (HINT[x] || x) + '</li>').join('') + '</ul><p class="mut">Verrà inserita nelle note del preventivo: la rifiniamo insieme dopo il tuo messaggio.</p>';
+    };
+    $$('.opts', root).forEach(g => g.addEventListener('click', e => {
+      const b = e.target.closest('.opt'); if (!b) return; const name = g.dataset.name, v = b.dataset.v, multi = g.classList.contains('multi');
+      if (multi) { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', on); on ? val.servizi.add(v) : val.servizi.delete(v); }
+      else { $$('.opt', g).forEach(x => x.setAttribute('aria-pressed', 'false')); b.setAttribute('aria-pressed', 'true'); val[name] = v; }
+      render();
+    }));
+    go.onclick = () => {
+      const f = $('#quoteForm'), s = [...val.servizi];
+      const sel = f.event_type; if ([...sel.options].some(o => o.value === val.tipo || o.text === val.tipo)) sel.value = val.tipo;
+      $$('input[name=services]', f).forEach(c => { c.checked = s.includes(c.value); });
+      const g = { 'Fino a 50': 50, '50–150': 100, '150–400': 250, 'Oltre 400': 500 }[val.ospiti]; if (g) f.guests.value = g;
+      f.notes.value = 'Configurazione dal sito: ' + val.tipo + (val.ospiti ? ', ospiti ' + val.ospiti : '') + '. Servizi: ' + s.map(x => (HINT[x] ? x + ' (' + HINT[x] + ')' : x)).join('; ') + '.';
+      $('#preventivo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  })();
 
   /* ---------- PWA ---------- */
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => { });

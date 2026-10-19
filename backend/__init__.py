@@ -14,6 +14,11 @@ def create_app():
     app.config.update(SECRET_KEY=config.SECRET_KEY, MAX_CONTENT_LENGTH=200 * 1024 * 1024,
                       SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax",
                       PERMANENT_SESSION_LIFETIME=timedelta(hours=8))
+    if os.getenv("TRUST_PROXY") == "1":     # dietro nginx: IP, schema https e host reali (serve a rate limit, link e firme webhook)
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    if os.getenv("COOKIE_SECURE") == "1":
+        app.config["SESSION_COOKIE_SECURE"] = True
     init_db()
     from .seed import seed
     seed()
@@ -41,7 +46,7 @@ def create_app():
     def webhook_telefono():
         # Predisposto: attivo solo con PHONE_AI_ENABLED=1 e token valido.
         tok = os.getenv("PHONE_WEBHOOK_TOKEN", "")
-        if os.getenv("PHONE_AI_ENABLED") != "1" or not tok or request.headers.get("X-Webhook-Token") != tok:
+        if os.getenv("PHONE_AI_ENABLED") != "1" or not tok or not __import__("secrets").compare_digest(request.headers.get("X-Webhook-Token", ""), tok):
             abort(404)
         d = request.get_json(silent=True) or {}
         ex("INSERT INTO calls(from_number,transcript,payload) VALUES(?,?,?)",
@@ -52,24 +57,42 @@ def create_app():
     def nf(_e):
         return "Pagina non trovata", 404
 
-    threading.Thread(target=_reminders, args=(app,), daemon=True).start()
+    if os.getenv("LMC_NO_BG") != "1":   # con cron esterno si può spegnere (vedi docs/DEPLOY.md)
+        threading.Thread(target=_background, args=(app,), daemon=True).start()
     return app
 
 
 def reminders_once():
-    """Promemoria al cliente per gli appuntamenti confermati di domani."""
+    """Promemoria al cliente per gli appuntamenti confermati di domani (prenotati in modo atomico: niente doppioni)."""
     tomorrow = (date.today() + timedelta(days=1)).isoformat()
     for a in q("SELECT * FROM appointments WHERE slot_date=? AND status='confermato' AND reminded=0", (tomorrow,)):
-        send_mail(a["email"], "Promemoria appuntamento – LMC Service",
-                  f"Ciao {a['name']}, ti ricordiamo l'appuntamento di domani {a['slot_date']} alle {a['slot_time']}.\nLMC Service")
-        ex("UPDATE appointments SET reminded=1 WHERE id=?", (a["id"],))
+        from .db import get_db
+        db = get_db()
+        cur = db.execute("UPDATE appointments SET reminded=1 WHERE id=? AND reminded=0", (a["id"],))
+        db.commit()
+        if cur.rowcount != 1:      # un altro worker se ne sta già occupando
+            continue
+        ok = send_mail(a["email"], "Promemoria appuntamento – LMC Service",
+                       f"Ciao {a['name']}, ti ricordiamo l'appuntamento di domani {a['slot_date']} alle {a['slot_time']}.\nLMC Service")
+        if ok is False:
+            ex("UPDATE appointments SET reminded=0 WHERE id=?", (a["id"],))
 
 
-def _reminders(app):
+def reports_once():
+    from . import reports
+    return reports.run_due()
+
+
+def _background(app):
+    """Ogni minuto: report WhatsApp dovuti; ogni ora: promemoria appuntamenti."""
+    last_rem = 0
     while True:
         try:
             with app.app_context():
-                reminders_once()
+                reports_once()
+                if time.time() - last_rem > 3600:
+                    last_rem = time.time()
+                    reminders_once()
         except Exception:
             pass
-        time.sleep(3600)
+        time.sleep(60)

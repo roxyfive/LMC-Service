@@ -60,8 +60,13 @@ def seed():
                 (json.dumps(base["servizi"], ensure_ascii=False),))
     # team: il titolare è precaricato, il resto si gestisce da Admin > Team e Contatti
     if not cur.execute("SELECT 1 FROM team").fetchone():
-        cur.execute("INSERT INTO team(name,role,phone,email,note,visible,sort) VALUES(?,?,?,?,?,?,?)",
-                    ("Pasquale", "Titolare", base["telefono"], "", "Aperto 24 ore", "si", 0))
+        cur.execute("INSERT INTO team(name,role,phone,email,note,visible,sort,notify,on_duty) VALUES(?,?,?,?,?,?,?,?,?)",
+                    ("Pasquale", "Titolare", base["telefono"], "", "Aperto 24 ore", "si", 0, "si", "si"))
+    # una tantum: nei DB creati prima di notifiche/turni, il titolare risulta di turno e riceve le notifiche
+    if not cur.execute("SELECT 1 FROM settings WHERE key='migr_team_duty'").fetchone():
+        if not cur.execute("SELECT 1 FROM team WHERE on_duty='si'").fetchone():
+            cur.execute("UPDATE team SET on_duty='si' WHERE id=(SELECT MIN(id) FROM team)")
+        cur.execute("INSERT INTO settings(key,value) VALUES('migr_team_duty','1')")
     # admin: password da .env solo al primo avvio, altrimenti casuale mostrata una volta
     if not cur.execute("SELECT 1 FROM admin_users").fetchone():
         user = os.getenv("ADMIN_USER", "admin")

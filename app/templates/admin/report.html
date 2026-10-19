@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Report</h1>
+{% if not tw_ready %}<div class="flash warn">WhatsApp non è configurato: i report automatici non partono. <a href="/admin/impostazioni#wa">Configura WhatsApp</a></div>{% endif %}
+<div class="cards4">
+{% for t, s in cards %}<div class="rc"><h3>{{ t }}</h3>
+  <p><b>{{ s.visits }}</b> visite <small class="mut">({{ s.pageviews }} pagine viste)</small></p>
+  <p><b>{{ s.contacts }}</b> contatti <small class="mut">({{ s.quotes }} preventivi{% if s.chat_leads %}, {{ s.chat_leads }} da chat{% endif %}{% if s.emergencies %}, {{ s.emergencies }} emergenze{% endif %}{% if s.voice_calls %}, {{ s.voice_calls }} chiamate vocali{% endif %})</small></p>
+  <p><b>{{ s.bookings }}</b> prenotazioni</p><p><b>{{ s.chats }}</b> chat con l'assistente</p></div>{% endfor %}
+</div>
+<h2>Visite degli ultimi 14 giorni</h2>
+<div class="scroll"><table><tr><th>Giorno</th><th>Visite</th><th></th><th>Contatti</th><th>Prenotazioni</th><th>Chat</th></tr>
+{% for d, s in days %}<tr><td>{{ giorni[d.weekday()] }} {{ d.strftime('%d/%m') }}</td><td>{{ s.visits }}</td><td style="width:40%"><div class="bar" style="width:{{ (100 * s.visits / mx)|round|int }}%"></div></td><td>{{ s.contacts }}</td><td>{{ s.bookings }}</td><td>{{ s.chats }}</td></tr>{% endfor %}</table></div>
+<p class="mut">Le visite sono conteggi anonimi (nessun cookie, nessun IP salvato; bot esclusi). Un visitatore conta una volta al giorno.</p>
+<h2>Invio su WhatsApp</h2>
+<div class="cards4">
+{% for k, lab in [('daily','Giornaliero'),('weekly','Settimanale'),('monthly','Mensile')] %}<div class="rc"><h3>{{ lab }} {% if enabled[k] %}<span class="badge ok">attivo</span>{% else %}<span class="badge">spento</span>{% endif %}</h3>
+  <pre class="pv">{{ prev[k] }}</pre><p class="mut">{{ recips[k] }} destinatari</p>
+  <form method="post" action="/admin/report/invia"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="tipo" value="{{ k }}"><button class="btn s">Invia ora</button></form></div>{% endfor %}
+</div>
+<p><a class="btn g" href="/admin/impostazioni#report">Attiva/disattiva e scegli i destinatari</a></p>
+{% if log %}<h2>Ultimi invii</h2><div class="scroll"><table><tr><th>Quando (UTC)</th><th>Report</th><th>Esito</th></tr>
+{% for r in log %}<tr><td>{{ r.sent_at }}</td><td>{{ r.key }}</td><td>{{ 'ok' if r.ok else 'non inviato' }} · {{ r.detail }}</td></tr>{% endfor %}</table></div>{% endif %}
+{% endblock %}

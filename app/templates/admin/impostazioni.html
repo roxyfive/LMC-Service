@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Impostazioni</h1>
+<p class="mut">Le chiavi si salvano nel database (tabella separata, mai mostrate nelle pagine pubbliche né rilette qui). In alternativa si possono mettere nel file <code>.env</code>: se un campo qui è vuoto vale il <code>.env</code>. Guida passo-passo: <code>docs/CONFIGURAZIONE-API.md</code>.</p>
+<nav class="tabs"><a href="#wa">WhatsApp / Twilio</a><a href="#vapi">Assistente vocale (Vapi)</a><a href="#report">Report automatici</a><a href="#emergenza">Emergenza 24h</a></nav>
+
+{% macro pill(ok, yes, no) %}<span class="badge {{ 'ok' if ok else 'w' }}">{{ yes if ok else no }}</span>{% endmacro %}
+{% macro src(k) %}{% if src[k] == 'env' %}<small class="mut">valore dal file .env</small>{% elif src[k] == 'admin' %}<small class="mut">salvato qui</small>{% endif %}{% endmacro %}
+
+<section id="wa" class="card-s">
+  <h2>WhatsApp / Twilio {{ pill(tw_ready, 'configurato', 'da configurare') }}</h2>
+  <form method="post" action="/admin/impostazioni/salva" class="form stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sezione" value="wa">
+    <label>Account SID (inizia con AC…) {{ src('twilio_account_sid') }}<input name="twilio_account_sid" value="{{ plain.twilio_account_sid }}" autocomplete="off" placeholder="ACxxxxxxxxxxxxxxxx"></label>
+    <label>Auth Token {{ pill(secret_set.twilio_auth_token, 'impostato', 'mancante') }} {{ src('twilio_auth_token') }}<input name="twilio_auth_token" type="password" autocomplete="new-password" placeholder="{{ '•••••••• (lascia vuoto per non cambiarlo)' if secret_set.twilio_auth_token else 'incolla il token' }}"></label>
+    {% if secret_set.twilio_auth_token %}<label class="chk"><input type="checkbox" name="clear_twilio_auth_token"> Rimuovi il token salvato</label>{% endif %}
+    <label>Numero WhatsApp mittente {{ src('twilio_whatsapp_from') }}<input name="twilio_whatsapp_from" value="{{ plain.twilio_whatsapp_from }}" placeholder="+14155238886 (sandbox) o il tuo numero WhatsApp Business"></label>
+    <label>Content SID del template (facoltativo) {{ src('twilio_content_sid') }}<input name="twilio_content_sid" value="{{ plain.twilio_content_sid }}" placeholder="HXxxxxxxx — necessario per scrivere oltre le 24 ore (report)"></label>
+    <label>Altri numeri destinatari (uno per riga) {{ src('wa_destinations') }}<textarea name="wa_destinations" rows="3" placeholder="+39 366 178 2548">{{ plain.wa_destinations }}</textarea></label>
+    <label class="chk"><input type="checkbox" name="wa_notify_requests" {{ 'checked' if tog.wa_notify_requests }}> Avvisa su WhatsApp ogni nuovo preventivo e appuntamento</label>
+    <button class="btn">Salva WhatsApp</button>
+  </form>
+  <div class="form stack">
+    <form method="post" action="/admin/impostazioni/test/twilio"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn g">1. Verifica credenziali</button></form>
+    <form method="post" action="/admin/impostazioni/test/whatsapp" class="inline"><input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>2. Messaggio di prova a<input name="numero" placeholder="vuoto = chi è di turno (Team e Contatti)"></label><button class="btn g">Invia prova</button></form>
+  </div>
+  <p class="mut">Destinatari: persone in <a href="/admin/m/team">Team e Contatti</a> con numero e “Riceve notifiche” = sì (il “di turno” riceve riepiloghi ed emergenze), più i numeri extra qui sopra.</p>
+  {% if wa_log %}<details><summary>Ultimi invii</summary><div class="scroll"><table><tr><th>Quando (UTC)</th><th>A</th><th>Tipo</th><th>Esito</th></tr>
+  {% for r in wa_log %}<tr><td>{{ r.ts }}</td><td>{{ r.to_num }}</td><td>{{ r.kind }}</td><td>{{ 'ok' if r.ok else 'errore' }} · {{ r.detail }}</td></tr>{% endfor %}</table></div></details>{% endif %}
+</section>
+
+<section id="vapi" class="card-s">
+  <h2>Assistente vocale (Vapi) {{ pill(vapi_ready, 'attivo sul sito', 'non configurato') }}</h2>
+  <form method="post" action="/admin/impostazioni/salva" class="form stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sezione" value="vapi">
+    <label>Public Key (Vapi › API Keys › Public) {{ src('vapi_public_key') }}<input name="vapi_public_key" value="{{ plain.vapi_public_key }}" autocomplete="off"></label>
+    <label>Assistant ID {{ src('vapi_assistant_id') }}<input name="vapi_assistant_id" value="{{ plain.vapi_assistant_id }}" autocomplete="off"></label>
+    <label>Assistant ID per l'emergenza (facoltativo) {{ src('vapi_emergency_assistant_id') }}<input name="vapi_emergency_assistant_id" value="{{ plain.vapi_emergency_assistant_id }}" autocomplete="off"></label>
+    <label>API Key privata {{ pill(secret_set.vapi_api_key, 'impostata', 'mancante') }} (serve solo per il test) {{ src('vapi_api_key') }}<input name="vapi_api_key" type="password" autocomplete="new-password" placeholder="{{ '•••••••• (lascia vuoto per non cambiarla)' if secret_set.vapi_api_key else 'incolla la chiave privata' }}"></label>
+    <label>Secret del webhook {{ pill(secret_set.vapi_webhook_secret, 'impostato', 'mancante') }} {{ src('vapi_webhook_secret') }}<input name="vapi_webhook_secret" type="password" autocomplete="new-password" placeholder="{{ '•••••••• (lascia vuoto per non cambiarlo)' if secret_set.vapi_webhook_secret else 'oppure genera con il pulsante sotto' }}"></label>
+    <button class="btn">Salva Vapi</button>
+  </form>
+  <div class="form stack">
+    <form method="post" action="/admin/impostazioni/test/vapi"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn g">Verifica chiave e assistente</button></form>
+    <form method="post" action="/admin/impostazioni/webhook-secret" onsubmit="return confirm('Generare un nuovo secret? Dovrai incollarlo anche in Vapi.')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn g">Genera secret webhook</button></form>
+  </div>
+  <p class="mut">Server URL da incollare in Vapi (Assistant › Advanced › Server URL): <code>{{ webhook }}</code> — il secret va nell'header <code>X-Vapi-Secret</code>. A fine chiamata il riepilogo arriva su WhatsApp e compare in <a href="/admin/chiamate">Chiamate</a>.</p>
+</section>
+
+<section id="report" class="card-s">
+  <h2>Report automatici su WhatsApp</h2>
+  <form method="post" action="/admin/impostazioni/salva" class="stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sezione" value="report">
+    {% for k, lab, dflt in [('daily','Giornaliero (ogni sera)','21:00'),('weekly','Settimanale (ogni lunedì)','08:30'),('monthly','Mensile (il giorno 1)','08:30')] %}
+    <div class="form"><label class="chk"><input type="checkbox" name="report_{{ k }}_on" {{ 'checked' if tog['report_' ~ k ~ '_on'] }}> <b>{{ lab }}</b></label>
+      <label>Orario di invio<input type="time" name="report_{{ k }}_time" value="{{ times['report_' ~ k ~ '_time'] }}"></label>
+      <fieldset><legend>Destinatari</legend>
+        {% for m in team if m.phone %}<label class="chk"><input type="checkbox" name="report_{{ k }}_to" value="{{ m.id }}" {{ 'checked' if sel[k] is none and m.notify != 'no' or (sel[k] is not none and m.id in sel[k]) }}> {{ m.name }} <small class="mut">{{ m.role }} · {{ m.phone }}</small></label>
+        {% else %}<span class="mut">Nessuno in Team e Contatti con un numero.</span>{% endfor %}</fieldset></div>
+    {% endfor %}
+    <button class="btn">Salva report</button> <a class="btn g" href="/admin/report">Vai ai report</a>
+  </form>
+  <p class="mut">Orari in fuso Europe/Rome. Se Twilio non è configurato i report non partono (e non “consumano” la giornata: partono appena lo configuri). Nota WhatsApp: per i messaggi automatici fuori dalle 24 ore Meta richiede un <b>template approvato</b> (campo Content SID sopra).</p>
+</section>
+
+<section id="emergenza" class="card-s">
+  <h2>Pulsante Emergenza 24h</h2>
+  <form method="post" action="/admin/impostazioni/salva" class="form stack">
+    <input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="sezione" value="emergenza">
+    <label class="chk"><input type="checkbox" name="emergency_on" {{ 'checked' if tog.emergency_on }}> Mostra il pulsante rosso sul sito</label>
+    <label>Numero da chiamare<input name="emergency_number" value="{{ plain.emergency_number }}" placeholder="vuoto = telefono di chi è di turno (+39 366 178 2548)"></label>
+    <label>Orari di risposta<input name="emergency_hours" value="{{ plain.emergency_hours }}" placeholder="24h  oppure  08:00-22:00"></label>
+    <button class="btn">Salva emergenza</button>
+  </form>
+  <p class="mut">Fuori orario (o se non risponde) il cliente può lasciare nome e telefono: arriva subito su WhatsApp a chi è di turno. Con Vapi attivo può anche parlare con l'assistente vocale.</p>
+</section>
+{% endblock %}

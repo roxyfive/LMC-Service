@@ -34,7 +34,8 @@ MODULES = {
     "team": {"table": "team", "title": "Team e Contatti", "order": "sort, id", "fields": [
         ("name", "Nome", "text"), ("role", "Ruolo", "text"), ("phone", "Telefono / WhatsApp", "text"), ("email", "Email", "text"),
         ("note", "Nota (es. orari, disponibilità)", "area"), ("visible", "Mostra sul sito e all'assistente", "select:si,no"),
-        ("sort", "Ordine (0 = primo)", "number")]},
+        ("sort", "Ordine (0 = primo)", "number"),
+        ("notify", "Riceve notifiche e report su WhatsApp", "select:si,no"), ("on_duty", "Di turno (riceve riepiloghi ed emergenze)", "select:si,no")]},
     "recensioni": {"table": "reviews", "title": "Dicono di noi", "fields": [
         ("author", "Autore", "text"), ("text", "Testo (solo recensioni reali)", "area"), ("source", "Fonte", "text")]},
 }
@@ -378,5 +379,15 @@ def documento_del(i):
 @bp.route("/chiamate")
 @admin_required
 def chiamate():
-    return render_template("admin/chiamate.html", rows=q("SELECT * FROM calls ORDER BY id DESC LIMIT 200"),
+    rows = []
+    for r in q("SELECT * FROM calls ORDER BY id DESC LIMIT 200"):
+        try:
+            src = json.loads(r["payload"] or "{}").get("source", "telefono")
+        except ValueError:
+            src = "telefono"
+        rows.append(dict(created=r["created"], from_number=r["from_number"], transcript=r["transcript"], source=src))
+    return render_template("admin/chiamate.html", rows=rows,
                            enabled=os.getenv("PHONE_AI_ENABLED") == "1")
+
+
+from . import admin_ext  # noqa: E402,F401  (registra Impostazioni e Report sullo stesso blueprint)

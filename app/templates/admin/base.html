@@ -8,12 +8,14 @@
   <form method="post" action="/admin/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn g s">Esci</button></form></div>
 <div class="wrap">
 <nav class="side">
-  <a href="/admin/">📅 Agenda</a><a href="/admin/richieste">📨 Richieste</a><a href="/admin/disponibilita">🕒 Disponibilità</a>
-  <h4>Sito</h4><a href="/admin/foto">🖼️ Foto e video</a><a href="/admin/testi">✏️ Testi</a><a href="/admin/m/team">🧑‍🤝‍🧑 Team e Contatti</a><a href="/admin/m/recensioni">⭐ Dicono di noi</a>
+  <h4>Sito</h4><a href="/admin/testi">✏️ Testi</a><a href="/admin/foto">🖼️ Foto e video</a><a href="/admin/m/team">🧑‍🤝‍🧑 Team e Contatti</a><a href="/admin/m/recensioni">⭐ Dicono di noi</a>
+  <h4>Prenotazioni</h4><a href="/admin/">📅 Calendario</a><a href="/admin/richieste">📨 Richieste</a><a href="/admin/disponibilita">🕒 Disponibilità</a><a href="/admin/chiamate">📞 Chiamate e chat</a>
+  <h4>Report</h4><a href="/admin/report">📊 Report e visite</a>
+  <h4>Impostazioni</h4><a href="/admin/impostazioni#wa">💬 WhatsApp / Twilio</a><a href="/admin/impostazioni#vapi">🎙️ Assistente vocale</a><a href="/admin/impostazioni#report">⏰ Report automatici</a><a href="/admin/impostazioni#emergenza">🚨 Emergenza 24h</a>
   <h4>Gestionale</h4>
   <a href="/admin/m/clienti">👥 Clienti</a><a href="/admin/m/fornitori">🚚 Fornitori</a><a href="/admin/m/magazzino">🎛️ Magazzino</a>
   <a href="/admin/m/eventi">🎤 Eventi</a><a href="/admin/documenti">🧾 Preventivi/Fatture</a><a href="/admin/m/prima-nota">💶 Prima nota</a>
-  <h4>Altro</h4><a href="/admin/chiamate">📞 Chiamate (AI)</a><a href="/" target="_blank">🌐 Vedi sito</a>
+  <h4>Altro</h4><a href="/" target="_blank">🌐 Vedi sito</a>
 </nav>
 <main>
 {% with m = get_flashed_messages() %}{% for x in m %}<div class="flash">{{ x }}</div>{% endfor %}{% endwith %}

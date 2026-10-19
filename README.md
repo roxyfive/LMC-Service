@@ -19,6 +19,11 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 - `docs/` guida deploy, PDF clienti/admin, kit social, scaletta video · `video/` intro 16:9 e 9:16, tutorial
 - `tests/test_e2e.py` test end-to-end: `python -m tests.test_e2e`
 
+## WhatsApp, voce, report ed emergenza
+Assistente vocale (voce del browser o Vapi), riepilogo chat su WhatsApp (Twilio), report giornaliero/settimanale/mensile, pulsante Emergenza 24h.
+Tutto si configura da **Admin › Impostazioni** (o `.env`): vedi `docs/CONFIGURAZIONE-API.md`. Pagina **Admin › Report** per i numeri. Proposte future: `docs/PROPOSTE.md`.
+Logo 3D: `python -m backend.make_logo3d` (richiede scipy e fonttools; non serve per far girare il sito).
+
 ## Team e Contatti (da admin)
 Admin › **Team e Contatti**: nome, ruolo, telefono, email, nota, visibilità e ordine di ogni collaboratore. Si salva nel database: compare
 nella sezione Contatti del sito e l'assistente risponde con questi dati ("numero di Pasquale?"). Precaricato: Pasquale (titolare, +39 366 178 2548, aperto 24 ore).

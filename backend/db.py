@@ -5,7 +5,8 @@ from .config import DB_PATH, DATA, UPLOADS, ROOT
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, timeout=10)
+        g.db.execute("PRAGMA busy_timeout=10000")
         g.db.row_factory = sqlite3.Row
     return g.db
 
@@ -34,6 +35,19 @@ def init_db():
     UPLOADS.mkdir(exist_ok=True)
     con = sqlite3.connect(DB_PATH)
     con.executescript((ROOT / "backend" / "schema.sql").read_text(encoding="utf-8"))
+    # migrazioni leggere per database già esistenti (CREATE IF NOT EXISTS non aggiunge colonne)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(team)")}
+    for name, ddl in (("notify", "TEXT DEFAULT 'si'"), ("on_duty", "TEXT DEFAULT 'no'")):
+        if name not in cols:
+            con.execute(f"ALTER TABLE team ADD COLUMN {name} {ddl}")
+    try:   # impedisce la doppia prenotazione dello stesso orario (se esistono già duplicati storici, l'indice viene saltato)
+        con.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_slot ON appointments(slot_date, slot_time) WHERE status != 'annullato'")
+    except sqlite3.DatabaseError:
+        pass
+    try:
+        con.execute("PRAGMA journal_mode=WAL")
+    except sqlite3.DatabaseError:
+        pass
     con.commit()
     con.close()
 
@@ -49,3 +63,16 @@ def set_setting(key, value):
 
 def all_settings():
     return {r["key"]: r["value"] for r in q("SELECT key,value FROM settings")}
+
+
+# Segreti (token e chiavi API): tabella separata, mai inclusa in all_settings() e quindi mai passata ai template.
+def get_secret(key, default=""):
+    r = q("SELECT value FROM secrets WHERE key=?", (key,), one=True)
+    return r["value"] if r else default
+
+
+def set_secret(key, value):
+    if value:
+        ex("INSERT INTO secrets(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (key, value))
+    else:
+        ex("DELETE FROM secrets WHERE key=?", (key,))

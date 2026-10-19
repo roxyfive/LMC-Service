@@ -47,7 +47,7 @@ After=network.target
 User=deploy
 WorkingDirectory=/srv/lmc
 EnvironmentFile=/srv/lmc/.env
-ExecStart=/srv/lmc/.venv/bin/gunicorn -w 2 -b 127.0.0.1:8010 "run:app"
+ExecStart=/srv/lmc/.venv/bin/gunicorn -w 2 --threads 4 --timeout 40 -b 127.0.0.1:8010 "run:app"
 Restart=always
 
 [Install]
@@ -73,6 +73,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 }
 ```
@@ -115,3 +116,19 @@ sudo systemctl restart lmc
 Per attivarlo in futuro: `PHONE_AI_ENABLED=1` e `PHONE_WEBHOOK_TOKEN=<token lungo>` in `.env`, poi punta il tuo provider voce a
 `POST https://lmc.tuodominio.it/webhook/telefono` con header `X-Webhook-Token` e JSON `{"from":"+39...","transcript":"..."}`.
 Le chiamate compaiono in Admin → Chiamate (AI).
+
+
+## 10. WhatsApp, Vapi, report ed emergenza (aggiunta)
+Guida completa alle chiavi: `docs/CONFIGURAZIONE-API.md`. Cose da fare in produzione:
+- `.env`: `APP_MODE=production`, `TRUST_PROXY=1` (dietro nginx), `COOKIE_SECURE=1` (con HTTPS), `SECRET_KEY` fissa. **Nessun commento sulla stessa riga del valore** nel `.env` usato da systemd.
+- **HTTPS obbligatorio**: microfono (riconoscimento vocale e Vapi), PWA e webhook pubblici lo richiedono.
+- Webhook pubblico `https://DOMINIO/webhook/vapi` (secret in header `X-Vapi-Secret`). In nginx limita le richieste, ad esempio `limit_req_zone $binary_remote_addr zone=hooks:5m rate=30r/m;` e `limit_req zone=hooks burst=20;` sulla `location /webhook/`.
+- Con più worker gunicorn il thread di sfondo parte in ognuno ma i report non si duplicano (prenotazione atomica). Per maggiore controllo: `LMC_NO_BG=1` e cron, fuso orario esplicito:
+  ```
+  CRON_TZ=Europe/Rome
+  * * * * *  cd /srv/lmc && .venv/bin/python run.py --report   >> /var/log/lmc-report.log 2>&1
+  0 * * * *  cd /srv/lmc && .venv/bin/python run.py --promemoria >> /var/log/lmc-promemoria.log 2>&1
+  ```
+- Il database contiene anche le chiavi API: `chmod 600 data/lmc.db data/secret.key`, backup cifrati/privati, rotazione delle chiavi se il file esce dal server.
+- Il database passa in modalità WAL (file `lmc.db-wal`/`-shm` accanto al DB: includili nei backup o usa `sqlite3 .backup`).
+- Aggiornamenti: le nuove tabelle/colonne si creano da sole al riavvio (`init_db` e migrazioni leggere); fai comunque un backup prima.

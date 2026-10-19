@@ -6,7 +6,13 @@ from backend.config import PORT, MODE
 app = create_app()
 
 if __name__ == "__main__":
-    if "--promemoria" in sys.argv:
+    if "--report" in sys.argv:      # per cron: python run.py --report  (invia i report dovuti in questo momento)
+        from backend import reports_once
+        with app.app_context():
+            for key, ok, detail in reports_once():
+                print(key, "OK" if ok else "ERRORE", detail)
+        print("Report controllati")
+    elif "--promemoria" in sys.argv:
         from backend import reminders_once
         with app.app_context():
             reminders_once()

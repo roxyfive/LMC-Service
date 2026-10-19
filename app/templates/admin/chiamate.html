@@ -1,7 +1,7 @@
 {% extends "admin/base.html" %}{% block body %}
-<h1>Assistente telefonico AI</h1>
+<h1>Chiamate, chat ed emergenze</h1>
 <p class="note">Stato: <b>{{ 'ATTIVO' if enabled else 'NON ATTIVO (predisposto)' }}</b>. Il webhook <code>POST /webhook/telefono</code> con header <code>X-Webhook-Token</code> salva qui le chiamate e le trascrizioni quando viene attivato da .env.</p>
-<div class="scroll"><table><tr><th>Data</th><th>Numero</th><th>Trascrizione</th></tr>
-{% for r in rows %}<tr><td>{{ r.created }}</td><td>{{ r.from_number }}</td><td>{{ r.transcript }}</td></tr>
-{% else %}<tr><td colspan="3" class="mut">Nessuna chiamata registrata.</td></tr>{% endfor %}</table></div>
+<div class="scroll"><table><tr><th>Data</th><th>Fonte</th><th>Numero</th><th>Contenuto</th></tr>
+{% for r in rows %}<tr><td>{{ r.created }}</td><td><span class="badge {{ 'no' if r.source=='emergenza' else '' }}">{{ r.source }}</span></td><td>{{ r.from_number }}</td><td>{{ r.transcript }}</td></tr>
+{% else %}<tr><td colspan="4" class="mut">Nessuna chiamata registrata.</td></tr>{% endfor %}</table></div>
 {% endblock %}

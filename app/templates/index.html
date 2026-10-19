@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#0e1a30">
 <meta name="csrf" content="{{ csrf_token() }}">
 <link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/static/img/logo-lmc.svg" type="image/svg+xml">
-<link rel="icon" href="/static/img/icon-192.png" sizes="192x192">
+<link rel="icon" href="/static/img/favicon.ico" sizes="any">
+<link rel="icon" href="/static/img/favicon-64.png" type="image/png" sizes="64x64">
 <link rel="apple-touch-icon" href="/static/img/icon-192.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LMC Service – Audio · Video · Luci | Napoli">
@@ -52,7 +52,6 @@
 </svg>
 {%- endmacro %}
 
-{% include "_logo.html" %}
 <div class="scroll-progress" id="sp" aria-hidden="true"></div>
 <a class="skip-link" href="#main">Vai al contenuto</a>
 
@@ -64,7 +63,7 @@
   <div class="intro-vig"></div>
   <div class="beams"></div>
   <div class="intro-frame"></div>
-  <svg class="intro-logo logo-mark" viewBox="0 0 240 240" role="img" aria-label="La Music Company Service"><use href="#lmc-logo"/></svg>
+  <img class="intro-logo" src="/static/img/logo-3d-256.webp" srcset="/static/img/logo-3d-256.webp 1x, /static/img/logo-3d-512.webp 2x" width="110" height="110" alt="La Music Company Service">
   <div class="intro-copy">
     <p class="intro-count" aria-hidden="true"><span id="introNum">01</span> / {{ '%02d' % v.intro_steps|length }}</p>
     <div id="introCap" class="intro-cap" aria-live="polite"></div>
@@ -81,11 +80,11 @@
 </div>
 
 <header class="nav" id="top">
-  <a class="brand" href="#top" aria-label="LMC Service – torna in alto"><svg class="logo-mark" viewBox="0 0 240 240" aria-hidden="true"><use href="#lmc-logo"/></svg><span>LMC <b>Service</b></span></a>
+  <a class="brand" href="#top" aria-label="LMC Service – torna in alto"><img class="logo-mark" src="/static/img/logo-3d-128.webp" srcset="/static/img/logo-3d-128.webp 1x, /static/img/logo-3d-256.webp 2x" width="46" height="46" alt=""><span>LMC <b>Service</b></span></a>
   <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="menu">☰</button>
   <nav id="menu" aria-label="Principale">
     <a href="#chi-siamo">Chi siamo</a><a href="#skill">Skill</a><a href="#eventi">Eventi</a>
-    <a href="#prenota">Prenota</a><a href="#contatti">Contatti</a>
+    <a href="#come-lavoriamo">Come lavoriamo</a><a href="#prenota">Prenota</a><a href="#contatti">Contatti</a>
     <a class="btn btn-gold" href="#preventivo">Preventivo</a>
   </nav>
 </header>
@@ -154,6 +153,19 @@
 </section>
 {% endif %}
 <div class="orn" aria-hidden="true"><i></i></div>
+<section id="come-lavoriamo" class="sec" aria-labelledby="cl-h">
+  <div class="sec-head reveal"><p class="kicker">Come lavoriamo</p><hr class="rule"><h2 id="cl-h">Dal primo messaggio alla serata</h2>
+    {% if demo %}<p class="note"><span class="demo-tag">Demo</span> Testi indicativi, da confermare con Pasquale.</p>{% endif %}</div>
+  <ol class="steps">
+    {% for n, t, d in [('01','Ci racconti l’evento','Data, luogo, numero di ospiti e servizi che ti servono: dal modulo preventivo, da WhatsApp o in DM su Instagram.'),
+                       ('02','Progettiamo','Studiamo la parte tecnica su misura: audio, luci, video e allestimento, un dettaglio alla volta.'),
+                       ('03','Allestiamo e proviamo','Montaggio, prove e programmazione prima che arrivi il pubblico.'),
+                       ('04','Tu vivi l’evento','Quando tutto è progettato con cura, la tecnica lascia spazio solo all’atmosfera.')] %}
+    <li class="step reveal" style="--i:{{ loop.index0 }}" data-anim="zoom"><span class="sn">{{ n }}</span><h3>{{ t }}</h3><p>{{ d }}</p></li>
+    {% endfor %}
+  </ol>
+</section>
+<div class="orn" aria-hidden="true"><i></i></div>
 <section id="eventi" class="sec" aria-labelledby="eventi-h">
   <div class="sec-head reveal"><p class="kicker">Portfolio</p><hr class="rule"><h2 id="eventi-h">Eventi realizzati</h2></div>
   {% if cats|length > 1 %}<div class="filters" role="group" aria-label="Filtra per categoria">
@@ -198,6 +210,31 @@
 </section>
 {% endif %}
 
+<div class="band"><section id="faq" class="sec" aria-labelledby="faq-h">
+  <div class="sec-head reveal"><p class="kicker">Domande frequenti</p><hr class="rule"><h2 id="faq-h">Prima di scriverci</h2></div>
+  <div class="faq reveal">
+    {% for qq, aa in [('Dove lavorate?', 'Siamo a ' ~ s.city ~ ' e lavoriamo in tutta Italia.'),
+                      ('Che servizi offrite?', 'Noleggio di attrezzature audio, video e luci, ledwall, organizzazione eventi, allestimenti e progettazione tecnica. Ci occupiamo anche di impianti di videosorveglianza.'),
+                      ('Per quali eventi?', 'Matrimoni, eventi privati, live e congressi.'),
+                      ('Quanto costa?', 'Non pubblichiamo prezzi fissi perché ogni evento è diverso: richiedi un preventivo indicando evento, data, luogo, ospiti e servizi.'),
+                      ('Come vi contatto?', 'Dal modulo preventivo, da WhatsApp, per telefono' ~ (' al ' ~ tel if tel else '') ~ ' oppure in DM su Instagram.'),
+                      ('Siete disponibili per le urgenze?', (orari ~ '. ' if orari else '') ~ 'Per un guasto o un’urgenza usa il pulsante rosso “Emergenza 24h”: chiama direttamente o lascia il tuo numero e ti richiamiamo.')] %}
+    <details><summary>{{ qq }}</summary><p>{{ aa }}</p></details>
+    {% endfor %}
+  </div>
+</section></div>
+<div class="orn" aria-hidden="true"><i></i></div>
+<section id="configuratore" class="sec" aria-labelledby="conf-h">
+  <div class="sec-head reveal"><p class="kicker">Configuratore</p><hr class="rule"><h2 id="conf-h">Costruisci il tuo evento</h2>
+    <p class="lead-d">Scegli tipo di evento, ospiti ed esigenze: ti prepariamo una proposta tecnica di partenza da inviare con il preventivo. Nessun prezzo: ogni evento è su misura.</p></div>
+  <div class="conf reveal" id="conf">
+    <fieldset><legend>Che evento è?</legend><div class="opts" data-name="tipo">{% for e in event_types %}<button type="button" class="opt" data-v="{{ e }}" aria-pressed="false">{{ e }}</button>{% endfor %}</div></fieldset>
+    <fieldset><legend>Quanti ospiti?</legend><div class="opts" data-name="ospiti">{% for g in ['Fino a 50','50–150','150–400','Oltre 400'] %}<button type="button" class="opt" data-v="{{ g }}" aria-pressed="false">{{ g }}</button>{% endfor %}</div></fieldset>
+    <fieldset><legend>Di cosa hai bisogno? (anche più di una)</legend><div class="opts multi" data-name="servizi">{% for sv in services %}<button type="button" class="opt" data-v="{{ sv }}" aria-pressed="false">{{ sv }}</button>{% endfor %}</div></fieldset>
+    <div class="conf-out" id="confOut" aria-live="polite"><p class="mut">Seleziona almeno tipo di evento e servizi: qui comparirà la tua proposta.</p></div>
+    <button type="button" class="btn btn-gold" id="confGo" disabled>Usa nel preventivo</button>
+  </div>
+</section>
 <div class="band"><section id="richieste" class="sec" aria-label="Prenotazioni e preventivi">
   <div class="sec-head reveal"><p class="kicker">Parliamone</p><hr class="rule"></div>
   <div class="forms">
@@ -275,7 +312,7 @@
 <footer class="foot">
   <div class="foot-in">
     <div>
-      <svg class="fl logo-mark" viewBox="0 0 240 240" role="img" aria-label="La Music Company Service"><use href="#lmc-logo"/></svg>
+      <img class="fl" src="/static/img/logo-mono-white.svg" width="110" height="110" alt="La Music Company Service" loading="lazy">
       <p>{{ s.brand }}<br>Service per eventi · {{ s.city }} · dal {{ s.founded }}</p>
     </div>
     <nav aria-label="Esplora"><p class="foot-h">Esplora</p>
@@ -291,12 +328,50 @@
 <div id="lb" class="lb" role="dialog" aria-modal="true" aria-label="Galleria ingrandita" hidden><button class="lb-x" aria-label="Chiudi">✕</button><button class="lb-p" aria-label="Precedente">‹</button>
   <figure><img alt=""><figcaption></figcaption></figure><button class="lb-n" aria-label="Successiva">›</button></div>
 
-<!-- CHAT -->
+<!-- EMERGENZA 24h -->
+{% if emg.on %}
+<a id="sos" class="sos {{ '' if emg.open_now else 'closed' }}" href="tel:{{ emg.number }}" aria-haspopup="dialog" aria-label="Emergenza 24 ore: chiama {{ emg.number }}"><span class="dot" aria-hidden="true"></span><span class="t">Emergenza 24h</span></a>
+<div id="sosSheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sosTitle" hidden>
+  <div class="sheet-in">
+    <button class="sheet-x" id="sosX" aria-label="Chiudi">✕</button>
+    <p class="kicker">Assistenza urgente</p><h2 id="sosTitle">Emergenza 24h</h2>
+    <p class="sheet-hours" id="sosHours">{% if emg.open_now %}{{ s.orari if s.orari and '[DA' not in s.orari else 'Siamo raggiungibili' }}. Chiama subito: ti risponde chi è di turno.{% else %}Siamo fuori dall’orario di risposta ({{ emg.hours }}). Lascia il tuo numero: ti richiamiamo appena possibile.{% endif %}</p>
+    <a class="btn btn-gold sheet-call" href="tel:{{ emg.number }}">Chiama ora {{ emg.number }}</a>
+    <div class="sheet-or"><span>Non risponde?</span></div>
+    <form id="sosForm" class="sheet-form" novalidate>
+      <label>Nome<input name="name" autocomplete="name"></label>
+      <label>Telefono per il richiamo<input name="phone" type="tel" required autocomplete="tel"></label>
+      <label>Cosa è successo?<textarea name="note" rows="2" maxlength="400" placeholder="Es. impianto audio spento durante l’evento"></textarea></label>
+      <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button class="btn btn-night" type="submit">Richiedi richiamo urgente</button>
+      <p class="msg" id="sosMsg" aria-live="polite"></p>
+    </form>
+    <button type="button" class="btn btn-line sheet-vapi" id="sosVapi" hidden>🎙️ Parla con l’assistente vocale</button>
+    <p class="fine">Con la richiesta accetti di essere richiamato al numero indicato. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></p>
+  </div>
+</div>
+{% endif %}
+
+<!-- CHAT + assistente vocale -->
 <button id="chatBtn" class="chat-btn" aria-label="Apri assistente" aria-expanded="false">Assistente</button>
 <div id="chat" class="chat" hidden role="dialog" aria-label="Assistente LMC">
   <div class="chat-h"><b>Assistente LMC</b><button id="chatX" aria-label="Chiudi">✕</button></div>
-  <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi o appuntamenti.</p></div>
+  <p class="chat-note">Assistente automatico (non una persona). I messaggi servono a rispondere e, se lo chiedi, vengono inoltrati al team. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></p>
+  <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi, appuntamenti o contatti: puoi scrivere oppure parlare.</p></div>
   <div id="chatAct"></div>
+  <div class="chat-tools">
+    <button type="button" id="voiceBtn" class="tool" aria-pressed="false">🎙️ Parla con l'assistente</button>
+    <button type="button" id="vapiBtn" class="tool" hidden>✨ Voce naturale</button>
+    <button type="button" id="waBtn" class="tool wa" hidden>Invia riepilogo su WhatsApp</button>
+  </div>
+  <p id="voiceStatus" class="voice-status" aria-live="polite" hidden></p>
+  <form id="waForm" class="wa-form" hidden novalidate>
+    <label>Il tuo nome<input name="name" autocomplete="name"></label>
+    <label>Telefono<input name="phone" type="tel" required autocomplete="tel"></label>
+    <input name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <label class="chk"><input type="checkbox" name="consent" required> Acconsento a essere ricontattato su questo numero. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></label>
+    <button class="btn btn-gold" type="submit">Invia a LMC</button><p class="msg" id="waMsg" aria-live="polite"></p>
+  </form>
   <form id="chatForm" class="chat-f"><button type="button" id="mic" aria-label="Detta il messaggio">🎤</button>
     <input id="chatIn" placeholder="Scrivi qui…" aria-label="Il tuo messaggio" autocomplete="off" maxlength="300"><button class="btn btn-gold" aria-label="Invia">➤</button></form>
 </div>
