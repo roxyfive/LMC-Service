@@ -74,5 +74,15 @@ check("video reale", 'class="lazyvid"' in home and "/static/media/loop1.mp4" not
 from backend.foto_sync import sync
 with app.app_context():
     check("risincronizzazione idempotente", sync() == ([], []))
+# sostituzione "stesso nome": la foto nuova prende il posto della vecchia (anche come hero)
+hero_file = tmp / "organizzate" / "hero" / "hero-01.jpg"
+with app.app_context():
+    from backend.db import q
+    old = q("SELECT filename FROM media WHERE featured=1", one=True)["filename"]
+    hero_file.write_bytes(jpg(1800, 900, (1, 2, 3)))
+    done, _ = sync()
+    rows = q("SELECT filename,featured FROM media WHERE source LIKE 'cartella:hero/hero-01.jpg#%'")
+    check("sostituzione stesso nome", len(done) == 1 and len(rows) == 1 and rows[0]["filename"] != old and rows[0]["featured"] == 1)
+    check("vecchia foto rimossa", not list((tmp / "data" / "uploads").glob(f"{old}*")))
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

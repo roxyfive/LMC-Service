@@ -19,6 +19,12 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 - `docs/` guida deploy, PDF clienti/admin, kit social, scaletta video · `video/` intro 16:9 e 9:16, tutorial
 - `tests/test_e2e.py` test end-to-end: `python -m tests.test_e2e`
 
+## ⚠️ Foto DEMO da sostituire
+Le foto in `foto/organizzate/` (1 hero, 1 galleria, 3 installazioni) sono **immagini demo temporanee**, non lavori di LMC Service
+(vedi `foto/organizzate/CREDITI.md`). Per sostituirle: copia le foto vere nella stessa cartella **con lo stesso nome**
+(es. `hero/hero-01.jpg`) e riavvia il sito, oppure metti il materiale del cliente in `foto/da_social/` e lancia
+`python importa_social.py foto/da_social`. Dettagli in `foto/organizzate/LEGGIMI.md`.
+
 ## Foto e video reali da Instagram/Facebook
 `python importa_social.py foto/da_social/*.zip` → estrae, rinomina e smista in `foto/organizzate/`; poi riavvia il sito
 (o Admin › Foto › Sincronizza). Dettagli in `foto/organizzate/LEGGIMI.md`. Test: `python -m tests.test_foto`

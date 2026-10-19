@@ -11,7 +11,7 @@ from io import BytesIO
 from PIL import Image, ImageOps
 from .config import FOTO_DIR, UPLOADS, MAX_VID
 from .db import q, ex
-from .media import save_image_obj, _is_video
+from .media import save_image_obj, delete_files, _is_video
 import secrets
 
 IMG_EXT = {".jpg", ".jpeg", ".png", ".webp"}
@@ -63,6 +63,9 @@ def sync():
             src = f"cartella:{folder}/{path.name}#{hashlib.sha1(data).hexdigest()[:12]}"
             if src in have:
                 continue
+            # stesso nome file ma contenuto diverso = foto sostituita: rimuove la vecchia, ne eredita posto e hero
+            prefix = f"cartella:{folder}/{path.name}#"
+            stale = q("SELECT id,filename,sort,featured FROM media WHERE substr(source,1,?)=?", (len(prefix), prefix))
             base = secrets.token_hex(16)
             try:
                 if kind == "image":
@@ -78,13 +81,21 @@ def sync():
                 skipped.append(f"{folder}/{path.name}: {e}")
                 continue
             meta = manifest.get(f"{folder}/{path.name}", {})
-            feat = int(folder == "hero" and not hero_set)
+            if stale:
+                for r in stale:
+                    delete_files(r["filename"])
+                    ex("DELETE FROM media WHERE id=?", (r["id"],))
+                feat = int(any(r["featured"] for r in stale))
+                pos = stale[0]["sort"]
+            else:
+                feat = int(folder == "hero" and not hero_set)
+                sort += 1
+                pos = sort
             hero_set = hero_set or bool(feat)
-            sort += 1
             ex("""INSERT INTO media(filename,kind,title,caption,category,show_home,show_gallery,show_intro,featured,sort,source)
                   VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
                (base, kind, _title(path, folder, meta), (meta.get("caption") or "")[:300], cat,
-                home, gal, intro, feat, sort, src))
+                home, gal, intro, feat, pos, src))
             done.append(f"{folder}/{path.name}")
     if done:
         # con foto vere pubblicate i segnaposto non servono più
