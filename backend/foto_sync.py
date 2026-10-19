@@ -6,6 +6,8 @@ Uso manuale: `python -m backend.foto_sync`
 """
 import hashlib
 import json
+import re
+from pathlib import Path
 import shutil
 from io import BytesIO
 from PIL import Image, ImageOps
@@ -37,6 +39,9 @@ def _title(path, folder, meta):
     cap = (meta.get("caption") or "").strip().splitlines()
     if cap and cap[0]:
         return cap[0][:60]
+    orig = Path(meta.get("origine") or "").stem
+    if orig and not re.search(r"^(img|vid|dsc|pxl|mov|whatsapp)|\d{6,}|^[0-9a-f-]{20,}$", orig, re.I):
+        return orig.replace("-", " ").replace("_", " ").capitalize()[:60]  # nome file descrittivo dato da chi ha caricato
     return path.stem.replace("-", " ").replace("_", " ").capitalize()[:60]
 
 

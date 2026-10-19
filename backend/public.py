@@ -10,6 +10,7 @@ from .config import UPLOADS, CATEGORIES
 from .security import check_csrf
 from .mailer import send_mail
 from . import ai
+from . import vetrina
 
 bp = Blueprint("pub", __name__)
 FILE_RE = re.compile(r"^[0-9a-f]{32}(_\d+)?\.(webp|mp4|webm)$")
@@ -77,7 +78,8 @@ def index():
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
     reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
     used = {m["category"] for m in gallery}
-    return render_template("index.html", s=s, gallery=gallery, home=home, intro=intro, videos=videos,
+    v = vetrina.build(media)
+    return render_template("index.html", s=s, gallery=gallery, home=home, intro=intro, videos=videos, v=v,
                            hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
                            has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
                            services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"))

@@ -34,3 +34,13 @@ Ogni file nuovo viene ottimizzato (webp 480/960/1600) e pubblicato automaticamen
   appena arrivano foto vere i segnaposto vengono nascosti.
 - Per **togliere** una foto dal sito eliminala anche da qui, altrimenti alla prossima sincronizzazione ritorna.
 - `_manifest.json` (creato dall'importatore) conserva data e didascalia originali: il sito li usa come titolo.
+
+## Come il sito usa le foto (home animata)
+- **Hero e intro:** le foto in `hero/` e `galleria/` fanno le slide in cima alla home; l'intro cinematografica usa le foto delle skill e la hero.
+- **Sezione "Le nostre skill"** (Videosorveglianza, Ledwall, Audio, Allestimenti, Eventi): per ogni skill il sito sceglie da solo
+  la foto che nel **nome file o nella didascalia** contiene una parola chiave: *telecamera/sorveglianza*, *ledwall*, *audio/casse/mixer*,
+  *allestimento/palco/truss*, *concerto/evento/matrimonio*. Esempio: `ledwall-matrimonio.jpg`. Senza parole chiave usa le altre foto a rotazione.
+  Con `importa_social.py` il nome originale resta in `_manifest.json` e viene usato allo stesso modo.
+- **Voce narrante dell'intro:** di default usa la voce del browser (Web Speech API, italiano). Per una voce registrata metti il file
+  `app/static/media/voce.mp3` (circa 40-60 secondi): se esiste viene usato al posto della voce di sistema. I testi della narrazione
+  sono in `backend/vetrina.py` (`INTRO_STEPS`).

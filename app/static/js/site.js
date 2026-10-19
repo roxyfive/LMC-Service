@@ -89,7 +89,7 @@
     const reply = r.ok ? r.data.reply : 'Al momento non riesco a rispondere. Usa la sezione Contatti.';
     add('bot', reply); hist.push({ role: 'assistant', content: reply }); speak(reply);
     if (r.ok && r.data.action) {
-      const b = document.createElement('a'); b.className = 'btn btn-red'; b.href = r.data.action === 'prenota' ? '#prenota' : '#preventivo';
+      const b = document.createElement('a'); b.className = 'btn btn-gold'; b.href = r.data.action === 'prenota' ? '#prenota' : '#preventivo';
       b.textContent = r.data.action === 'prenota' ? 'Prenota ora' : 'Richiedi preventivo'; b.onclick = () => chat.hidden = true; act.appendChild(b);
     }
   }
@@ -108,52 +108,137 @@
   $('#installBtn').onclick = async () => { inst.hidden = true; if (dp) { dp.prompt(); dp = null; } };
   $('#installX').onclick = () => inst.hidden = true;
 
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ready = () => document.documentElement.classList.add('ready');
+
+  /* ---------- barra di avanzamento + menu che si nasconde scorrendo ---------- */
+  const sp = $('#sp'), nav = $('.nav'); let lastY = 0, tick = false;
+  addEventListener('scroll', () => {
+    if (tick) return; tick = true;
+    requestAnimationFrame(() => {
+      const y = scrollY, max = document.documentElement.scrollHeight - innerHeight;
+      sp.style.transform = 'scaleX(' + (max > 0 ? Math.min(1, y / max) : 0) + ')';
+      nav.classList.toggle('hide', y > lastY && y > 400 && !menu.classList.contains('open'));
+      lastY = y; tick = false;
+    });
+  }, { passive: true });
+
+  /* ---------- hero: slide automatiche con Ken Burns ---------- */
+  (function () {
+    const slides = $$('#heroSlides .hs'), dots = $('#heroDots');
+    if (slides.length < 2 || reduce) return;
+    const DUR = 6500; dots.style.setProperty('--dur', DUR + 'ms');
+    slides.forEach(() => dots.appendChild(document.createElement('i')));
+    const D = [...dots.children]; let n = 0, timer, visible = true;
+    const mark = () => { D.forEach(d => d.classList.remove('on')); void dots.offsetWidth; D[n].classList.add('on'); };
+    const go = i => {
+      const old = slides[n]; old.classList.remove('on'); old.classList.add('leaving'); setTimeout(() => old.classList.remove('leaving'), 1800);
+      n = i % slides.length; slides[n].classList.add('on'); mark();
+    };
+    const start = () => { clearInterval(timer); if (visible && !document.hidden) { mark(); timer = setInterval(() => go(n + 1), DUR); } else clearInterval(timer); };
+    new IntersectionObserver(es => { visible = es[0].isIntersecting; start(); }, { threshold: .15 }).observe($('#hero'));
+    document.addEventListener('visibilitychange', start);
+    D.forEach((d, k) => { d.style.cursor = 'pointer'; d.addEventListener('click', () => { go(k); start(); }); });
+    dots.style.pointerEvents = 'auto';
+  })();
+
   /* ---------- intro cinematografica ---------- */
   const intro = $('#intro');
-  const lines = JSON.parse($('#introData').textContent || '[]');
-  const slides = $$('.slide', intro), line = $('#introLine');
-  let timer, audio;
-  const endIntro = () => {
-    clearInterval(timer); if (audio) audio.pause();
-    document.body.style.overflow = '';
-    intro.classList.add('out'); setTimeout(() => intro.hidden = true, 800);
-    try { sessionStorage.setItem('introSeen', '1'); } catch (e) { }
-  };
-  try { if (sessionStorage.getItem('introSeen')) intro.hidden = true; } catch (e) { }
-  if (!intro.hidden) {
+  let data = {}; try { data = JSON.parse($('#introData').textContent || '{}'); } catch (e) { }
+  const steps = data.steps || [];
+  let seen = false; try { seen = !!sessionStorage.getItem('introSeen'); } catch (e) { }
+  const force = /[?&]intro=1/.test(location.search);
+  if (!steps.length || reduce || (!force && (seen || location.hash))) { intro.hidden = true; ready(); }
+  else startIntro();
+
+  function startIntro() {
     document.body.style.overflow = 'hidden';
-    $('#introSkip').onclick = endIntro;
-    const play = () => {
-      slides.forEach(s => s.src = s.dataset.src);
-      let n = 0;
-      const step = () => {
-        if (n >= lines.length) return endIntro();
-        line.style.animation = 'none'; void line.offsetWidth; line.style.animation = ''; line.textContent = lines[n];
-        if (slides.length) { slides.forEach(s => s.classList.remove('on')); slides[n % slides.length].classList.add('on'); }
-        n++;
-      };
-      step(); timer = setInterval(step, 3200);
+    const slides = $$('.slide', intro), cap = $('#introCap'), sub = $('#introSub'), num = $('#introNum'),
+      bars = $$('#introBars i'), btnAudio = $('#introAudio'), btnSkip = $('#introSkip');
+    const MIN = 5600, sleep = ms => new Promise(r => setTimeout(r, ms));
+    const music = new Audio('/static/media/music.mp3'); music.loop = true; music.volume = .5; music.preload = 'none';
+    const voceFile = data.voce ? new Audio(data.voce) : null; if (voceFile) voceFile.preload = 'metadata';
+    let sound = false, run = 0, cur = -1, ended = false, stopSpeak = null;
+    setTimeout(() => slides.forEach(s => { if (!s.src && s.dataset.src) s.src = s.dataset.src; }), 500);
+    btnSkip.focus({ preventScroll: true });
+
+    const reset = () => {
+      slides.forEach(s => s.classList.remove('on', 'leaving')); void intro.offsetWidth; cur = -1;
+      bars.forEach(b => b.classList.remove('on', 'done'));
     };
-    $('#introStart').onclick = () => {
-      $('#introStart').style.display = 'none';
-      audio = new Audio('/static/media/music.mp3'); audio.loop = true; audio.volume = .6;
-      audio.play().then(() => { $('#introAudio').textContent = '🔊 Audio'; $('#introAudio').setAttribute('aria-pressed', 'true'); }).catch(() => { });
-      play();
+    const showStep = (i, ms) => {
+      const prev = slides[cur];
+      if (prev) { prev.classList.remove('on'); prev.classList.add('leaving'); setTimeout(() => prev.classList.remove('leaving'), 1800); }
+      cur = i; const sl = slides[i];
+      if (!sl.src && sl.dataset.src) sl.src = sl.dataset.src;
+      sl.classList.add('on');
+      const st = steps[i];
+      cap.textContent = '';
+      st.cap.split(' ').forEach((w, k) => { const sp = document.createElement('span'); sp.className = 'w'; sp.style.setProperty('--k', k); sp.textContent = w; cap.appendChild(sp); });
+      sub.classList.remove('in'); sub.textContent = st.sub; void sub.offsetWidth; sub.classList.add('in');
+      num.textContent = String(i + 1).padStart(2, '0');
+      bars.forEach((b, k) => { b.classList.toggle('done', k < i); b.classList.toggle('on', k === i); b.style.setProperty('--dur', ms + 'ms'); });
     };
-    $('#introAudio').onclick = e => {
-      if (!audio) return; const b = e.currentTarget;
-      if (audio.paused) { audio.play(); b.textContent = '🔊 Audio'; b.setAttribute('aria-pressed', 'true'); } else { audio.pause(); b.textContent = '🔇 Audio'; b.setAttribute('aria-pressed', 'false'); }
+    /* voce narrante: voce.mp3 se presente, altrimenti la voce di sistema (Web Speech API) */
+    const speak = text => new Promise(res => {
+      if (!sound || !('speechSynthesis' in window)) return res();
+      const u = new SpeechSynthesisUtterance(text); u.lang = 'it-IT'; u.rate = .96;
+      const v = speechSynthesis.getVoices().find(v => /^it/i.test(v.lang)); if (v) u.voice = v;
+      let done = false, guard, hard;
+      const fin = () => { if (done) return; done = true; clearTimeout(guard); clearTimeout(hard); stopSpeak = null; music.volume = .5; res(); };
+      guard = setTimeout(fin, 2500);              // la voce non parte (nessuna voce installata)
+      hard = setTimeout(fin, 16000);
+      u.onstart = () => clearTimeout(guard); u.onend = fin; u.onerror = fin;
+      stopSpeak = fin; music.volume = .22; speechSynthesis.cancel(); speechSynthesis.speak(u);
+    });
+    async function play() {
+      const my = ++run; reset();
+      if (stopSpeak) stopSpeak();
+      if (sound && voceFile) { voceFile.currentTime = 0; voceFile.play().catch(() => { }); }
+      const fileMs = sound && voceFile && isFinite(voceFile.duration) && voceFile.duration > 3 ? voceFile.duration * 1000 / steps.length : 0;
+      const ms = fileMs || MIN;
+      for (let i = 0; i < steps.length; i++) {
+        if (my !== run) return;
+        showStep(i, ms);
+        await Promise.all([sleep(ms), sound && !voceFile ? speak(steps[i].voce) : null]);
+      }
+      if (my === run) { await sleep(900); if (my === run) endIntro(); }
+    }
+    function endIntro() {
+      if (ended) return; ended = true; run++;
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      if (voceFile) voceFile.pause();
+      const f = setInterval(() => { music.volume = Math.max(0, music.volume - .05); if (music.volume <= .01) { music.pause(); clearInterval(f); } }, 90);
+      intro.classList.add('out'); document.body.style.overflow = ''; ready();
+      setTimeout(() => { intro.hidden = true; }, 1200);
+      try { sessionStorage.setItem('introSeen', '1'); } catch (e) { }
+    }
+    btnSkip.onclick = endIntro;
+    document.addEventListener('keydown', e => { if (!ended && e.key === 'Escape') endIntro(); });
+    btnAudio.onclick = () => {
+      sound = !sound; btnAudio.setAttribute('aria-pressed', sound); btnAudio.classList.add('live');
+      if (sound) {
+        btnAudio.textContent = '🔊 Musica e voce attive';
+        music.volume = .5; music.play().catch(() => { });
+        play();                                   // riparte dall'inizio, così voce e immagini restano sincronizzate
+      } else {
+        btnAudio.textContent = '🔇 Audio disattivato';
+        music.pause(); if (voceFile) voceFile.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); if (stopSpeak) stopSpeak();
+      }
     };
-    /* fumo / particelle */
+    play();
+
+    /* polvere di luce */
     const cv = $('#smoke'), g = cv.getContext('2d');
     const fit = () => { cv.width = innerWidth; cv.height = innerHeight; }; fit(); addEventListener('resize', fit);
-    const P = Array.from({ length: 50 }, () => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: 40 + Math.random() * 90, vx: (Math.random() - .5) * .3, vy: -.1 - Math.random() * .3 }));
+    const P = Array.from({ length: 36 }, (_, k) => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: 30 + Math.random() * 90,
+      vx: (Math.random() - .5) * .25, vy: -.08 - Math.random() * .25, c: k % 3 ? '217,178,94' : '77,163,255' }));
     (function loop() {
-      if (intro.hidden) return;
+      if (ended || intro.hidden) return;
       g.clearRect(0, 0, cv.width, cv.height);
       P.forEach(p => {
         p.x += p.vx; p.y += p.vy; if (p.y < -p.r) { p.y = cv.height + p.r; p.x = Math.random() * cv.width; }
-        const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); gr.addColorStop(0, 'rgba(255,40,30,.10)'); gr.addColorStop(1, 'rgba(255,40,30,0)');
+        const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); gr.addColorStop(0, 'rgba(' + p.c + ',.11)'); gr.addColorStop(1, 'rgba(' + p.c + ',0)');
         g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
       });
       requestAnimationFrame(loop);

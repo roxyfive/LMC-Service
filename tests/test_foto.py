@@ -69,7 +69,11 @@ c = app.test_client()
 home = c.get("/").get_data(as_text=True)
 check("segnaposto nascosti", "[Segnaposto]" not in home and "FOTO IN ARRIVO" not in home)
 check("filtro Installazioni presente", 'data-cat="Installazioni"' in home and 'data-cat="Luci"' not in home)
-check("hero reale", "/static/img/logo-1600.webp\"\n       alt=\"La Music" not in home and 'class="hero-bg" src="/media/' in home)
+check("hero reale", 'class="hs kb0 on" src="/media/' in home and "logo-1600" not in home.split('id="heroSlides"')[1].split("hero-shade")[0])
+check("sezione skill con 5 foto", home.count('class="skill reveal"') == 5 and home.count('class="skill-ph"><img') == 5)
+check("hero con slide dalle cartelle", home.count('class="hs ') >= 2)
+check("intro cinematografica con 7 passi", home.count('class="slide kb') == 7 and 'id="introData"' in home and "Entra nello show" not in home)
+check("senza voce.mp3 usa la voce di sistema", '"voce":""' in home.replace(" ", ""))
 check("video reale", 'class="lazyvid"' in home and "/static/media/loop1.mp4" not in home)
 from backend.foto_sync import sync
 with app.app_context():
