@@ -52,6 +52,8 @@ def seed():
             v = json.dumps(v, ensure_ascii=False)
         cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)", (k, v))
     cur.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('slot_minutes','60')")
+    # social dismessi: restano solo Instagram, Facebook, TikTok
+    cur.execute("DELETE FROM settings WHERE key IN ('threads','x','linktree')")
     # dati reali del cliente: sostituiscono solo i segnaposto, mai ciò che l'admin ha già modificato
     for k in ("telefono", "whatsapp", "orari", "zone"):
         cur.execute("UPDATE settings SET value=? WHERE key=? AND (value='' OR value LIKE '[DA%' OR (key='zone' AND value LIKE 'Tutta Italia%'))",

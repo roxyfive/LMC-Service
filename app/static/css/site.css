@@ -305,3 +305,24 @@ fieldset{border:1px solid #bdb298;display:flex;gap:1rem;flex-wrap:wrap;padding:.
 @media(prefers-reduced-motion:reduce){.foot-social a{transition:none}}
 .soc-t{min-width:0}.soc-n{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;letter-spacing:.01em}
 .foot-social a{min-width:0}
+
+/* contatti – restyle: layout asimmetrico, scheda con ombra morbida, icone oro */
+.contatti{position:relative;padding:clamp(4.5rem,10vw,8rem) clamp(1.1rem,4vw,2rem);background:radial-gradient(ellipse 70% 80% at 85% 20%,#c4a15a1f,transparent 60%),radial-gradient(ellipse 60% 70% at 5% 100%,#27457f12,transparent 60%),linear-gradient(180deg,var(--ivory),#f2ebdc);overflow:hidden}
+.contatti:before{content:"";position:absolute;inset:0;background-image:radial-gradient(#7a5a1c14 1px,transparent 1.2px);background-size:22px 22px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 70%);mask-image:linear-gradient(90deg,transparent,#000 70%);pointer-events:none}
+.contatti .contact{position:relative;max-width:1220px;margin:0 auto;grid-template-columns:1.15fr 1fr;align-items:center;gap:clamp(2rem,6vw,6rem)}
+@media(max-width:900px){.contatti .contact{grid-template-columns:1fr}}
+.orn-line{display:flex;align-items:center;gap:.7rem;margin:0 0 1.4rem;max-width:230px}.orn-line i{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold))}.orn-line i:last-child{background:linear-gradient(90deg,var(--gold),transparent)}.orn-line b{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid var(--gold)}
+.contact-intro h2{font-family:"Playfair Display",Georgia,serif;font-weight:500;font-size:clamp(2.6rem,6.2vw,4.6rem);line-height:1.04;letter-spacing:-.01em;margin:0 0 1.4rem;color:var(--ink)}.contact-intro h2 em{font-style:italic;color:var(--gold-ink)}
+.contact-intro .big{font-size:clamp(1.05rem,1.6vw,1.2rem);line-height:1.7;max-width:34em;color:#3a4150}
+.contact .cta{display:flex;flex-wrap:wrap;gap:.8rem}
+.btn-gold{background:linear-gradient(135deg,#d9bc78,#c4a15a 55%,#a98640);color:#1d1708;border-color:transparent;box-shadow:0 8px 22px #c4a15a55}.btn-gold:hover{transform:translateY(-2px);box-shadow:0 14px 30px #c4a15a77;color:#000}
+.btn-gold-line{background:transparent;color:var(--gold-ink);border-color:#c4a15a}.btn-gold-line:hover{background:var(--gold);color:#1d1708;border-color:var(--gold);transform:translateY(-2px);box-shadow:0 10px 24px #c4a15a44}
+.contatti .contact-card{background:linear-gradient(160deg,#fffefb,#faf5ea);border:0;border-radius:18px 4px 18px 4px;padding:clamp(1.6rem,3.5vw,2.8rem);box-shadow:0 30px 60px -22px #0e1a3040,0 2px 0 #fff inset,0 0 0 1px #c4a15a24}
+.contatti .contact-card dl{gap:0}
+.crow{display:flex;gap:1.1rem;align-items:flex-start;padding:1.15rem 0;border-bottom:1px solid #c4a15a2e}.crow:first-child{padding-top:0}.crow:last-child{border-bottom:0;padding-bottom:0}
+.ci{flex:none;width:2.6rem;height:2.6rem;display:grid;place-items:center;border-radius:50%;background:#c4a15a1c;color:var(--gold-ink)}.ci svg{width:1.2rem;height:1.2rem;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.contatti dt{font:600 .7rem/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;font-variant:small-caps;color:var(--gold-ink);margin-bottom:.5rem}
+.contatti dd{font-size:1.12rem;line-height:1.5;color:var(--ink)}
+.contatti .team a{font-size:1.18rem;font-weight:600;text-decoration:none;color:var(--ink);border-bottom:1px solid #c4a15a88}.contatti .team a:hover{color:var(--gold-ink)}
+.contatti .social{gap:.4rem 1.5rem}
+@media(max-width:560px){.contatti .cta .btn{flex:1 1 100%}.ci{width:2.3rem;height:2.3rem}}

@@ -50,5 +50,12 @@ check("handle completo in una riga con title", 'title="@lamusicompanyservice"' i
 form.update({"tiktok": ""})
 c.post("/admin/testi", data=form)
 check("TikTok nascosto se vuoto", "<small>TikTok" not in c.get("/").get_data(as_text=True))
+home = c.get("/").get_data(as_text=True)
+check("niente Threads/X/Linktree nel sito", all(x not in home.lower() for x in ("threads", "linktr", "x.com/")))
+check("niente campi admin Threads/X/Linktree", all(f'name="{k}"' not in c.get("/admin/testi").get_data(as_text=True) for k in ("threads", "x", "linktree")))
+form.update({"instagram": "https://www.instagram.com/a/", "facebook": "https://www.facebook.com/b", "tiktok": "https://www.tiktok.com/@c"})
+c.post("/admin/testi", data=form)
+sec = c.get("/").get_data(as_text=True).split('id="contatti"')[1].split("</section>")[0]
+check("Contatti: solo Instagram, Facebook, TikTok", ">Instagram<" in sec and ">Facebook<" in sec and ">TikTok<" in sec and "Linktree" not in sec)
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

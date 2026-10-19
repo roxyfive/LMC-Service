@@ -29,7 +29,7 @@
  "description":"Service per eventi: audio, luci, ledwall, videosorveglianza e allestimenti.","image":request.host_url+"static/img/logo-1200.jpg",
  "url":request.host_url,"foundingDate":"2025-02-16","founder":{"@type":"Person","name":s.owner},
  "address":{"@type":"PostalAddress","addressLocality":"Napoli","addressCountry":"IT"},
- "areaServed":"IT","sameAs":[s.instagram,s.facebook,s.tiktok,s.threads,s.x]|select|list} %}
+ "areaServed":"IT","sameAs":[s.instagram,s.facebook,s.tiktok]|select|list} %}
 {% if tel %}{% set _ = ld.update(telephone=tel) %}{% endif %}{% if mail %}{% set _ = ld.update(email=mail) %}{% endif %}
 <script type="application/ld+json">{{ ld|tojson }}</script>
 </head>
@@ -274,35 +274,35 @@
 </section></div>
 
 <div class="orn" aria-hidden="true"><i></i></div>
-<section id="contatti" class="sec" aria-labelledby="contatti-h">
+<section id="contatti" class="contatti" aria-labelledby="contatti-h">
   {% set lead = (s.team|selectattr('phone')|list|first) if s.team else none %}
   {% set call = lead.phone if lead else tel %}
   <div class="contact">
-    <div class="reveal" data-anim="left">
-      <p class="kicker">Contatti</p><hr class="rule">
-      <h2 id="contatti-h">Raccontaci il tuo evento</h2>
+    <div class="contact-intro reveal" data-anim="left">
+      <p class="kicker">Contatti</p>
+      <div class="orn-line" aria-hidden="true"><i></i><b></b><i></i></div>
+      <h2 id="contatti-h">Raccontaci<br>il tuo <em>evento</em></h2>
       <p class="big">Noleggio attrezzature, organizzazione eventi e allestimenti a Napoli e in tutta Italia.{% if orari %} {{ orari }}.{% endif %} Scrivici data, luogo e servizi che ti servono: ti rispondiamo con un preventivo su misura.</p>
       <div class="cta">
-        <a class="btn btn-night" href="#preventivo">Richiedi un preventivo</a>
-        {% if call %}<a class="btn btn-line" href="tel:{{ call|replace(' ','') }}">Chiama{{ ' ' ~ lead.name if lead }}</a>{% endif %}
-        {% if s.whatsapp %}<a class="btn btn-line" href="https://wa.me/{{ s.whatsapp }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
-        <a class="btn btn-line" href="#prenota">Prenota</a>
+        <a class="btn btn-gold" href="#preventivo">Richiedi un preventivo</a>
+        {% if call %}<a class="btn btn-gold-line" href="tel:{{ call|replace(' ','') }}">Chiama{{ ' ' ~ lead.name if lead }}</a>{% endif %}
+        {% if s.whatsapp %}<a class="btn btn-gold-line" href="https://wa.me/{{ s.whatsapp }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+        <a class="btn btn-gold-line" href="#prenota">Prenota</a>
       </div>
-      {% if s.instagram %}<p style="margin-top:1.2rem;color:var(--muted)">Preventivi anche in DM su <a href="{{ s.instagram }}" target="_blank" rel="noopener">Instagram</a>.</p>{% endif %}
     </div>
     <div class="contact-card reveal" data-anim="right">
       <dl>
-        <div><dt>Team</dt><dd>
+        <div class="crow"><span class="ci" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span><div><dt>Team</dt><dd>
           {% if s.team %}<ul class="team">{% for m in s.team %}<li><strong>{{ m.name }}</strong>{% if m.role %} <span class="role">{{ m.role }}</span>{% endif %}
             {% if m.phone %}<br><a href="tel:{{ m.phone|replace(' ','') }}">{{ m.phone }}</a>{% endif %}{% if m.email %}<br><a href="mailto:{{ m.email }}">{{ m.email }}</a>{% endif %}{% if m.note %}<br><span class="note-s">{{ m.note }}</span>{% endif %}</li>{% endfor %}</ul>
           {% elif tel %}<a href="tel:{{ tel|replace(' ','') }}">{{ tel }}</a>
-          {% else %}<span class="todo">Da comunicare</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div>
-        {% if mail %}<div><dt>Email</dt><dd><a href="mailto:{{ mail }}">{{ mail }}</a></dd></div>{% endif %}
-        <div><dt>Orari</dt><dd>{% if orari %}{{ orari }}{% else %}<span class="todo">Su appuntamento</span>{% endif %}</dd></div>
-        <div><dt>Sede</dt><dd>{% if s.zone and s.indirizzo and s.indirizzo.lower() in s.zone.lower() %}{{ s.zone }}{% else %}{{ s.indirizzo }} · {{ s.zone }}{% endif %}</dd></div>
-        <div><dt>Social</dt><dd class="social">
-          {% for k,l in [('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok'),('threads','Threads'),('x','X'),('linktree','Linktree')] %}
-          {% if s[k] %}<a href="{{ s[k] }}" target="_blank" rel="noopener">{{ l }}</a>{% endif %}{% endfor %}</dd></div>
+          {% else %}<span class="todo">Da comunicare</span> {% if demo %}<span class="demo-tag">Demo</span>{% endif %}{% endif %}</dd></div></div>
+        {% if mail %}<div class="crow"><span class="ci" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/></svg></span><div><dt>Email</dt><dd><a href="mailto:{{ mail }}">{{ mail }}</a></dd></div></div>{% endif %}
+        <div class="crow"><span class="ci" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><dt>Orari</dt><dd>{% if orari %}{{ orari }}{% else %}<span class="todo">Su appuntamento</span>{% endif %}</dd></div></div>
+        <div class="crow"><span class="ci" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 0 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><dt>Sede</dt><dd>{% if s.zone and s.indirizzo and s.indirizzo.lower() in s.zone.lower() %}{{ s.zone }}{% else %}{{ s.indirizzo }} · {{ s.zone }}{% endif %}</dd></div></div>
+        {% if s.instagram or s.facebook or s.tiktok %}<div class="crow"><span class="ci" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6" r="2.4"/><circle cx="17" cy="18" r="2.4"/><path d="m8.2 10.8 6.6-3.6M8.2 13.2l6.6 3.6"/></svg></span><div><dt>Social</dt><dd class="social">
+          {% for k,l in [('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok')] %}
+          {% if s[k] %}<a href="{{ s[k] }}" target="_blank" rel="noopener">{{ l }}</a>{% endif %}{% endfor %}</dd></div></div>{% endif %}
       </dl>
     </div>
   </div>
