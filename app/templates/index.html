@@ -34,6 +34,7 @@
 <script type="application/ld+json">{{ ld|tojson }}</script>
 </head>
 <body>
+<canvas id="pageFx" class="page-fx" aria-hidden="true"></canvas>
 {% macro skill_icon(slug) -%}
 <svg class="sk-ico sk-{{ slug }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 {%- if slug == 'videosorveglianza' %}
@@ -367,13 +368,14 @@
   <div class="chat-h"><span class="chat-id"><img src="/static/img/logo-3d-128.webp" width="34" height="34" alt=""><b>Assistente LMC AI</b></span><button id="chatX" aria-label="Chiudi">✕</button></div>
   <p class="chat-note">Assistente automatico (non una persona). I messaggi servono a rispondere e, se lo chiedi, vengono inoltrati al team. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></p>
   <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi, appuntamenti o contatti: puoi scrivere oppure parlare.</p></div>
+  <div id="chatSug" class="chat-sug" role="group" aria-label="Domande suggerite" hidden></div>
   <div id="chatAct"></div>
   <div class="chat-tools">
     <button type="button" id="voiceBtn" class="tool" aria-pressed="false">🎙️ Parla con l'assistente</button>
     <button type="button" id="vapiBtn" class="tool" hidden>✨ Voce naturale</button>
     <button type="button" id="waBtn" class="tool wa" hidden>Invia riepilogo su WhatsApp</button>
   </div>
-  <p id="voiceStatus" class="voice-status" aria-live="polite" hidden></p>
+  <div id="voiceBar" class="voice-bar" hidden><span class="wave" id="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span id="voiceStatus" class="voice-status" aria-live="polite"></span></div>
   <form id="waForm" class="wa-form" hidden novalidate>
     <label>Il tuo nome<input name="name" autocomplete="name"></label>
     <label>Telefono<input name="phone" type="tel" required autocomplete="tel"></label>
@@ -381,7 +383,7 @@
     <label class="chk"><input type="checkbox" name="consent" required> Acconsento a essere ricontattato su questo numero. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></label>
     <button class="btn btn-gold" type="submit">Invia a LMC</button><p class="msg" id="waMsg" aria-live="polite"></p>
   </form>
-  <form id="chatForm" class="chat-f"><button type="button" id="mic" aria-label="Detta il messaggio">🎤</button>
+  <form id="chatForm" class="chat-f"><button type="button" id="mic" class="mic-btn" aria-label="Parla con l'assistente: tocca e parla" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button>
     <input id="chatIn" placeholder="Scrivi qui…" aria-label="Il tuo messaggio" autocomplete="off" maxlength="300"><button class="btn btn-gold" aria-label="Invia">➤</button></form>
 </div>
 <div id="install" class="install" hidden><span>Installa l'app LMC Service</span><button id="installBtn" class="btn btn-gold">Installa</button><button id="installX" class="chip" aria-label="Chiudi">✕</button></div>

@@ -233,6 +233,7 @@ TEXT_FIELDS = [("claim", "Claim", "text"), ("tagline", "Sottotitolo", "text"), (
                ("email", "Email", "text"), ("indirizzo", "Indirizzo / città", "text"), ("orari", "Orari", "text"),
                ("instagram", "Instagram – URL del profilo", "text"), ("facebook", "Facebook – URL della pagina", "text"),
                ("facebook_nome", "Facebook – nome pagina mostrato nel footer", "text"), ("sito_url", "Sito ufficiale – URL (footer \"Seguici\")", "text"), ("tiktok", "TikTok – URL", "text"),
+               ("chat_suggerimenti", "Suggerimenti chat – domande pronte, una per riga, max 4 (vuoto = automatiche dai dati del sito)", "area"),
                ("privacy", "Informativa privacy", "area")]
 
 

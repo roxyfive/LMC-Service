@@ -96,22 +96,32 @@
   });
 
   /* ---------- configurazione pubblica (nessun segreto) ---------- */
-  let CFG = { wa_ready: false, admin: false, vapi: { enabled: false }, emergency: { on: false }, contact_wa: '' };
+  let CFG = { wa_ready: false, admin: false, vapi: { enabled: false }, emergency: { on: false }, contact_wa: '', suggestions: [] };
   const cfgReady = fetch('/api/config', { cache: 'no-store' }).then(r => r.json()).then(c => { CFG = c; return c; }).catch(() => CFG);
 
   /* ---------- chat + assistente vocale ---------- */
   const chat = $('#chat'), log = $('#chatLog'), act = $('#chatAct'), inp = $('#chatIn'), chatBtn = $('#chatBtn');
-  const voiceBtn = $('#voiceBtn'), vapiBtn = $('#vapiBtn'), waBtn = $('#waBtn'), waForm = $('#waForm'), vStatus = $('#voiceStatus');
+  const voiceBtn = $('#voiceBtn'), vapiBtn = $('#vapiBtn'), waBtn = $('#waBtn'), waForm = $('#waForm'), vStatus = $('#voiceStatus'), vBar = $('#voiceBar'), wave = $('#wave'), sug = $('#chatSug');
   const toggleChat = open => { chat.hidden = !open; chatBtn.setAttribute('aria-expanded', open); if (open) { inp.focus(); initTools(); } else stopVoice(); };
   chatBtn.onclick = () => toggleChat(chat.hidden);
   $('#chatX').onclick = () => { toggleChat(false); chatBtn.focus(); };
   const hist = [];
   const add = (cls, t) => { const p = document.createElement('p'); p.className = cls; p.textContent = t; log.appendChild(p); log.scrollTop = log.scrollHeight; };
-  const setStatus = t => { vStatus.hidden = !t; vStatus.textContent = t || ''; };
+  const setStatus = t => { vBar.hidden = !t; vStatus.textContent = t || ''; if (!t) setWave(''); };
+  const setWave = st => { wave.dataset.state = st || ''; };        // '' | listen | think | speak: onde animate in CSS
+
+  /* suggerimenti: domande pronte (dai dati del sito o scritte in Admin); spariscono quando si scrive o si invia */
+  function hideSug() { if (sug.hidden || sug.classList.contains('gone')) return; sug.classList.add('gone'); setTimeout(() => { sug.hidden = true; }, 350); }
+  function renderSug(list) {
+    sug.innerHTML = ''; sug.classList.remove('gone');
+    (list || []).slice(0, 4).forEach((t, i) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sug'; b.style.setProperty('--i', i); b.textContent = t; b.onclick = () => ask(t); sug.appendChild(b); });
+    sug.hidden = !sug.children.length;
+  }
+  inp.addEventListener('input', () => { if (inp.value) hideSug(); });
 
   async function ask(text) {
     if (!text.trim()) return '';
-    add('me', text); hist.push({ role: 'user', content: text }); act.innerHTML = '';
+    hideSug(); add('me', text); hist.push({ role: 'user', content: text }); act.innerHTML = '';
     const r = await post('/api/chat', { messages: hist });
     const reply = r.ok ? r.data.reply : 'Al momento non riesco a rispondere. Usa la sezione Contatti.';
     add('bot', reply); hist.push({ role: 'assistant', content: reply });
@@ -124,52 +134,66 @@
   }
   $('#chatForm').addEventListener('submit', e => { e.preventDefault(); const t = inp.value; inp.value = ''; ask(t); });
 
-  /* dettatura singola (microfono nel campo di testo) */
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $('#mic');
-  if (SR) {
-    const rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = false;
-    rec.onresult = e => ask(e.results[0][0].transcript); rec.onend = () => mic.classList.remove('rec');
-    mic.onclick = () => { try { mic.classList.add('rec'); rec.start(); } catch (e) { mic.classList.remove('rec'); } };
-  } else mic.style.display = 'none';
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition, mic = $('#mic');   // il microfono è sempre visibile: spiega cosa manca se non è disponibile
 
   /* conversazione a voce: ascolta (riconoscimento del browser) -> risponde -> legge la risposta -> ascolta ancora.
      Parte SOLO quando il cliente tocca "Parla con l'assistente"; la sintesi vocale del browser è la base, Vapi dà una voce più naturale. */
   const synth = window.speechSynthesis;
   let voiceOn = false, curRec = null, tts = null;
-  const pickVoice = () => {
-    const vs = (synth ? synth.getVoices() : []).filter(v => /^it/i.test(v.lang));
-    return vs.find(v => /(natural|neural|online|premium)/i.test(v.name)) || vs.find(v => /(google|elsa|isabella|alice|luca|cosimo)/i.test(v.name)) || vs[0] || null;
-  };
+  const voiceScore = v => { const n = v.name.toLowerCase(); let k = 0;
+    if (/natural|neural|online/.test(n)) k += 6; if (/premium|enhanced|migliorat/.test(n)) k += 4; if (/google/.test(n)) k += 3;
+    if (/elsa|isabella|diego|alice|federica|luca|cosimo|paola|emma/.test(n)) k += 2; if (/compact|espeak/.test(n)) k -= 4;
+    if (v.lang.replace('_', '-').toLowerCase() === 'it-it') k += 1; return k; };
+  const pickVoice = () => (synth ? synth.getVoices() : []).filter(v => /^it/i.test(v.lang)).sort((x, y) => voiceScore(y) - voiceScore(x))[0] || null;
   const speak = text => new Promise(res => {
     if (!synth) return res();
-    const u = new SpeechSynthesisUtterance(text.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' '));
-    u.lang = 'it-IT'; u.rate = .98; const v = pickVoice(); if (v) u.voice = v;
-    let done = false; const fin = () => { if (!done) { done = true; clearTimeout(tm); tts = null; res(); } };
-    const tm = setTimeout(fin, 25000); u.onend = fin; u.onerror = fin; tts = fin;
-    synth.cancel(); synth.speak(u);
+    const clean = text.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim();
+    const chunks = []; (clean.match(/[^.!?;:]+[.!?;:]*\s*/g) || [clean]).forEach(p => { const l = chunks[chunks.length - 1]; if (l && (l + p).length < 170) chunks[chunks.length - 1] = l + p; else chunks.push(p); });
+    let stopped = false; const v = pickVoice();
+    const fin = () => { if (!stopped) { stopped = true; clearTimeout(tm); tts = null; setWave(''); res(); } };
+    const tm = setTimeout(fin, 60000); tts = fin; setWave('speak'); synth.cancel();
+    const next = () => { if (stopped) return; const t = chunks.shift(); if (!t) return fin();
+      const u = new SpeechSynthesisUtterance(t); u.lang = 'it-IT'; u.rate = .97; u.pitch = 1; if (v) u.voice = v; u.onend = next; u.onerror = fin; synth.speak(u); };
+    next();
   });
+  /* permesso microfono: messaggi chiari se negato / assente (su telefono compare la richiesta del browser) */
+  async function ensureMic() {
+    if (!window.isSecureContext) return 'Il microfono funziona solo su connessione sicura (https). Puoi scrivere qui sotto.';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return '';
+    try { const st = await navigator.mediaDevices.getUserMedia({ audio: true }); st.getTracks().forEach(t => t.stop()); return ''; }
+    catch (e) {
+      if (/NotAllowed|Security|PermissionDenied/i.test(e.name)) return 'Il microfono è bloccato. Tocca il lucchetto accanto all’indirizzo del sito, scegli “Consenti microfono” e riprova. Intanto puoi scrivere qui sotto.';
+      if (/NotFound|Overconstrained/i.test(e.name)) return 'Non trovo nessun microfono su questo dispositivo: puoi scrivere qui sotto.';
+      if (/NotReadable|Abort/i.test(e.name)) return 'Il microfono è in uso da un’altra app: chiudila e riprova.';
+      return 'Non riesco ad accedere al microfono. Puoi scrivere qui sotto.';
+    }
+  }
+  const showInterim = t => { let p = log.querySelector('.interim'); if (!t) { if (p) p.remove(); return; }
+    if (!p) { p = document.createElement('p'); p.className = 'me interim'; log.appendChild(p); } p.textContent = t; log.scrollTop = log.scrollHeight; };
   const listenOnce = () => new Promise(res => {
-    const r = new SR(); curRec = r; r.lang = 'it-IT'; r.interimResults = false; r.maxAlternatives = 1;
-    let out = '', err = '';
-    r.onresult = e => { out = e.results[0][0].transcript; };
+    const r = new SR(); curRec = r; r.lang = 'it-IT'; r.interimResults = true; r.maxAlternatives = 1;
+    let out = '', tmp = '', err = '';
+    r.onresult = e => { let f = '', t = ''; for (const x of e.results) { if (x.isFinal) f += x[0].transcript; else t += x[0].transcript; } if (f) out = f; tmp = t; showInterim(f || t); };
     r.onerror = e => { err = e.error; };
-    r.onend = () => { curRec = null; res({ text: out, err }); };
+    r.onend = () => { curRec = null; showInterim(''); res({ text: out || tmp, err }); };
     try { r.start(); } catch (e) { res({ text: '', err: 'start' }); }
   });
   function stopVoice(msg) {
-    voiceOn = false; voiceBtn.setAttribute('aria-pressed', 'false'); voiceBtn.textContent = '🎙️ Parla con l\'assistente';
+    voiceOn = false; voiceBtn.setAttribute('aria-pressed', 'false'); mic.setAttribute('aria-pressed', 'false'); mic.classList.remove('rec'); voiceBtn.textContent = '🎙️ Parla con l\'assistente';
     if (curRec) { try { curRec.abort(); } catch (e) { } } if (synth) synth.cancel(); if (tts) tts(); setStatus(msg || '');
     if (vapiCall) { try { vapiCall.stop(); } catch (e) { } vapiCall = null; if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'false'); }
   }
   async function voiceLoop() {
     let silent = 0;
     while (voiceOn) {
-      setStatus('Ti ascolto… parla pure');
+      setStatus('Ti ascolto… parla pure'); setWave('listen');
       const { text, err } = await listenOnce();
       if (!voiceOn) return;
-      if (err === 'not-allowed' || err === 'service-not-allowed') return stopVoice('Il microfono è bloccato: consentilo nelle impostazioni del browser, oppure scrivi.');
+      if (err === 'not-allowed' || err === 'service-not-allowed') return stopVoice('Il microfono è bloccato: tocca il lucchetto accanto all’indirizzo, consenti il microfono e riprova, oppure scrivi.');
+      if (err === 'audio-capture') return stopVoice('Non trovo il microfono: controlla che sia collegato o scrivi qui sotto.');
+      if (err === 'network') return stopVoice('Il riconoscimento vocale richiede connessione a internet: riprova o scrivi qui sotto.');
       if (!text) { if (++silent >= 2) return stopVoice('Non ti sento: tocca di nuovo "Parla con l\'assistente" per riprovare.'); continue; }
-      silent = 0; setStatus('Sto pensando…');
+      silent = 0; setStatus('Sto pensando…'); setWave('think');
       const reply = await ask(text);
       if (!voiceOn) return;
       setStatus('Sto rispondendo…'); await speak(reply);
@@ -178,12 +202,11 @@
   voiceBtn.onclick = async () => {
     if (voiceOn) return stopVoice();
     if (!SR) { add('bot', 'Il tuo browser non supporta il riconoscimento vocale: usa Chrome, Edge o Safari, oppure scrivi qui sotto.'); return; }
-    if (!window.isSecureContext) { add('bot', 'Il microfono funziona solo su connessione sicura (https). Puoi scrivere qui sotto.'); return; }
-    voiceOn = true; voiceBtn.setAttribute('aria-pressed', 'true'); voiceBtn.textContent = '⏹ Termina conversazione vocale';
+    const bad = await ensureMic(); if (bad) { add('bot', bad); return; }
+    voiceOn = true; voiceBtn.setAttribute('aria-pressed', 'true'); mic.setAttribute('aria-pressed', 'true'); mic.classList.add('rec'); voiceBtn.textContent = '⏹ Termina conversazione vocale';
     if (synth && !synth.getVoices().length) await new Promise(r => { synth.onvoiceschanged = r; setTimeout(r, 600); });
     voiceLoop();
   };
-
   /* voce naturale con Vapi (solo se configurato in Admin); il SDK si scarica solo al tocco */
   let vapiCall = null, vapiLoaded = null;
   const loadVapi = () => vapiLoaded || (vapiLoaded = new Promise((res, rej) => {
@@ -192,16 +215,20 @@
   async function startVapi(emergency) {
     const c = await cfgReady; if (!c.vapi.enabled) return false;
     try {
+      const bad = await ensureMic(); if (bad) { add('bot', bad); return true; }
       const Vapi = await loadVapi(); const v = new Vapi(c.vapi.public_key); vapiCall = v;
       setStatus('Mi collego all\'assistente vocale…');
-      v.on('call-start', () => { setStatus('In linea: parla pure. Tocca di nuovo per terminare.'); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'true'); });
-      v.on('call-end', () => { vapiCall = null; setStatus(''); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'false'); });
+      v.on('speech-start', () => { setWave('speak'); }); v.on('speech-end', () => { setWave('listen'); });
+      v.on('call-start', () => { setStatus('In linea: parla pure. Tocca di nuovo per terminare.'); setWave('listen'); mic.classList.add('rec'); mic.setAttribute('aria-pressed', 'true'); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'true'); });
+      v.on('call-end', () => { vapiCall = null; setStatus(''); mic.classList.remove('rec'); mic.setAttribute('aria-pressed', 'false'); if (vapiBtn) vapiBtn.setAttribute('aria-pressed', 'false'); });
       v.on('message', m => { if (m && m.type === 'transcript' && m.transcriptType === 'final' && m.transcript) { const me = m.role === 'user'; add(me ? 'me' : 'bot', m.transcript); hist.push({ role: me ? 'user' : 'assistant', content: m.transcript }); showSummaryBtn(false); } });
       v.on('error', () => { vapiCall = null; setStatus(''); add('bot', 'La voce naturale non è disponibile in questo momento: puoi usare la conversazione vocale standard o scrivere.'); });
       await v.start((emergency && c.vapi.emergency_assistant_id) || c.vapi.assistant_id);
       return true;
     } catch (e) { vapiCall = null; setStatus(''); add('bot', 'Non riesco ad avviare la voce naturale. Uso la conversazione vocale standard.'); return false; }
   }
+  /* microfono nella chat: voce naturale Vapi se configurata, altrimenti Web Speech con la miglior voce italiana */
+  mic.onclick = async () => { if (vapiCall || voiceOn) return stopVoice(); const c = await cfgReady; if (c.vapi && c.vapi.enabled) vapiBtn.click(); else voiceBtn.click(); };
   vapiBtn.onclick = async () => { if (vapiCall) return stopVoice(); if (voiceOn) stopVoice(); if (!(await startVapi(false))) voiceBtn.click(); };
 
   /* riepilogo su WhatsApp */
@@ -214,7 +241,7 @@
   async function initTools() {
     if (summaryShown) return; summaryShown = true;
     const c = await cfgReady;
-    vapiBtn.hidden = !c.vapi.enabled;
+    renderSug(c.suggestions); vapiBtn.hidden = !c.vapi.enabled;
     if (!c.wa_ready && c.admin) {          // chi gestisce il sito vede come attivarlo
       waBtn.textContent = 'Configura WhatsApp'; waBtn.dataset.admin = '1';
     }
@@ -348,30 +375,40 @@
     nums.forEach(n => { n.setAttribute('aria-label', n.textContent); if (!reduce) fmt(n, 0); cio.observe(n); });
   })();
 
-  /* ---------- particelle dorate nella hero (leggere: sprite pre-renderizzato, pausa fuori vista) ---------- */
-  (function () {
-    const cv = $('#heroFx'), hero = $('#hero'); if (!cv || reduce) return;
-    const g = cv.getContext('2d'), sprite = document.createElement('canvas'); sprite.width = sprite.height = 32;
-    const sg = sprite.getContext('2d'), gr = sg.createRadialGradient(16, 16, 0, 16, 16, 16);
-    gr.addColorStop(0, 'rgba(255,236,190,1)'); gr.addColorStop(.35, 'rgba(230,207,154,.45)'); gr.addColorStop(1, 'rgba(230,207,154,0)');
-    sg.fillStyle = gr; sg.fillRect(0, 0, 32, 32);
-    let W = 0, H = 0, P = [], run = false, last = 0;
-    const N = () => (innerWidth < 700 ? 14 : 30);
-    const fit = () => { W = cv.width = hero.clientWidth; H = cv.height = hero.clientHeight;
-      P = Array.from({ length: N() }, () => ({ x: Math.random() * W, y: Math.random() * H, r: 3 + Math.random() * 8, vy: 6 + Math.random() * 14, vx: (Math.random() - .5) * 6, ph: Math.random() * 6.28, a: .25 + Math.random() * .5 })); };
+  /* ---------- polvere d'oro rotante: hero + sfondo home (sprite pre-renderizzati, ~30 fps, pausa fuori vista / tab nascosta) ---------- */
+  function goldDust(cv, host, o) {
+    const g = cv.getContext('2d'), mk = f => { const c = document.createElement('canvas'); c.width = c.height = 48; f(c.getContext('2d')); return c; };
+    const dot = mk(x => { const r = x.createRadialGradient(24, 24, 0, 24, 24, 24); r.addColorStop(0, o.core); r.addColorStop(.3, o.mid); r.addColorStop(1, o.edge); x.fillStyle = r; x.fillRect(0, 0, 48, 48); });
+    const star = mk(x => { x.translate(24, 24); x.strokeStyle = o.core; x.lineCap = 'round'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(0, -22); x.lineTo(0, 22); x.moveTo(-22, 0); x.lineTo(22, 0); x.stroke();
+      x.lineWidth = 1; x.globalAlpha = .6; x.beginPath(); x.moveTo(-8, -8); x.lineTo(8, 8); x.moveTo(8, -8); x.lineTo(-8, 8); x.stroke(); x.globalAlpha = 1; x.fillStyle = o.core; x.beginPath(); x.arc(0, 0, 2.6, 0, 6.3); x.fill(); });
+    let W = 0, H = 0, R = 0, P = [], run = false, last = 0, ang = 0;
+    const fit = () => { W = cv.width = Math.round(host.clientWidth * o.scale); H = cv.height = Math.round(host.clientHeight * o.scale); R = Math.hypot(W, H) / 2;
+      const n = innerWidth < 700 ? o.nMobile : o.nDesktop;
+      P = Array.from({ length: n }, () => ({ r: Math.sqrt(Math.random()) * R, a: Math.random() * 6.283, w: .6 + Math.random() * .8, s: (3 + Math.random() * 7) * o.scale * (o.size || 1), ph: Math.random() * 6.283, tw: .8 + Math.random() * 1.8, al: .35 + Math.random() * .65, star: Math.random() < .22, dr: (Math.random() - .5) * 5 * o.scale })); };
     fit(); addEventListener('resize', fit);
     const frame = t => {
-      if (!run) return; const dt = Math.min(.05, (t - last) / 1000); last = t;
+      if (!run) return; requestAnimationFrame(frame);
+      if (t - last < 33) return; const dt = Math.min(.08, (t - last) / 1000); last = t;
+      ang += dt * o.spin; const cx = W / 2, cy = H / 2, ca = Math.cos(ang), sa = Math.sin(ang);
       g.clearRect(0, 0, W, H);
       for (const p of P) {
-        p.y -= p.vy * dt; p.x += p.vx * dt; p.ph += dt * 1.6; if (p.y < -20) { p.y = H + 20; p.x = Math.random() * W; }
-        g.globalAlpha = p.a * (.55 + .45 * Math.sin(p.ph)); g.drawImage(sprite, p.x - p.r, p.y - p.r, p.r * 2, p.r * 2);
+        p.a += dt * .018 * p.w; p.r += p.dr * dt; p.ph += dt * p.tw;
+        if (p.r > R) p.r = 0; else if (p.r < 0) p.r = R;
+        const x0 = Math.cos(p.a) * p.r, y0 = Math.sin(p.a) * p.r * .82, x = cx + x0 * ca - y0 * sa, y = cy + x0 * sa + y0 * ca;
+        if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
+        const tw = .5 + .5 * Math.sin(p.ph), sz = p.s * (p.star ? .8 + tw * .9 : 1);
+        g.globalAlpha = p.al * (p.star ? tw * tw : .45 + .55 * tw); g.drawImage(p.star ? star : dot, x - sz, y - sz, sz * 2, sz * 2);
       }
-      requestAnimationFrame(frame);
     };
     const upd = vis => { const go = vis && !document.hidden; if (go && !run) { run = true; last = performance.now(); requestAnimationFrame(frame); } else if (!go) run = false; };
-    let vis = true; new IntersectionObserver(es => { vis = es[0].isIntersecting; upd(vis); }, { threshold: .05 }).observe(hero);
+    let vis = true; new IntersectionObserver(es => { vis = es[0].isIntersecting; upd(vis); }, { threshold: 0 }).observe(host);
     document.addEventListener('visibilitychange', () => upd(vis));
+  }
+  (function () {
+    if (reduce) return;
+    const cv = $('#heroFx'), hero = $('#hero');
+    if (cv && hero) goldDust(cv, hero, { core: 'rgba(255,240,200,1)', mid: 'rgba(230,207,154,.5)', edge: 'rgba(230,207,154,0)', scale: 1, nMobile: 16, nDesktop: 34, spin: .035 });
+    const pg = $('#pageFx'); if (pg) goldDust(pg, document.documentElement, { core: 'rgba(205,163,70,1)', mid: 'rgba(214,176,92,.5)', edge: 'rgba(214,176,92,0)', scale: .6, size: 2.1, nMobile: 14, nDesktop: 30, spin: .02 });
   })();
 
   /* ---------- intro: musica + didascalie animate (voce.mp3 e voce.json solo se presenti) ---------- */

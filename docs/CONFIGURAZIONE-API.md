@@ -97,3 +97,7 @@ Il pulsante rosso apre una finestra con **"Chiama ora"** (`tel:`), il modulo di 
 | `401` / "Authenticate" | Account SID o Auth Token sbagliati. |
 | Il pulsante "Voce naturale" non compare | Mancano Public Key o Assistant ID. |
 | Il microfono non parte | Serve HTTPS (o localhost) e il permesso del browser; Firefox non ha il riconoscimento vocale integrato. |
+
+## Suggerimenti della chat e conversazione vocale
+- **Suggerimenti**: la chat mostra 3-4 domande pronte. Di default sono generate dai dati reali del sito (primo servizio, prossima disponibilità, preventivo, emergenza o contatto del team). Per sceglierle tu: **Admin › Testi › "Suggerimenti chat"**, una domanda per riga (max 4); se il campo è vuoto tornano quelle automatiche.
+- **Voce**: il microfono nella chat è sempre visibile. Con Vapi configurato (Admin › Impostazioni) usa la voce naturale Vapi; altrimenti usa la voce italiana migliore disponibile nel browser (Web Speech). Il permesso del microfono viene chiesto al primo tocco; se negato la chat spiega come riattivarlo.

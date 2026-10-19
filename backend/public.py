@@ -230,6 +230,7 @@ def api_config():
         wa_ready=notify.twilio_ready(), admin=bool(session.get("admin")),
         vapi=dict(enabled=notify.vapi_ready(), public_key=notify.cfg("vapi_public_key"), assistant_id=notify.cfg("vapi_assistant_id"),
                   emergency_assistant_id=notify.cfg("vapi_emergency_assistant_id")),
+        suggestions=ai.suggestions(),
         emergency=dict(on=bool(on and num), number=num, hours=hours, open_now=_open_now(hours)),
         contact_wa=notify.normalize_number(get_setting("whatsapp", "")) or num)
     r.headers["Cache-Control"] = "no-store"

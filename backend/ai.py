@@ -90,7 +90,17 @@ def fallback(text):
                     extra = f" {m['note']}." if m["note"] else ""
                     return (f"Puoi contattare {m['name']}" + (f" ({m['role'].lower()})" if m["role"] else "") + ": " + ", ".join(parts) + "." + extra, None)
             return (f"{_person(m)}.", None)
-    if _has(t, "prenot", "appuntament", "dispon", "quando posso"):
+    for x in _servizi(s):                                   # un servizio citato per nome: spiega cosa comprende
+        if x.get("nome") and x["nome"].lower() in t:
+            return (f"{x['nome']}: {x.get('testo', '')} Per i dettagli e il prezzo ti prepariamo un preventivo su misura.", "preventivo")
+    if _has(t, "emergenz", "urgenz", "guasto", "sos", "assistenza urgente"):
+        from .public import _emergency_cfg
+        on, number, hours = _emergency_cfg()
+        if on and number:
+            return (f"Per un guasto o un'urgenza usa il pulsante rosso \"Emergenza 24h\": parli subito con l'assistente AI, che raccoglie la richiesta e la gira a chi è di turno. "
+                    f"In alternativa chiami direttamente il {number}. Orario di risposta: {hours}.", None)
+        return ("Per un'urgenza chiamaci o scrivici su WhatsApp: ti rispondiamo appena possibile.", None)
+    if _has(t, "prenot", "appuntament", "dispon", "quando posso", "liber"):
         sl = next_slots(3)
         return ("Puoi prenotare dal calendario del sito. Prossimi orari liberi: "
                 + (", ".join(sl) if sl else "nessuno al momento, scrivici o chiamaci") + ". Premi 'Prenota ora'.", "prenota")
@@ -139,3 +149,37 @@ def chat(messages):
         except Exception:
             pass
     return fallback(last)
+
+
+_MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"]
+
+
+def suggestions(limit=4):
+    """Domande pronte per la chat: se l'admin ne ha scritte (Admin > Testi) vincono quelle; altrimenti si
+    generano dai dati reali del sito (servizi, disponibilità, team, emergenza)."""
+    s = all_settings()
+    manual = [x.strip()[:80] for x in (s.get("chat_suggerimenti") or "").splitlines() if x.strip()]
+    if manual:
+        return manual[:limit]
+    out = []
+    serv = [x["nome"] for x in _servizi(s) if x.get("nome")]
+    if serv:
+        out.append(f"Cosa comprende «{serv[0]}»?")
+    try:
+        sl = next_slots(1)
+        mese = _MESI[int(sl[0][5:7]) - 1] if sl else _MESI[(date.today().month % 12)]
+    except Exception:
+        mese = _MESI[(date.today().month % 12)]
+    out.append(f"Siete disponibili a {mese}?")
+    out.append("Come funziona il preventivo?")
+    try:
+        from .public import _emergency_cfg
+        on, number, _h = _emergency_cfg()
+    except Exception:
+        on, number = False, ""
+    if on and number:
+        out.append("Come funziona l'emergenza 24h?")
+    else:
+        lead = next((m for m in _team() if _real(m["phone"])), None)
+        out.append(f"Qual è il numero di {lead['name']}?" if lead else "Come posso contattarvi?")
+    return out[:limit]
