@@ -13,4 +13,5 @@ SECRET_KEY = os.getenv("SECRET_KEY") or os.urandom(24).hex()
 PORT = int(os.getenv("PORT", "5000"))
 MAX_IMG = 12 * 1024 * 1024
 MAX_VID = 60 * 1024 * 1024
-CATEGORIES = ["Eventi", "Show Demo", "Audio", "Luci", "Video", "Progettazione", "Meeting"]
+CATEGORIES = ["Eventi", "Installazioni", "Show Demo", "Audio", "Luci", "Video", "Progettazione", "Meeting"]
+FOTO_DIR = Path(os.getenv("FOTO_DIR") or ROOT / "foto" / "organizzate")

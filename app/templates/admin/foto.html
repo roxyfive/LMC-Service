@@ -11,6 +11,9 @@
   </form>
   <p id="upMsg"></p>
 </div>
+<form method="post" action="/admin/foto/sincronizza"><input type="hidden" name="csrf" value="{{ csrf }}">
+  <button class="btn s">Sincronizza cartella foto/organizzate</button>
+  <span class="mut">importa le foto/video messi in hero, galleria, installazioni, video</span></form>
 <p class="mut">Trascina le card per riordinare. Il badge <b>SEGNAPOSTO</b> indica immagini generate: sostituiscile con foto vere.</p>
 <div class="photos" id="photos">
 {% for m in items %}

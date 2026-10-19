@@ -76,8 +76,10 @@ def index():
     videos = [m for m in media if m["kind"] == "video"]
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
     reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
+    used = {m["category"] for m in gallery}
     return render_template("index.html", s=s, gallery=gallery, home=home, intro=intro, videos=videos,
-                           hero=hero, reviews=reviews, cats=CATEGORIES, event_types=EVENT_TYPES,
+                           hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
+                           has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
                            services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"))
 
 

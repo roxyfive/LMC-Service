@@ -3,3 +3,6 @@ data/
 __pycache__/
 *.pyc
 .venv/
+foto/da_social/*
+!foto/da_social/.gitkeep
+!foto/da_social/LEGGIMI.md

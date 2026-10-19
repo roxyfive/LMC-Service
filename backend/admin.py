@@ -180,6 +180,15 @@ def foto_upload():
     return redirect(url_for("admin.foto"))
 
 
+@bp.route("/foto/sincronizza", methods=["POST"])
+@admin_required
+def foto_sync():
+    from .foto_sync import sync
+    done, skipped = sync()
+    flash(f"Cartella foto/organizzate: {len(done)} file importati, {len(skipped)} saltati." + (" " + "; ".join(skipped[:5]) if skipped else ""))
+    return redirect(url_for("admin.foto"))
+
+
 @bp.route("/foto/<int:i>", methods=["POST"])
 @admin_required
 def foto_update(i):

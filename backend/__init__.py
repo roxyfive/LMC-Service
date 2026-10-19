@@ -18,6 +18,12 @@ def create_app():
     from .seed import seed
     seed()
     app.teardown_appcontext(close_db)
+    from .foto_sync import sync as sync_foto
+    with app.app_context():
+        try:
+            sync_foto()  # pubblica le foto/video nuove di foto/organizzate/
+        except Exception as e:  # un file rovinato non deve impedire l'avvio
+            print("Sincronizzazione foto non riuscita:", e)
     from .public import bp as pub
     from .admin import bp as adm
     app.register_blueprint(pub)
