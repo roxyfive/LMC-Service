@@ -136,32 +136,31 @@ def build():
     H = np.where(fil, 1.0 + 2.6 * np.sqrt(np.clip(1 - (g / 0.9) ** 2, 0, 1)), H)
     M[fil] = 4
 
-    # antenna parabolica: guscio ellittico inclinato, bordo tondo e catino concavo
-    u, v = ellipse_coords(0, -44, 39, 23.5, -28)
-    rho = np.hypot(u, v)
-    dish = rho <= 1.0
-    rim_w = 0.17
-    rim = np.clip((rho - (1 - rim_w)) / rim_w, 0, 1)
-    bowl = 7.5 - 5.5 * (1 - np.clip(rho / (1 - rim_w), 0, 1) ** 2)       # paraboloide concavo
-    rimh = 7.5 + 1.6 * np.sqrt(np.clip(1 - ((rho - (1 - rim_w / 2)) / (rim_w / 2)) ** 2, 0, 1))
-    Hd = np.where(rho > 1 - rim_w, rimh, bowl)
-    H = np.where(dish, 2.0 + Hd, H)
-    M[dish] = 3
-    # alimentatore (feed) al centro: sfera dorata
-    fx, fy = -3, -47
-    fr = np.hypot(X - fx, Y - fy)
-    feed = fr < 4.0
-    H = np.where(feed, 2.0 + 7.5 + 7.0 * np.sqrt(np.clip(1 - (fr / 4.0) ** 2, 0, 1)), H)
-    M[feed] = 2
-    # braccio e base (cilindri)
-    for (x0, y0, x1, y1, wd) in ((0, -23.5, 0, -9, 2.0), (-11, -8, 11, -8, 1.9)):
-        dx, dy = x1 - x0, y1 - y0
-        L = math.hypot(dx, dy)
-        tt = np.clip(((X - x0) * dx + (Y - y0) * dy) / (L * L), 0, 1)
-        d = np.hypot(X - (x0 + tt * dx), Y - (y0 + tt * dy))
-        m = d < wd
-        H = np.where(m, np.maximum(H, 3.0 + 5.0 * np.sqrt(np.clip(1 - (d / wd) ** 2, 0, 1))), H)
-        M[m] = 2
+    # icona originale: disco/oblo ovale inclinato + due bande curve parallele sotto (a mezzaluna)
+    ANG, C0, RX0, RY0 = 43.0, (4.0, -40.0), 41.0, 17.0
+    ta = math.radians(ANG)
+    vx, vy = -math.sin(ta), math.cos(ta)                 # perpendicolare: verso in basso a sinistra
+    GAP = 1.7
+
+    def rho_of(shift, rx, ry, grow=0.0):
+        u, v = ellipse_coords(C0[0] + vx * shift, C0[1] + vy * shift, rx + grow, ry + grow, ANG)
+        return np.hypot(u, v)
+
+    bands = ((8.6, 39.0), (17.2, 31.0))
+    for k, (shift, rx) in enumerate(bands):
+        rho = rho_of(shift, rx, RY0)
+        gshift, grx = (0.0, RX0) if k == 0 else bands[k - 1]
+        g = rho_of(gshift, grx, RY0, GAP)                  # ellisse precedente ingrandita = fessura
+        mask = (rho <= 1.0) & (g > 1.0)
+        edge = np.minimum((1 - rho) * RY0, (g - 1) * RY0)
+        prof = np.sqrt(np.clip(edge / 1.8, 0, 1))
+        H = np.where(mask, 2.0 + 4.0 + 2.2 * prof, H)
+        M[mask] = 4
+    rho = rho_of(0.0, RX0, RY0)
+    disc = rho <= 1.0
+    dome = np.sqrt(np.clip(1 - rho ** 2, 0, 1))
+    H = np.where(disc, 2.0 + 5.0 + 3.0 * dome ** 0.35, H)
+    M[disc] = 4
 
     # scritta LMC (avorio lucido) in rilievo
     pf = font_ttf("playfair-display-latin-wght-normal.woff2")
@@ -276,8 +275,15 @@ def mono_svg():
     """Versione monocromatica bianca (trasparente) per sfondi scuri: footer, stampa, ricami."""
     return '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="LMC Service – La Music Company Service" fill="none" stroke="#fff">
   <circle cx="120" cy="120" r="110" stroke-width="3"/><circle cx="120" cy="120" r="103" stroke-width="1" stroke-opacity=".6"/>
-  <g transform="translate(120 78) rotate(-28)"><ellipse rx="37" ry="22" fill="#fff" stroke="none"/><ellipse cx="3" cy="3.5" rx="29" ry="15" fill="none" stroke-width="1.6"/><circle cx="-1" cy="-1" r="3.4" fill="#fff" stroke="none"/></g>
-  <path d="M120 96v16M108 114h24" stroke-width="3" stroke-linecap="round"/>
+  <defs>
+    <mask id="g1" maskUnits="userSpaceOnUse" x="-80" y="-60" width="160" height="140"><rect x="-80" y="-60" width="160" height="140" fill="#fff"/><ellipse rx="46.1" ry="20.7" fill="#000"/></mask>
+    <mask id="g2" maskUnits="userSpaceOnUse" x="-80" y="-60" width="160" height="140"><rect x="-80" y="-60" width="160" height="140" fill="#fff"/><ellipse cy="9.1" rx="43.9" ry="20.7" fill="#000"/></mask>
+  </defs>
+  <g transform="translate(124 78) rotate(43) scale(1.06)" fill="#fff" stroke="none">
+    <ellipse rx="41" ry="17"/>
+    <ellipse cy="8.6" rx="39" ry="17" mask="url(#g1)"/>
+    <ellipse cy="17.2" rx="31" ry="17" mask="url(#g2)"/>
+  </g>
   <text x="120" y="154" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="600" font-size="44" letter-spacing="5" fill="#fff" stroke="none">LMC</text>
   <path d="M52 167h22M166 167h22" stroke-width="1.4"/>
   <text x="120" y="172" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="600" font-size="12" letter-spacing="6.5" fill="#fff" stroke="none">SERVICE</text>

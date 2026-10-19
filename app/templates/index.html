@@ -317,6 +317,12 @@
     </div>
     <nav aria-label="Esplora"><p class="foot-h">Esplora</p>
       <ul><li><a href="#chi-siamo">Chi siamo</a></li><li><a href="#skill">Le nostre skill</a></li><li><a href="#eventi">Eventi realizzati</a></li><li><a href="#preventivo">Richiedi un preventivo</a></li><li><a href="#contatti">Contatti</a></li></ul></nav>
+    {% set _ig = (s.instagram or '').strip() %}{% set _fb = (s.facebook or '').strip() %}{% set _web = (s.sito_url or '').strip() %}
+    {% if _ig or _fb or _web %}<nav aria-label="Seguici" class="foot-social"><p class="foot-h">Seguici</p><ul>
+      {% if _ig %}<li><a href="{{ _ig }}" target="_blank" rel="noopener"><span class="soc-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r=".9" fill="currentColor" stroke="none"/></svg></span><span class="soc-t"><small>Instagram</small>@{{ _ig.rstrip('/').split('/')[-1].split('?')[0] }}</span></a></li>{% endif %}
+      {% if _fb %}<li><a href="{{ _fb }}" target="_blank" rel="noopener"><span class="soc-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8.5h2.6V5.2H14c-2.3 0-3.7 1.5-3.7 3.8v1.9H8v3.2h2.3V21h3.3v-6.9h2.4l.5-3.2h-2.9V9.3c0-.5.3-.8.9-.8z"/></svg></span><span class="soc-t"><small>Facebook</small>{{ s.facebook_nome or 'La Music Company Service' }}</span></a></li>{% endif %}
+      {% if _web %}<li><a href="{{ _web }}" target="_blank" rel="noopener"><span class="soc-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></span><span class="soc-t"><small>Web</small>Sito ufficiale</span></a></li>{% endif %}
+    </ul></nav>{% endif %}
     <nav aria-label="Informazioni legali"><p class="foot-h">Note legali</p>
       <ul><li><a href="/privacy">Informativa privacy</a></li><li><a href="/?intro=1">Rivedi l'intro</a></li>
       {% if demo %}<li>Foto e testi demo da sostituire · <span class="demo-tag">Demo</span></li><li>Dati societari (P.IVA): da inserire</li>{% endif %}</ul></nav>

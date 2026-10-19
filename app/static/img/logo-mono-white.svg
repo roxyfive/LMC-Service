@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="LMC Service – La Music Company Service" fill="none" stroke="#fff">
   <circle cx="120" cy="120" r="110" stroke-width="3"/><circle cx="120" cy="120" r="103" stroke-width="1" stroke-opacity=".6"/>
-  <g transform="translate(120 78) rotate(-28)"><ellipse rx="37" ry="22" fill="#fff" stroke="none"/><ellipse cx="3" cy="3.5" rx="29" ry="15" fill="none" stroke-width="1.6"/><circle cx="-1" cy="-1" r="3.4" fill="#fff" stroke="none"/></g>
-  <path d="M120 96v16M108 114h24" stroke-width="3" stroke-linecap="round"/>
+  <defs>
+    <mask id="g1" maskUnits="userSpaceOnUse" x="-80" y="-60" width="160" height="140"><rect x="-80" y="-60" width="160" height="140" fill="#fff"/><ellipse rx="46.1" ry="20.7" fill="#000"/></mask>
+    <mask id="g2" maskUnits="userSpaceOnUse" x="-80" y="-60" width="160" height="140"><rect x="-80" y="-60" width="160" height="140" fill="#fff"/><ellipse cy="9.1" rx="43.9" ry="20.7" fill="#000"/></mask>
+  </defs>
+  <g transform="translate(124 78) rotate(43) scale(1.06)" fill="#fff" stroke="none">
+    <ellipse rx="41" ry="17"/>
+    <ellipse cy="8.6" rx="39" ry="17" mask="url(#g1)"/>
+    <ellipse cy="17.2" rx="31" ry="17" mask="url(#g2)"/>
+  </g>
   <text x="120" y="154" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="600" font-size="44" letter-spacing="5" fill="#fff" stroke="none">LMC</text>
   <path d="M52 167h22M166 167h22" stroke-width="1.4"/>
   <text x="120" y="172" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="600" font-size="12" letter-spacing="6.5" fill="#fff" stroke="none">SERVICE</text>
