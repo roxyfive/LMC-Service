@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Richieste</h1>
+<h2>Appuntamenti</h2>
+<div class="scroll"><table><tr><th>Quando</th><th>Cliente</th><th>Evento</th><th>Stato</th><th></th></tr>
+{% for a in apps %}<tr><td>{{ a.slot_date }} {{ a.slot_time }}</td><td>{{ a.name }}<br>{{ a.phone }} {{ a.email }}</td>
+<td>{{ a.event_type }} {{ a.event_date }}<br><span class="mut">{{ a.notes }}</span></td><td><span class="badge">{{ a.status }}</span></td>
+<td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
+<select name="stato">{% for s in ['in attesa','confermato','annullato','completato'] %}<option {{ 'selected' if s==a.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">OK</button></form></td></tr>
+{% else %}<tr><td colspan="5" class="mut">Nessuna richiesta.</td></tr>{% endfor %}</table></div>
+<h2>Preventivi</h2>
+<div class="scroll"><table><tr><th>Ricevuta</th><th>Cliente</th><th>Evento</th><th>Servizi</th><th>Stato</th><th></th></tr>
+{% for r in quotes %}<tr><td>{{ r.created[:16] }}</td><td>{{ r.name }}<br>{{ r.phone }} {{ r.email }}</td>
+<td>{{ r.event_type }} {{ r.event_date }}<br>{{ r.place }} – {{ r.guests }} ospiti<br><span class="mut">{{ r.notes }}</span></td><td>{{ r.services }}</td>
+<td><span class="badge">{{ r.status }}</span></td>
+<td><form method="post" action="/admin/preventivo/{{ r.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
+<select name="stato">{% for s in ['nuova','in lavorazione','inviata','chiusa'] %}<option {{ 'selected' if s==r.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">OK</button></form>
+<form method="post" action="/admin/preventivo/{{ r.id }}/cliente"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s g">+ Cliente</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="mut">Nessun preventivo.</td></tr>{% endfor %}</table></div>
+{% endblock %}

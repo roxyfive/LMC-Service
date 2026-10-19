@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Disponibilità</h1>
+<h2>Durata di ogni appuntamento</h2>
+<form method="post" class="form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="act" value="slot">
+<label>Minuti<input type="number" name="slot_minutes" min="15" max="240" step="15" value="{{ slot }}"></label><button class="btn">Salva</button></form>
+<h2>Fasce settimanali</h2>
+<form method="post" class="form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="act" value="add">
+<label>Giorno<select name="weekday">{% for d in days %}<option value="{{ loop.index0 }}">{{ d }}</option>{% endfor %}</select></label>
+<label>Dalle<input type="time" name="start" required></label><label>Alle<input type="time" name="end" required></label><button class="btn">Aggiungi fascia</button></form>
+<div class="scroll"><table><tr><th>Giorno</th><th>Fascia</th><th></th></tr>
+{% for a in av %}<tr><td>{{ days[a.weekday] }}</td><td>{{ a.start }} – {{ a.end }}</td><td><form method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="act" value="del"><input type="hidden" name="id" value="{{ a.id }}"><button class="btn s d">Elimina</button></form></td></tr>
+{% else %}<tr><td colspan="3" class="mut">Nessuna fascia: il calendario pubblico sarà vuoto.</td></tr>{% endfor %}</table></div>
+<h2>Giorni di chiusura</h2>
+<form method="post" class="form"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="act" value="close">
+<label>Data<input type="date" name="date" required></label><label>Nota<input name="note"></label><button class="btn">Chiudi giorno</button></form>
+<div class="scroll"><table><tr><th>Data</th><th>Nota</th><th></th></tr>
+{% for c in cl %}<tr><td>{{ c.date }}</td><td>{{ c.note }}</td><td><form method="post"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="act" value="open"><input type="hidden" name="id" value="{{ c.id }}"><button class="btn s g">Riapri</button></form></td></tr>
+{% else %}<tr><td colspan="3" class="mut">Nessuna chiusura.</td></tr>{% endfor %}</table></div>
+{% endblock %}

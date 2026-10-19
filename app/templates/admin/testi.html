@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Modifica testi</h1>
+<form method="post" class="form" style="grid-template-columns:1fr">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% for k,l,t in fields %}
+  <label>{{ l }}{% if t=='area' %}<textarea name="{{ k }}" rows="5">{{ s[k] }}</textarea>{% else %}<input name="{{ k }}" value="{{ s[k] }}">{% endif %}</label>
+  {% endfor %}
+  <h2>Servizi</h2>
+  {% for i in range(6) %}
+  <div class="form" style="margin:0"><label>Nome<input name="sv_nome" value="{{ serv[i].nome if i < serv|length else '' }}"></label>
+  <label>Descrizione<input name="sv_testo" value="{{ serv[i].testo if i < serv|length else '' }}"></label></div>
+  {% endfor %}
+  <label>Frasi dell'intro (una per riga)<textarea name="intro_righe" rows="7">{{ intro }}</textarea></label>
+  <button class="btn">Salva tutto</button>
+</form>
+{% endblock %}

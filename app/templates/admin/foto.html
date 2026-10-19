@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Foto e video</h1>
+<div class="drop" id="drop">
+  <p><b>Trascina qui foto e video</b> oppure scegli dal telefono/computer (anche più file insieme).<br>
+  <span class="mut">Immagini jpg/png/webp max 12 MB · Video mp4/webm max 60 MB · ottimizzazione automatica</span></p>
+  <form id="upForm" method="post" action="/admin/foto/upload" enctype="multipart/form-data">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <select name="category">{% for c in cats %}<option>{{ c }}</option>{% endfor %}</select>
+    <input id="files" type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
+    <button class="btn">Carica</button>
+  </form>
+  <p id="upMsg"></p>
+</div>
+<p class="mut">Trascina le card per riordinare. Il badge <b>SEGNAPOSTO</b> indica immagini generate: sostituiscile con foto vere.</p>
+<div class="photos" id="photos">
+{% for m in items %}
+<form class="ph" id="m{{ m.id }}" data-id="{{ m.id }}" draggable="true" method="post" action="/admin/foto/{{ m.id }}">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% if m.kind == 'image' %}<img loading="lazy" src="/media/{{ m.filename }}_480.webp" alt="{{ m.title }}">
+  {% else %}<video src="/media/{{ m.filename }}.mp4" muted preload="metadata" controls></video>{% endif %}
+  {% if m.placeholder %}<span class="badge w">SEGNAPOSTO</span>{% endif %}{% if m.hidden %}<span class="badge no">nascosta</span>{% endif %}
+  <input name="title" value="{{ m.title }}" placeholder="Titolo">
+  <input name="caption" value="{{ m.caption }}" placeholder="Didascalia">
+  <select name="category">{% for c in cats %}<option {{ 'selected' if c==m.category }}>{{ c }}</option>{% endfor %}</select>
+  <div>
+    <label class="chk"><input type="checkbox" name="show_home" {{ 'checked' if m.show_home }}> Home</label>
+    <label class="chk"><input type="checkbox" name="show_gallery" {{ 'checked' if m.show_gallery }}> Galleria</label>
+    <label class="chk"><input type="checkbox" name="show_intro" {{ 'checked' if m.show_intro }}> Intro</label>
+    <label class="chk"><input type="checkbox" name="featured" {{ 'checked' if m.featured }}> Hero ★</label>
+    <label class="chk"><input type="checkbox" name="hidden" {{ 'checked' if m.hidden }}> Nascondi</label>
+  </div>
+  <div><button class="btn s">Salva</button>
+  <button class="btn s d" formaction="/admin/foto/{{ m.id }}/elimina" onclick="return confirm('Eliminare definitivamente?')">Elimina</button></div>
+</form>
+{% endfor %}
+</div>
+<script>
+const CSRF=document.querySelector('meta[name=csrf]').content;
+const drop=document.getElementById('drop'),files=document.getElementById('files'),msg=document.getElementById('upMsg');
+['dragover','dragenter'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove('over')}));
+async function send(fl){
+  const fd=new FormData(document.getElementById('upForm'));fd.delete('files');for(const f of fl)fd.append('files',f);
+  msg.textContent='Caricamento in corso…';
+  try{const r=await fetch('/admin/foto/upload',{method:'POST',body:fd,headers:{'X-CSRF-Token':CSRF,'X-Requested-With':'fetch'}});
+  const d=await r.json();msg.textContent=`Caricati: ${d.ok.length}. ${d.errors.join(' | ')}`;if(d.ok.length)setTimeout(()=>location.reload(),900);}
+  catch(e){msg.textContent='Errore di rete';}
+}
+drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length)send(e.dataTransfer.files)});
+document.getElementById('upForm').addEventListener('submit',e=>{e.preventDefault();if(files.files.length)send(files.files)});
+let dragEl=null;const box=document.getElementById('photos');
+box.addEventListener('dragstart',e=>{dragEl=e.target.closest('.ph');dragEl&&dragEl.classList.add('drag')});
+box.addEventListener('dragend',async()=>{if(!dragEl)return;dragEl.classList.remove('drag');dragEl=null;
+  const ids=[...box.querySelectorAll('.ph')].map(x=>x.dataset.id);
+  await fetch('/admin/foto/riordina',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({ids})});});
+box.addEventListener('dragover',e=>{e.preventDefault();const t=e.target.closest('.ph');if(t&&dragEl&&t!==dragEl){const r=t.getBoundingClientRect();box.insertBefore(dragEl,(e.clientY-r.top>r.height/2||e.clientX-r.left>r.width/2)?t.nextSibling:t);}});
+</script>
+{% endblock %}

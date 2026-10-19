@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Il tuo appuntamento | LMC Service</title><meta name="robots" content="noindex">
+<link rel="stylesheet" href="/static/css/site.css"></head>
+<body><main class="page">
+<h1>Il tuo appuntamento</h1>
+{% if msg %}<p class="msg ok">{{ msg }}</p>{% endif %}
+<div class="card">
+  <p><b>{{ a.name }}</b><br>Data: <b>{{ a.slot_date }}</b> alle <b>{{ a.slot_time }}</b><br>Stato: <b>{{ a.status }}</b></p>
+</div>
+{% if a.status != 'annullato' %}
+<form method="post" class="form" style="margin-top:1rem" id="mf">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <h3>Sposta l'appuntamento</h3>
+  <div class="row"><label>Nuovo giorno<input type="date" name="date" required></label>
+    <label>Orario<select name="time" required><option value="">Scegli il giorno</option></select></label></div>
+  <button class="btn btn-red" name="act" value="modifica">Sposta</button>
+</form>
+<form method="post" style="margin-top:1rem" onsubmit="return confirm('Annullare l\'appuntamento?')">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <button class="btn btn-line" name="act" value="annulla">Annulla appuntamento</button>
+</form>
+<script>
+const d=document.querySelector('#mf [name=date]'),t=document.querySelector('#mf [name=time]');
+d.min=new Date(Date.now()+864e5).toISOString().slice(0,10);
+d.addEventListener('change',async()=>{const s=await (await fetch('/api/slots?date='+d.value)).json();
+t.innerHTML=s.length?s.map(x=>'<option>'+x+'</option>').join(''):'<option value="">Nessun orario</option>';});
+</script>
+{% endif %}
+<p><a href="/">← Torna al sito</a></p>
+</main></body></html>

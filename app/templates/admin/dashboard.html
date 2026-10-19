@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Agenda</h1>
+<div class="cards">
+  <div><b>{{ pend }}</b>appuntamenti da confermare</div>
+  <div><b>{{ new_q }}</b>preventivi nuovi</div>
+  <div><b>{{ agenda|length }}</b>appuntamenti futuri</div>
+</div>
+<h2>Prossimi appuntamenti</h2>
+<div class="scroll"><table><tr><th>Data</th><th>Ora</th><th>Cliente</th><th>Contatti</th><th>Evento</th><th>Stato</th><th></th></tr>
+{% for a in agenda %}<tr><td>{{ a.slot_date }}</td><td>{{ a.slot_time }}</td><td>{{ a.name }}</td><td>{{ a.phone }}<br>{{ a.email }}</td>
+<td>{{ a.event_type }} {{ a.event_date }}<br><span class="mut">{{ a.notes }}</span></td>
+<td><span class="badge {{ 'ok' if a.status=='confermato' else 'w' }}">{{ a.status }}</span></td>
+<td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
+<button class="btn s" name="stato" value="confermato">Conferma</button> <button class="btn s d" name="stato" value="annullato">Annulla</button></form></td></tr>
+{% else %}<tr><td colspan="7" class="mut">Nessun appuntamento.</td></tr>{% endfor %}</table></div>
+<h2>Prossimi eventi</h2>
+<div class="scroll"><table><tr><th>Data</th><th>Evento</th><th>Luogo</th></tr>
+{% for e in evs %}<tr><td>{{ e.date }}</td><td><a href="/admin/m/eventi/{{ e.id }}">{{ e.title }}</a></td><td>{{ e.place }}</td></tr>
+{% else %}<tr><td colspan="3" class="mut">Nessun evento.</td></tr>{% endfor %}</table></div>
+{% endblock %}

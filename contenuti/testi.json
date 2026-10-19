@@ -1,0 +1,38 @@
+{
+ "brand": "La Music Company Service",
+ "brand_short": "LMC Service",
+ "claim": "Audio · Video · Luci. Il tuo evento, sotto i riflettori.",
+ "tagline": "Service per eventi in tutta Italia",
+ "owner": "Pasquale Toppi",
+ "founded": "16/02/2025",
+ "city": "Napoli",
+ "chi_siamo": "La Music Company Service nasce a Napoli il 16 febbraio 2025, fondata da Pasquale Toppi. Siamo un service per eventi: portiamo audio, video e luci dove serve, in tutta Italia, e curiamo anche la progettazione tecnica di ogni serata. Lavoriamo per matrimoni, eventi privati, live e congressi. Preventivi su richiesta.",
+ "servizi": [
+  {"nome": "Audio", "testo": "Impianti audio per eventi, meeting e show."},
+  {"nome": "Luci", "testo": "Illuminazione scenica e fasci di luce per palchi ed eventi."},
+  {"nome": "Video", "testo": "Soluzioni video per eventi e spettacoli."},
+  {"nome": "Progettazione", "testo": "Progettazione tecnica dell'allestimento su misura per ogni evento."},
+  {"nome": "Allestimenti", "testo": "Allestimenti per matrimoni, eventi privati, live e congressi."}
+ ],
+ "zone": "Tutta Italia (sede a Napoli)",
+ "telefono": "[DA INSERIRE: telefono]",
+ "whatsapp": "",
+ "email": "[DA INSERIRE: email]",
+ "indirizzo": "Napoli",
+ "orari": "[DA INSERIRE: orari]",
+ "instagram": "https://www.instagram.com/lamusicompany.service/",
+ "facebook": "https://www.facebook.com/share/15A1Ci9nBu/",
+ "tiktok": "https://www.tiktok.com/@l.m.c..service",
+ "threads": "https://www.threads.net/@l_m_c_service_",
+ "x": "https://x.com/lmcservice",
+ "linktree": "https://linktr.ee/lamusiccompany.24",
+ "intro_righe": [
+  "Napoli. 16 febbraio 2025.",
+  "Nasce La Music Company Service.",
+  "Audio. Luci. Video.",
+  "Progettiamo ogni dettaglio del tuo evento.",
+  "In tutta Italia, dal palco al meeting.",
+  "Il tuo evento, sotto i riflettori."
+ ],
+ "privacy": "I dati inseriti nei moduli sono usati solo per rispondere alla tua richiesta e gestire l'appuntamento. Titolare del trattamento: Pasquale Toppi – La Music Company Service, Napoli. Puoi chiedere accesso, modifica o cancellazione scrivendo ai contatti del sito. [DA COMPLETARE: informativa legale con consulente]"
+}

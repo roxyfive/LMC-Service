@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Service audio luci video eventi Napoli | LMC Service – La Music Company Service</title>
+<meta name="description" content="La Music Company Service (LMC Service): service audio, video, luci e progettazione per eventi a Napoli e in tutta Italia. Richiedi un preventivo o prenota un appuntamento.">
+<meta name="theme-color" content="#e10600">
+<meta name="csrf" content="{{ csrf_token() }}">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/img/icon-192.png">
+<link rel="apple-touch-icon" href="/static/img/icon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="LMC Service – Audio · Video · Luci | Napoli">
+<meta property="og:description" content="Service per eventi in tutta Italia: audio, video, luci, progettazione.">
+<meta property="og:image" content="{{ request.host_url }}static/img/logo-1200.jpg">
+<meta property="og:locale" content="it_IT">
+<link rel="canonical" href="{{ request.base_url }}">
+<link rel="stylesheet" href="/static/css/site.css">
+<script type="application/ld+json">
+{{ {"@context":"https://schema.org","@type":"LocalBusiness","name":s.brand,"alternateName":s.brand_short,
+ "description":"Service per eventi: audio, video, luci e progettazione.","image":request.host_url+"static/img/logo-1200.jpg",
+ "url":request.host_url,"foundingDate":"2025-02-16","founder":{"@type":"Person","name":s.owner},
+ "address":{"@type":"PostalAddress","addressLocality":"Napoli","addressCountry":"IT"},
+ "areaServed":"IT","sameAs":[s.instagram,s.facebook,s.tiktok,s.threads,s.x]}|tojson }}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Vai al contenuto</a>
+
+<!-- INTRO -->
+<div id="intro" class="intro" role="dialog" aria-label="Introduzione">
+  <div class="intro-slides">
+    {% for m in intro %}<img class="slide" alt="{{ m.title }}" data-src="/media/{{ m.filename }}_1600.webp">{% endfor %}
+  </div>
+  <div class="beams"></div>
+  <canvas id="smoke" class="smoke"></canvas>
+  <div class="intro-ui">
+    <img src="/static/img/logo-480.webp" alt="La Music Company Service" class="intro-logo" width="240" height="135">
+    <p id="introLine" class="intro-line" aria-live="polite"></p>
+    <button id="introStart" class="btn btn-red">▶ Entra nello show</button>
+  </div>
+  <div class="intro-ctrl">
+    <button id="introAudio" class="chip" aria-pressed="false" aria-label="Musica">🔇 Audio</button>
+    <button id="introSkip" class="chip">Salta ›</button>
+  </div>
+  <script id="introData" type="application/json">{{ s.intro_list|tojson }}</script>
+</div>
+
+<header class="nav" id="top">
+  <a class="brand" href="#top"><img src="/static/img/icon-192.png" alt="" width="36" height="36"><span>LMC <b>Service</b></span></a>
+  <button class="burger" aria-label="Menu" aria-expanded="false">☰</button>
+  <nav id="menu">
+    <a href="#chi-siamo">Chi siamo</a><a href="#servizi">Servizi</a><a href="#eventi">Eventi</a>
+    <a href="#show-demo">Show demo</a><a href="#dicono">Dicono di noi</a><a href="#prenota">Prenota</a>
+    <a href="#preventivo">Preventivo</a><a href="#contatti">Contatti</a>
+  </nav>
+</header>
+
+<main id="main">
+<section class="hero">
+  <img class="hero-bg" src="{% if hero and not hero.placeholder %}/media/{{ hero.filename }}_1600.webp{% else %}/static/img/logo-1600.webp{% endif %}"
+       alt="La Music Company Service – palco con fasci di luce rossi" width="1600" height="900" fetchpriority="high">
+  <div class="beams"></div>
+  <div class="hero-in reveal">
+    <h1>{{ s.claim }}</h1>
+    <p class="lead">{{ s.tagline }} · {{ s.city }}</p>
+    <div class="cta">
+      <a class="btn btn-red" href="#prenota">Prenota un appuntamento</a>
+      <a class="btn btn-line" href="#preventivo">Richiedi un preventivo</a>
+      {% if s.telefono and '[DA' not in s.telefono %}<a class="btn btn-line" href="tel:{{ s.telefono|replace(' ','') }}">Chiama</a>{% endif %}
+      {% if s.whatsapp %}<a class="btn btn-line" href="https://wa.me/{{ s.whatsapp }}" rel="noopener">WhatsApp</a>{% endif %}
+    </div>
+  </div>
+</section>
+
+<section id="chi-siamo" class="sec reveal">
+  <h2>Chi siamo</h2>
+  <div class="two">
+    <p class="big">{{ s.chi_siamo }}</p>
+    <ul class="facts">
+      <li><b>Dal</b> {{ s.founded }}</li>
+      <li><b>Titolare</b> {{ s.owner }}</li>
+      <li><b>Sede</b> {{ s.city }}</li>
+      <li><b>Zona</b> {{ s.zone }}</li>
+    </ul>
+  </div>
+</section>
+
+<section id="servizi" class="sec reveal">
+  <h2>Servizi</h2>
+  <div class="grid4">
+    {% for sv in s.servizi_list %}
+    <article class="card"><span class="ico">{{ ['🔊','💡','🎬','📐','🎛️','🎤'][loop.index0 % 6] }}</span><h3>{{ sv.nome }}</h3><p>{{ sv.testo }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="eventi" class="sec reveal">
+  <h2>Eventi realizzati</h2>
+  <div class="filters">
+    <button class="chip on" data-cat="*">Tutti</button>
+    {% for c in cats %}<button class="chip" data-cat="{{ c }}">{{ c }}</button>{% endfor %}
+  </div>
+  <div class="gallery">
+    {% for m in gallery %}
+    <a class="g-item" href="/media/{{ m.filename }}_1600.webp" data-cat="{{ m.category }}" data-cap="{{ m.title }}{% if m.caption %} – {{ m.caption }}{% endif %}">
+      <img loading="lazy" decoding="async" src="/media/{{ m.filename }}_480.webp" srcset="/media/{{ m.filename }}_480.webp 480w, /media/{{ m.filename }}_960.webp 960w"
+           sizes="(max-width:700px) 50vw, 25vw" alt="{{ m.title }}" width="480" height="300">
+      <span>{{ m.title }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% if demo %}<p class="note">Immagini segnaposto: le foto reali si caricano dal pannello admin.</p>{% endif %}
+</section>
+
+<section id="show-demo" class="sec reveal">
+  <h2>Show demo</h2>
+  {% if videos %}
+  <div class="vids">
+    {% for v in videos %}<video class="lazyvid" muted loop playsinline preload="none" data-src="/media/{{ v.filename }}.mp4" aria-label="{{ v.title }}"></video>{% endfor %}
+  </div>
+  {% else %}
+  <div class="vids">
+    {% for f in ['loop1','loop2','loop3'] %}<video class="lazyvid" muted loop playsinline preload="none" data-src="/static/media/{{ f }}.mp4" poster="/static/img/logo-480.webp" aria-label="Show di luci"></video>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<section id="dicono" class="sec reveal">
+  <h2>Dicono di noi</h2>
+  {% if reviews %}
+  <div class="grid3">{% for r in reviews %}<blockquote class="card"><p>“{{ r.text }}”</p><footer>— {{ r.author }}{% if r.source %}, {{ r.source }}{% endif %}</footer></blockquote>{% endfor %}</div>
+  {% else %}
+  <p class="note">[DA INSERIRE: recensioni reali dei clienti, dalla storia in evidenza “Dicono di noi”]. Nessuna recensione è inventata.</p>
+  {% endif %}
+</section>
+
+<section id="prenota" class="sec reveal">
+  <h2>Prenota un appuntamento</h2>
+  <form id="bookForm" class="form" novalidate>
+    <div class="row">
+      <label>Giorno<input type="date" name="date" required></label>
+      <label>Orario<select name="time" required><option value="">Scegli prima il giorno</option></select></label>
+    </div>
+    <div id="slotInfo" class="note" aria-live="polite"></div>
+    <div class="row"><label>Nome<input name="name" required autocomplete="name"></label><label>Telefono<input name="phone" type="tel" required autocomplete="tel"></label></div>
+    <div class="row"><label>Email<input name="email" type="email" required autocomplete="email"></label>
+      <label>Tipo di evento<select name="event_type">{% for e in event_types %}<option>{{ e }}</option>{% endfor %}</select></label></div>
+    <div class="row"><label>Data dell'evento<input type="date" name="event_date"></label></div>
+    <label>Note<textarea name="notes" rows="3" maxlength="800"></textarea></label>
+    <label class="chk"><input type="checkbox" name="consent" required> Ho letto l'<a href="/privacy" target="_blank">informativa privacy</a> e acconsento al trattamento dei dati.</label>
+    <button class="btn btn-red" type="submit">Conferma appuntamento</button>
+    <p class="msg" aria-live="polite"></p>
+  </form>
+</section>
+
+<section id="preventivo" class="sec reveal">
+  <h2>Richiedi un preventivo</h2>
+  <form id="quoteForm" class="form" novalidate>
+    <div class="row"><label>Nome<input name="name" required></label><label>Telefono<input name="phone" type="tel" required></label></div>
+    <div class="row"><label>Email<input name="email" type="email" required></label>
+      <label>Tipo di evento<select name="event_type">{% for e in event_types %}<option>{{ e }}</option>{% endfor %}</select></label></div>
+    <div class="row"><label>Data evento<input type="date" name="event_date"></label><label>Luogo<input name="place"></label><label>N. ospiti<input name="guests" type="number" min="1" max="100000"></label></div>
+    <fieldset><legend>Servizi richiesti</legend>{% for sv in services %}<label class="chk"><input type="checkbox" name="services" value="{{ sv }}"> {{ sv }}</label>{% endfor %}</fieldset>
+    <label>Note<textarea name="notes" rows="3" maxlength="800"></textarea></label>
+    <label class="chk"><input type="checkbox" name="consent" required> Ho letto l'<a href="/privacy" target="_blank">informativa privacy</a> e acconsento al trattamento dei dati.</label>
+    <button class="btn btn-red" type="submit">Invia richiesta</button>
+    <p class="msg" aria-live="polite"></p>
+  </form>
+</section>
+
+<section id="contatti" class="sec reveal">
+  <h2>Contatti</h2>
+  <div class="two">
+    <ul class="facts">
+      <li><b>Telefono</b> {{ s.telefono }}</li><li><b>Email</b> {{ s.email }}</li>
+      <li><b>Dove</b> {{ s.indirizzo }}</li><li><b>Orari</b> {{ s.orari }}</li>
+    </ul>
+    <div class="social">
+      {% for k,l in [('instagram','Instagram'),('facebook','Facebook'),('tiktok','TikTok'),('threads','Threads'),('x','X'),('linktree','Linktree')] %}
+      {% if s[k] %}<a class="chip" href="{{ s[k] }}" target="_blank" rel="noopener">{{ l }}</a>{% endif %}{% endfor %}
+    </div>
+  </div>
+  <iframe class="map" title="Mappa Napoli" loading="lazy" referrerpolicy="no-referrer"
+    src="https://www.openstreetmap.org/export/embed.html?bbox=14.15%2C40.80%2C14.35%2C40.90&amp;layer=mapnik"></iframe>
+</section>
+</main>
+
+<footer class="foot">
+  <img src="/static/img/logo-480.webp" alt="LMC Service" width="160" height="90" loading="lazy">
+  <p>© {{ s.brand }} · {{ s.city }} · <a href="/privacy">Privacy</a></p>
+  <p class="by">Realizzato da <img src="/static/img/fivetech-160.webp" alt="FiveTech" width="80" height="45" loading="lazy"> FiveTech</p>
+</footer>
+
+<!-- LIGHTBOX -->
+<div id="lb" class="lb" hidden><button class="lb-x" aria-label="Chiudi">✕</button><button class="lb-p" aria-label="Precedente">‹</button>
+  <figure><img alt=""><figcaption></figcaption></figure><button class="lb-n" aria-label="Successiva">›</button></div>
+
+<!-- CHAT -->
+<button id="chatBtn" class="chat-btn" aria-label="Apri assistente">💬 Assistente</button>
+<div id="chat" class="chat" hidden role="dialog" aria-label="Assistente LMC">
+  <div class="chat-h"><b>Assistente LMC H24</b><button id="chatX" aria-label="Chiudi">✕</button></div>
+  <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi o appuntamenti.</p></div>
+  <div id="chatAct"></div>
+  <form id="chatForm" class="chat-f"><button type="button" id="mic" aria-label="Parla">🎤</button>
+    <input id="chatIn" placeholder="Scrivi qui…" autocomplete="off" maxlength="300"><button class="btn btn-red" aria-label="Invia">➤</button></form>
+  <label class="chk small"><input type="checkbox" id="speak" checked> Risposta vocale</label>
+</div>
+<div id="install" class="install" hidden><span>Installa l'app LMC Service</span><button id="installBtn" class="btn btn-red">Installa</button><button id="installX" class="chip">✕</button></div>
+
+<script src="/static/js/site.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS admin_users(id INTEGER PRIMARY KEY, username TEXT UNIQUE, pw_hash TEXT);
+CREATE TABLE IF NOT EXISTS media(
+ id INTEGER PRIMARY KEY, filename TEXT, kind TEXT DEFAULT 'image', title TEXT DEFAULT '', caption TEXT DEFAULT '',
+ category TEXT DEFAULT 'Eventi', show_home INTEGER DEFAULT 1, show_gallery INTEGER DEFAULT 1, show_intro INTEGER DEFAULT 0,
+ featured INTEGER DEFAULT 0, hidden INTEGER DEFAULT 0, sort INTEGER DEFAULT 0, source TEXT DEFAULT '', placeholder INTEGER DEFAULT 0,
+ created TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS availability(id INTEGER PRIMARY KEY, weekday INTEGER, start TEXT, end TEXT);
+CREATE TABLE IF NOT EXISTS closures(id INTEGER PRIMARY KEY, date TEXT, note TEXT DEFAULT '');
+CREATE TABLE IF NOT EXISTS appointments(id INTEGER PRIMARY KEY, token TEXT UNIQUE, name TEXT, phone TEXT, email TEXT,
+ event_type TEXT, event_date TEXT, notes TEXT, slot_date TEXT, slot_time TEXT, status TEXT DEFAULT 'in attesa',
+ reminded INTEGER DEFAULT 0, consent INTEGER DEFAULT 0, created TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS quotes(id INTEGER PRIMARY KEY, name TEXT, phone TEXT, email TEXT, event_type TEXT, event_date TEXT,
+ place TEXT, guests TEXT, services TEXT, notes TEXT, status TEXT DEFAULT 'nuova', consent INTEGER DEFAULT 0,
+ created TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS reviews(id INTEGER PRIMARY KEY, author TEXT, text TEXT, source TEXT, hidden INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS clients(id INTEGER PRIMARY KEY, name TEXT, phone TEXT, email TEXT, notes TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS suppliers(id INTEGER PRIMARY KEY, name TEXT, category TEXT, phone TEXT, email TEXT, notes TEXT);
+CREATE TABLE IF NOT EXISTS equipment(id INTEGER PRIMARY KEY, name TEXT, category TEXT, qty INTEGER DEFAULT 1, status TEXT DEFAULT 'disponibile', notes TEXT);
+CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY, title TEXT, date TEXT, place TEXT, client_id INTEGER, notes TEXT);
+CREATE TABLE IF NOT EXISTS event_equipment(id INTEGER PRIMARY KEY, event_id INTEGER, equipment_id INTEGER, qty INTEGER DEFAULT 1);
+CREATE TABLE IF NOT EXISTS documents(id INTEGER PRIMARY KEY, kind TEXT, number TEXT, client_id INTEGER, date TEXT,
+ items TEXT, total REAL DEFAULT 0, status TEXT DEFAULT 'bozza', notes TEXT);
+CREATE TABLE IF NOT EXISTS journal(id INTEGER PRIMARY KEY, date TEXT, description TEXT, type TEXT DEFAULT 'entrata', amount REAL DEFAULT 0, notes TEXT);
+CREATE TABLE IF NOT EXISTS calls(id INTEGER PRIMARY KEY, from_number TEXT, transcript TEXT, payload TEXT, created TEXT DEFAULT CURRENT_TIMESTAMP);

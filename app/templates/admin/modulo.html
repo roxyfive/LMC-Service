@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>{{ c.title }}</h1>
+{% if extra.entrate is defined %}<div class="cards"><div><b>€ {{ '%.2f'|format(extra.entrate) }}</b>entrate</div><div><b>€ {{ '%.2f'|format(extra.uscite) }}</b>uscite</div><div><b>€ {{ '%.2f'|format(extra.entrate-extra.uscite) }}</b>saldo</div></div>{% endif %}
+<h2>{{ 'Modifica' if row else 'Aggiungi' }}</h2>
+<form method="post" class="form"><input type="hidden" name="csrf" value="{{ csrf }}">
+{% for k,l,t in c.fields %}
+<label>{{ l }}
+{% if t=='area' %}<textarea name="{{ k }}" rows="2">{{ row[k] if row else '' }}</textarea>
+{% elif t.startswith('select:') %}<select name="{{ k }}">{% for o in t[7:].split(',') %}<option {{ 'selected' if row and row[k]==o }}>{{ o }}</option>{% endfor %}</select>
+{% elif t=='client' %}<select name="{{ k }}"><option value="">—</option>{% for cl in clients %}<option value="{{ cl.id }}" {{ 'selected' if row and row[k]==cl.id }}>{{ cl.name }}</option>{% endfor %}</select>
+{% else %}<input name="{{ k }}" type="{{ t }}" {% if t=='number' %}step="any"{% endif %} value="{{ row[k] if row else '' }}">{% endif %}
+</label>{% endfor %}
+<button class="btn">Salva</button>{% if row %}<a class="btn g" href="/admin/m/{{ mod }}">Annulla</a>{% endif %}</form>
+
+{% if row and mod=='eventi' %}
+<h2>Attrezzatura assegnata</h2>
+<form method="post" action="/admin/eventi/{{ row.id }}/attrezzatura" class="form"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Attrezzatura<select name="equipment_id">{% for e in eq %}<option value="{{ e.id }}">{{ e.name }} (tot. {{ e.qty }})</option>{% endfor %}</select></label>
+<label>Quantità<input type="number" name="qty" value="1" min="1"></label><button class="btn">Assegna</button></form>
+<div class="scroll"><table><tr><th>Attrezzatura</th><th>Q.tà</th><th></th></tr>
+{% for a in assigned %}<tr><td>{{ a.name }}</td><td>{{ a.qty }}</td><td><form method="post" action="/admin/eventi/{{ row.id }}/attrezzatura"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d" name="del" value="{{ a.id }}">Rimuovi</button></form></td></tr>
+{% else %}<tr><td colspan="3" class="mut">Nessuna.</td></tr>{% endfor %}</table></div>
+{% endif %}
+
+{% if not row %}
+<h2>Elenco</h2>
+<div class="scroll"><table><tr>{% for k,l,t in c.fields %}<th>{{ l }}</th>{% endfor %}<th></th></tr>
+{% for r in rows %}<tr>{% for k,l,t in c.fields %}<td>{{ r[k] }}</td>{% endfor %}
+<td><a class="btn s g" href="/admin/m/{{ mod }}/{{ r.id }}">Modifica</a>
+<form method="post" action="/admin/m/{{ mod }}/{{ r.id }}/elimina" style="display:inline" onsubmit="return confirm('Eliminare?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d">✕</button></form></td></tr>
+{% else %}<tr><td colspan="{{ c.fields|length + 1 }}" class="mut">Vuoto.</td></tr>{% endfor %}</table></div>
+{% endif %}
+{% endblock %}

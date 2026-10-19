@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin | LMC Service</title><meta name="robots" content="noindex">
+<meta name="csrf" content="{{ csrf }}"><link rel="stylesheet" href="/static/css/admin.css"></head>
+<body>
+<div class="top"><img src="/static/img/icon-192.png" alt=""><b>LMC ADMIN</b>
+  <span class="badge {{ 'w' if mode=='demo' else 'ok' }}">{{ mode|upper }}</span>
+  <form method="post" action="/admin/logout"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn g s">Esci</button></form></div>
+<div class="wrap">
+<nav class="side">
+  <a href="/admin/">📅 Agenda</a><a href="/admin/richieste">📨 Richieste</a><a href="/admin/disponibilita">🕒 Disponibilità</a>
+  <h4>Sito</h4><a href="/admin/foto">🖼️ Foto e video</a><a href="/admin/testi">✏️ Testi</a><a href="/admin/m/recensioni">⭐ Dicono di noi</a>
+  <h4>Gestionale</h4>
+  <a href="/admin/m/clienti">👥 Clienti</a><a href="/admin/m/fornitori">🚚 Fornitori</a><a href="/admin/m/magazzino">🎛️ Magazzino</a>
+  <a href="/admin/m/eventi">🎤 Eventi</a><a href="/admin/documenti">🧾 Preventivi/Fatture</a><a href="/admin/m/prima-nota">💶 Prima nota</a>
+  <h4>Altro</h4><a href="/admin/chiamate">📞 Chiamate (AI)</a><a href="/" target="_blank">🌐 Vedi sito</a>
+</nav>
+<main>
+{% with m = get_flashed_messages() %}{% for x in m %}<div class="flash">{{ x }}</div>{% endfor %}{% endwith %}
+{% block body %}{% endblock %}
+</main></div>
+</body></html>

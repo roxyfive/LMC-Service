@@ -1,0 +1,15 @@
+{% extends "admin/base.html" %}{% block body %}
+<h1>Preventivi e fatture</h1>
+<form method="post" class="form" style="grid-template-columns:1fr 1fr"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Tipo<select name="kind"><option value="preventivo">Preventivo</option><option value="fattura">Fattura</option></select></label>
+<label>Cliente<select name="client_id"><option value="">—</option>{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+<label style="grid-column:1/-1">Voci (una per riga: descrizione;quantità;prezzo)<textarea name="items" rows="5" placeholder="Impianto audio 2 casse;1;350&#10;Luci scenografiche;1;200"></textarea></label>
+<label style="grid-column:1/-1">Note<input name="notes"></label>
+<button class="btn">Crea documento</button></form>
+<div class="scroll"><table><tr><th>N.</th><th>Tipo</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Stato</th><th></th></tr>
+{% for d in docs %}<tr><td>{{ d.number }}</td><td>{{ d.kind }}</td><td>{{ d.client or '—' }}</td><td>{{ d.date }}</td><td>€ {{ '%.2f'|format(d.total) }}</td>
+<td><form method="post" action="/admin/documenti/{{ d.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}"><select name="stato">{% for s in ['bozza','inviato','pagato','annullato'] %}<option {{ 'selected' if s==d.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s g">OK</button></form></td>
+<td><a class="btn s" href="/admin/documenti/{{ d.id }}.pdf" target="_blank">PDF</a>
+<form method="post" action="/admin/documenti/{{ d.id }}/elimina" style="display:inline" onsubmit="return confirm('Eliminare?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d">✕</button></form></td></tr>
+{% else %}<tr><td colspan="7" class="mut">Nessun documento.</td></tr>{% endfor %}</table></div>
+{% endblock %}
