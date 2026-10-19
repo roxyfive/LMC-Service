@@ -77,7 +77,7 @@ js = open("app/static/js/site.js", encoding="utf-8").read()
 intro_js = js.split("/* ---------- intro:")[1]
 check("intro senza voce sintetica (solo musica + voce.mp3)", "speechSynthesis" not in intro_js and "SpeechSynthesisUtterance" not in intro_js)
 check("sintesi vocale solo nella conversazione a voce avviata dal cliente", js.count("await speak(") == 1 and "voiceBtn.onclick" in js and "Risposta vocale" not in home)
-check("font locali, niente CDN", "/static/fonts/playfair-display" in home and "googleapis" not in home)
+check("font locali, niente CDN", "/static/fonts/montserrat" in home and "googleapis" not in home)
 check("sezione contatti con CTA preventivo", 'id="contatti"' in home and 'class="btn btn-gold" href="#preventivo">Richiedi un preventivo' in home)
 check("footer con rivedi intro e privacy", "Rivedi l'intro" in home and 'href="/privacy"' in home)
 check("un solo h1", home.count("<h1") == 1)

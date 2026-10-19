@@ -375,42 +375,6 @@
     nums.forEach(n => { n.setAttribute('aria-label', n.textContent); if (!reduce) fmt(n, 0); cio.observe(n); });
   })();
 
-  /* ---------- polvere d'oro rotante: hero + sfondo home (sprite pre-renderizzati, ~30 fps, pausa fuori vista / tab nascosta) ---------- */
-  function goldDust(cv, host, o) {
-    const g = cv.getContext('2d'), mk = f => { const c = document.createElement('canvas'); c.width = c.height = 48; f(c.getContext('2d')); return c; };
-    const dot = mk(x => { const r = x.createRadialGradient(24, 24, 0, 24, 24, 24); r.addColorStop(0, o.core); r.addColorStop(.3, o.mid); r.addColorStop(1, o.edge); x.fillStyle = r; x.fillRect(0, 0, 48, 48); });
-    const star = mk(x => { x.translate(24, 24); x.strokeStyle = o.core; x.lineCap = 'round'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(0, -22); x.lineTo(0, 22); x.moveTo(-22, 0); x.lineTo(22, 0); x.stroke();
-      x.lineWidth = 1; x.globalAlpha = .6; x.beginPath(); x.moveTo(-8, -8); x.lineTo(8, 8); x.moveTo(8, -8); x.lineTo(-8, 8); x.stroke(); x.globalAlpha = 1; x.fillStyle = o.core; x.beginPath(); x.arc(0, 0, 2.6, 0, 6.3); x.fill(); });
-    let W = 0, H = 0, R = 0, P = [], run = false, last = 0, ang = 0;
-    const fit = () => { W = cv.width = Math.round(host.clientWidth * o.scale); H = cv.height = Math.round(host.clientHeight * o.scale); R = Math.hypot(W, H) / 2;
-      const n = innerWidth < 700 ? o.nMobile : o.nDesktop;
-      P = Array.from({ length: n }, () => ({ r: Math.sqrt(Math.random()) * R, a: Math.random() * 6.283, w: .6 + Math.random() * .8, s: (3 + Math.random() * 7) * o.scale * (o.size || 1), ph: Math.random() * 6.283, tw: .8 + Math.random() * 1.8, al: .35 + Math.random() * .65, star: Math.random() < .22, dr: (Math.random() - .5) * 5 * o.scale })); };
-    fit(); addEventListener('resize', fit);
-    const frame = t => {
-      if (!run) return; requestAnimationFrame(frame);
-      if (t - last < 33) return; const dt = Math.min(.08, (t - last) / 1000); last = t;
-      ang += dt * o.spin; const cx = W / 2, cy = H / 2, ca = Math.cos(ang), sa = Math.sin(ang);
-      g.clearRect(0, 0, W, H);
-      for (const p of P) {
-        p.a += dt * .018 * p.w; p.r += p.dr * dt; p.ph += dt * p.tw;
-        if (p.r > R) p.r = 0; else if (p.r < 0) p.r = R;
-        const x0 = Math.cos(p.a) * p.r, y0 = Math.sin(p.a) * p.r * .82, x = cx + x0 * ca - y0 * sa, y = cy + x0 * sa + y0 * ca;
-        if (x < -20 || y < -20 || x > W + 20 || y > H + 20) continue;
-        const tw = .5 + .5 * Math.sin(p.ph), sz = p.s * (p.star ? .8 + tw * .9 : 1);
-        g.globalAlpha = p.al * (p.star ? tw * tw : .45 + .55 * tw); g.drawImage(p.star ? star : dot, x - sz, y - sz, sz * 2, sz * 2);
-      }
-    };
-    const upd = vis => { const go = vis && !document.hidden; if (go && !run) { run = true; last = performance.now(); requestAnimationFrame(frame); } else if (!go) run = false; };
-    let vis = true; new IntersectionObserver(es => { vis = es[0].isIntersecting; upd(vis); }, { threshold: 0 }).observe(host);
-    document.addEventListener('visibilitychange', () => upd(vis));
-  }
-  (function () {
-    if (reduce) return;
-    const cv = $('#heroFx'), hero = $('#hero');
-    if (cv && hero) goldDust(cv, hero, { core: 'rgba(255,240,200,1)', mid: 'rgba(230,207,154,.5)', edge: 'rgba(230,207,154,0)', scale: 1, nMobile: 16, nDesktop: 34, spin: .035 });
-    const pg = $('#pageFx'); if (pg) goldDust(pg, document.documentElement, { core: 'rgba(205,163,70,1)', mid: 'rgba(214,176,92,.5)', edge: 'rgba(214,176,92,0)', scale: .6, size: 2.1, nMobile: 14, nDesktop: 30, spin: .02 });
-  })();
-
   /* ---------- intro: musica + didascalie animate (voce.mp3 e voce.json solo se presenti) ---------- */
   const intro = $('#intro');
   let data = {}; try { data = JSON.parse($('#introData').textContent || '{}'); } catch (e) { }

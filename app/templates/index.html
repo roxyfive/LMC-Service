@@ -17,7 +17,7 @@
 <meta property="og:image" content="{{ request.host_url }}static/img/logo-1200.jpg">
 <meta property="og:locale" content="it_IT">
 <link rel="canonical" href="{{ request.base_url }}">
-<link rel="preload" href="/static/fonts/playfair-display-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/montserrat-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/static/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>document.documentElement.className+=' js'</script>
 <noscript><style>.intro{display:none!important}</style></noscript>
@@ -34,7 +34,6 @@
 <script type="application/ld+json">{{ ld|tojson }}</script>
 </head>
 <body>
-<canvas id="pageFx" class="page-fx" aria-hidden="true"></canvas>
 {% macro skill_icon(slug) -%}
 <svg class="sk-ico sk-{{ slug }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 {%- if slug == 'videosorveglianza' %}
@@ -97,10 +96,8 @@
          {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %} width="1600" height="900">
     {% else %}<img class="hs on" src="/static/img/logo-1600.webp" alt="La Music Company Service" width="1600" height="900" fetchpriority="high">{% endfor %}
   </div>
-  <div class="hero-lights" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="hero-shade"></div>
   <div class="beams"></div>
-  <canvas id="heroFx" class="hero-fx" aria-hidden="true"></canvas>
   <div class="hero-in">
     <p class="eyebrow rise" style="--d:.1s">{{ s.city }} · Service per eventi</p>
     {% set cl = s.claim.split('. ', 1) %}
@@ -118,7 +115,7 @@
 <section id="chi-siamo" class="sec">
   <div class="two">
     <div class="reveal" data-anim="left">
-      <p class="kicker">Chi siamo</p><hr class="rule">
+      <div class="sec-head"><p class="kicker">La nostra storia</p><h2>Chi siamo</h2></div>
       <p class="big">{{ s.chi_siamo }}</p>
       <blockquote class="quote">“Un evento funziona quando tutto parla la stessa lingua.”<cite>La Music Company Service · dal profilo Instagram</cite></blockquote>
     </div>

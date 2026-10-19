@@ -29,9 +29,13 @@ check("emergenza: icona microfono + 'Parla con l’AI' e fallback tel:", 'class=
 check("emergenza: JS avvia Vapi se attivo, altrimenti tel:", "startVapi(true)" in js and "location.href = sos.getAttribute('href')" in js)
 import json, re
 css = c.get("/static/css/site.css").get_data(as_text=True)
-check("palette: bianco perlato neutro, niente avorio rosato", "--ivory:#f7f8fa" in css and "--paper:#ffffff" in css and "#f8f4ec" not in css and "#c0307a" not in css)
-check("effetto: canvas di sfondo + polvere d'oro rotante, rispetta reduced-motion", 'id="pageFx"' in home and "function goldDust" in js and "const reduce" in js and "prefers-reduced-motion" in css)
-check("polvere d'oro in pausa fuori vista/tab nascosta", "IntersectionObserver" in js.split("function goldDust")[1].split("(function () {")[0] and "document.hidden" in js)
+check("palette: bianco puro, niente avorio/rosato/magenta", "--ivory:#ffffff" in css and "--paper:#ffffff" in css and "#f8f4ec" not in css and "#f7f8fa" not in css and "#c0307a" not in css and "#f5e6e8" not in css)
+check("niente effetti scintillanti (particelle, glint, bokeh, iridescenze)", all(x not in home for x in ('id="pageFx"', 'id="heroFx"', "hero-lights")) and "function goldDust" not in js and "page-fx" not in css and "hero-fx" not in css and "@keyframes pearl" not in css)
+check("sfondo pagina bianco puro", "html,body{background:#fff}" in css and "body:before" not in css)
+check("tipografia moderna: Montserrat + Space Grotesk + Inter, niente Playfair", '"Montserrat"' in css and '"Space Grotesk"' in css and '"Inter"' in css and "Playfair" not in css and "playfair" not in home)
+check("numeri di sezione enormi (counter) e titoli pesanti", "counter(sec,decimal-leading-zero)" in css and "font-weight:800" in css)
+import os
+check("font locali presenti", all(os.path.exists(os.path.join("app/static/fonts", f)) for f in ("montserrat-latin-wght-normal.woff2", "space-grotesk-latin-wght-normal.woff2", "inter-latin-wght-normal.woff2")))
 
 # suggerimenti: automatici dai dati reali
 cfg = c.get("/api/config").get_json()

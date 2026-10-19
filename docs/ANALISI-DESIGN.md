@@ -34,6 +34,6 @@ Quello che segue viene dai riassunti delle ricerche e da pratiche consolidate; v
 
 ## 3. Scelte del redesign
 - Palette: avorio `#f8f4ec`, carta `#fffdf9`, antracite `#1d2127`, oro `#c4a15a` (testi oro scuro `#7a5a1c`), blu notte `#0e1a30`. Contrasti verificati: testo 14,7:1; grigio 6,1:1; oro scuro 5,8:1; avorio su blu notte 15,8:1 (tutti ≥ AA). Quota scura misurata sulla pagina: ~21% desktop, ~23% mobile.
-- Tipografia: Playfair Display (titoli) + Inter (testi), file `woff2` locali (nessuna chiamata a Google).
+- Tipografia (aggiornata): Montserrat 800 (titoli), Space Grotesk (numeri di sezione e maiuscoletto tecnico), Inter (testi); `woff2` locali, nessuna chiamata a Google. Sfondo bianco puro, niente particelle/iridescenze.
 - Intro ridotta, senza canvas né voce sintetica; musica a scelta; `voce.mp3` opzionale.
 - Marcatura DEMO: con `APP_MODE=demo` testi/foto generici hanno il bollino "Demo"; in `production` spariscono (e le recensioni vuote nascondono la sezione).
