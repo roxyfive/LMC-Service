@@ -65,11 +65,11 @@
   <div class="intro-frame"></div>
   <img class="intro-logo" src="/static/img/logo-3d-256.webp" srcset="/static/img/logo-3d-256.webp 1x, /static/img/logo-3d-512.webp 2x" width="110" height="110" alt="La Music Company Service">
   <div class="intro-copy">
-    <p class="intro-count" aria-hidden="true"><span id="introNum">01</span> / {{ '%02d' % v.intro_steps|length }}</p>
     <div id="introCap" class="intro-cap" aria-live="polite"></div>
     <p id="introSub" class="intro-sub"></p>
   </div>
   <div class="intro-bars" id="introBars" aria-hidden="true">{% for st in v.intro_steps %}<i><b></b></i>{% endfor %}</div>
+  <p class="intro-count" aria-hidden="true"><span id="introNum">01</span> / {{ '%02d' % v.intro_steps|length }}</p>
   <div class="intro-ctrl">
     <button id="introAudio" class="chip pulse" aria-pressed="false"><span id="introAudioTxt">♪ Attiva musica{{ ' e voce' if v.voce_url }}</span></button>
     <button id="introSkip" class="btn btn-gold">Entra nel sito</button>

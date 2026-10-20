@@ -4,7 +4,7 @@ Pensata per chi non è esperto di server (i nomi delle voci nel pannello IONOS p
 Tempo previsto: 30–45 minuti (più l'attesa del DNS).
 
 > **Cosa installi:** il sito (Python + gunicorn) gestito da *systemd* (riparte da solo), **nginx** davanti (compressione, cache, upload, limiti anti-abuso), **HTTPS** gratuito con Let's Encrypt, **backup notturno** con rotazione di 7 giorni, controllo di salute `/health`.
-> I file di configurazione sono nella cartella `deploy/` del progetto: `lmc.service`, `nginx-lmc.conf`, `lmc-proxy.conf`, `env.production.example`, `backup.sh`, `restore.sh`, `lmc-backup.cron`, `setup-vps.sh`.
+> I file di configurazione sono nella cartella `deploy/` del progetto: `lmc.service`, `nginx-lmc.conf`, `lmc-proxy.conf`, `env.production.example`, `setup-vps.sh`, e per i backup `backup.sh`, `restore.sh`, `backup-status.sh`, `backup-alert.py`, `lib-backup.sh`, `lmc-backup.conf.example`, `lmc-backup.cron`.
 
 ---
 
@@ -53,7 +53,7 @@ Sostituisci dominio ed email (l'email serve a Let's Encrypt per avvisarti se il 
 ```bash
 bash /srv/lmc/deploy/setup-vps.sh www.tuodominio.it tua@email.it
 ```
-Lo script fa, in ordine: installa i pacchetti · imposta il fuso orario Europe/Rome · crea l'utente di servizio `lmc` · crea l'ambiente Python · crea il file `.env` di **produzione** con chiave segreta casuale e una password admin iniziale · avvia il servizio e verifica `/health` · configura nginx · richiede il certificato HTTPS · attiva il backup notturno e ne esegue uno subito.
+Lo script fa, in ordine: installa i pacchetti · imposta il fuso orario Europe/Rome · crea l'utente di servizio `lmc` · crea l'ambiente Python · crea il file `.env` di **produzione** con chiave segreta casuale e una password admin iniziale · avvia il servizio e verifica `/health` · configura nginx · richiede il certificato HTTPS · attiva il backup notturno cifrato (con controllo mattutino) e ne esegue uno subito. La copia su IONOS Object Storage si attiva dopo, con le chiavi (Parte 4.3).
 Può essere rilanciato senza danni (non cancella dati, non rigenera un `.env` esistente).
 
 **A fine esecuzione leggi con attenzione il riquadro «FATTO»**: contiene
@@ -111,12 +111,13 @@ nginx -t && systemctl reload nginx
 certbot --nginx -d www.tuodominio.it -m tua@email.it --agree-tos --redirect
 certbot renew --dry-run                      # prova del rinnovo automatico
 
-# 7. backup notturno
+# 7. backup notturno (dettagli e copia su IONOS: Parte 4)
 python3 -c "import secrets;print(secrets.token_urlsafe(32))" > /root/.lmc-backup-pass && chmod 600 /root/.lmc-backup-pass
 cat /root/.lmc-backup-pass                   # SALVA questa password in un gestore di password fuori dal VPS
+cp deploy/lmc-backup.conf.example deploy/lmc-backup.conf && chmod 600 deploy/lmc-backup.conf
 cp deploy/lmc-backup.cron /etc/cron.d/lmc-backup && chmod 644 /etc/cron.d/lmc-backup
 mkdir -p /var/backups/lmc && chmod 700 /var/backups/lmc
-chmod +x deploy/backup.sh deploy/restore.sh && deploy/backup.sh
+chmod +x deploy/*.sh && deploy/backup.sh
 ```
 Le impostazioni di nginx incluse: compressione **gzip**, cache dei file statici (7 giorni; 30 per audio/video dell'intro), **upload fino a 200 MB** (foto e video dall'admin), limiti anti-abuso su `/api/` e `/webhook/`, endpoint `/health` senza log.
 
@@ -125,52 +126,138 @@ Le impostazioni di nginx incluse: compressione **gzip**, cache dei file statici 
 
 ---
 
-## Parte 4 – Backup
+## Parte 4 – Sistema di backup (notturno + copia su IONOS)
 
-### 4.1 Cosa fa il backup notturno (ogni notte alle 03:30)
-Script: `/srv/lmc/deploy/backup.sh`, avviato da `/etc/cron.d/lmc-backup`. Salva in **`/var/backups/lmc`** (cartella riservata, permessi 700):
-| File | Contenuto |
+### 4.0 In breve: cosa succede ogni notte
+| Ora | Cosa | Dove finiscono i file |
+|---|---|---|
+| **03:30** | `deploy/backup.sh` (lo lancia `cron`): copia consistente del **database** + controllo di integrità, **foto/video** (`data/uploads` e `foto/`), **`.env` e `secret.key`** | `/var/backups/lmc/` sul server |
+| subito dopo | tutto viene **cifrato** (AES-256) con la password in `/root/.lmc-backup-pass` e riletto per prova | `lmc-data-AAAA-MM-GG_HHMM.tar.gz.enc` e `lmc-secrets-AAAA-MM-GG_HHMM.tar.gz.enc` |
+| subito dopo | **rotazione**: si cancellano i backup più vecchi di 7 giorni (locale **e** cloud) | – |
+| subito dopo | **copia su IONOS Object Storage** (se configurata, 4.3) e **verifica**: file presente, stessa dimensione, stessa impronta md5 (o confronto byte per byte) | bucket IONOS, cartella `lmc/` |
+| se qualcosa fallisce | **avviso** via email al titolare (`OWNER_EMAIL`) e WhatsApp a chi è «di turno» | – |
+| **08:00** | `backup-status.sh --check --alert`: se nelle ultime 26 ore non risulta nessun backup riuscito (es. il server era spento), **avviso** | – |
+
+> **Sicurezza:** nei file di backup, **anche quelli sul cloud, non c'è nulla in chiaro**: né il `.env`, né il database (che contiene anche le chiavi API inserite da Admin). Senza la password di cifratura i file sono illeggibili — per questo **la password va conservata fuori dal VPS** (4.1). Le **chiavi di IONOS** stanno solo in `deploy/lmc-backup.conf`, file escluso da git (4.5).
+
+### 4.1 Prima cosa: salva la password di cifratura
+L'installer la crea in `/root/.lmc-backup-pass` e la mostra una volta a fine installazione. Rileggila quando vuoi:
+```bash
+sudo cat /root/.lmc-backup-pass
+```
+Copiala in un **gestore di password** (o stampala e conservala in cassaforte). **Se la perdi, i backup non si possono più aprire.**
+
+### 4.2 Verificare e modificare la pianificazione sul VPS
+Il backup è un compito di `cron` definito in **`/etc/cron.d/lmc-backup`**:
+```
+30 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1
+0  8 * * * root /srv/lmc/deploy/backup-status.sh --check --alert >> /var/log/lmc-backup.log 2>&1
+```
+(minuto · ora · giorno · mese · giorno-settimana · utente · comando → **03:30 ogni notte**; il fuso orario del server è Europe/Rome, impostato dall'installer).
+
+| Cosa vuoi fare | Comando |
 |---|---|
-| `lmc-data-AAAA-MM-GG_HHMM.tar.gz` | **database** (copia consistente + controllo di integrità), **`data/uploads`** (foto/video ottimizzati), **`foto/`** (originali) |
-| `lmc-secrets-AAAA-MM-GG_HHMM.tar.gz.enc` | **`.env` e `secret.key` CIFRATI** (AES-256) con la password in `/root/.lmc-backup-pass` — mai in chiaro |
+| Vedere la pianificazione | `cat /etc/cron.d/lmc-backup` |
+| Cron è attivo? | `systemctl status cron --no-pager` (deve essere *active (running)*) |
+| Il fuso orario è giusto? | `timedatectl` (deve mostrare *Europe/Rome*); se no: `sudo timedatectl set-timezone Europe/Rome` |
+| Vedere che cron l'ha lanciato | `grep lmc-backup /var/log/syslog \| tail` (oppure `journalctl -u cron \| grep lmc`) |
+| Leggere il log dei backup | `tail -n 40 /var/log/lmc-backup.log` — ogni notte ci sono righe «backup dati ok», «copia su IONOS ok e verificata», «backup terminato» |
+| **Stato completo** (ultimo riuscito, file locali e sul cloud) | `sudo /srv/lmc/deploy/backup-status.sh` |
+| Lanciarlo subito a mano | `sudo /srv/lmc/deploy/backup.sh` |
+| Cambiare l'orario | `sudo nano /etc/cron.d/lmc-backup` → cambia `30 3` (es. `0 2` = le 02:00) → salva (Ctrl+O, Invio, Ctrl+X). Cron rilegge il file da solo |
+| Cambiare la rotazione | in `deploy/lmc-backup.conf`: `KEEP_DAYS=7` (locale) e `REMOTE_KEEP_DAYS=7` (cloud) |
 
-**Rotazione:** vengono tenuti gli ultimi **7 giorni**; i più vecchi si cancellano da soli (cambia `KEEP_DAYS` in `/etc/lmc-backup.conf`, modello in `deploy/lmc-backup.conf.example`).
-Esito nel log: `tail -n 20 /var/log/lmc-backup.log`. Prova manuale: `sudo /srv/lmc/deploy/backup.sh`.
-Se manca la password di cifratura lo script **non salva mai il `.env` in chiaro** e termina con avviso.
+**Rotazione dei 7 giorni:** ogni notte vengono cancellati i file `lmc-data-*`/`lmc-secrets-*` più vecchi di 7 giorni, quindi restano le ultime **7 notti**. Spazio occupato: `du -sh /var/backups/lmc`.
+**Esiti dello script:** `0` tutto ok · `1` errore (nessun backup salvato) · `3` backup locale ok ma copia IONOS non riuscita/non verificata.
 
-### 4.2 Scaricare il backup sul tuo PC (copia fuori dal VPS)
-Un backup che sta solo sul server non protegge dalla perdita del server. Da **PowerShell/Terminale sul tuo PC**:
+### 4.3 Copia su IONOS Object Storage (S3) – passo per passo
+**A) Crea il bucket e le chiavi nel pannello IONOS** (i nomi delle voci possono variare leggermente):
+1. Accedi al **Cloud Panel / Data Center Designer** IONOS → menu **Storage → Object Storage** (S3).
+2. **Crea un bucket**: nome in minuscolo, univoco in tutto IONOS (es. `lmc-service-backup-7f3k`); scegli la **regione** vicina (Frankfurt, Berlino o Logroño) e lasciala **privata**. *Non attivare «Object Lock»* (impedirebbe la rotazione automatica).
+3. **Annota l'endpoint** della regione: nel pannello accanto al bucket (esempi: `s3-eu-central-1.ionoscloud.com` Frankfurt · `s3-eu-central-2.ionoscloud.com` Berlino · `s3-eu-south-2.ionoscloud.com` Logroño).
+4. Apri **Key management** (Gestione chiavi) → **Generate key / Genera chiave**: ottieni **Access key** e **Secret key**. La *Secret key* si vede **una sola volta**: copiala subito.
+
+**B) Inserisci le chiavi sul VPS** (l'installer ha già creato il file; se manca: `cp /srv/lmc/deploy/lmc-backup.conf.example /srv/lmc/deploy/lmc-backup.conf`):
 ```bash
-scp root@IP_DELLA_VPS:/var/backups/lmc/lmc-*  C:\backup-lmc\          # Windows: cartella a tua scelta
-# oppure, scarica solo l'ultimo giorno:
-scp "root@IP_DELLA_VPS:/var/backups/lmc/lmc-*$(date +%F)*" ./         # Mac/Linux
+sudo nano /srv/lmc/deploy/lmc-backup.conf
+sudo chmod 600 /srv/lmc/deploy/lmc-backup.conf      # leggibile solo da root
 ```
-Con **WinSCP** o **FileZilla** (protocollo SFTP, host = IP, utente `root`) puoi anche trascinare i file dalla cartella `/var/backups/lmc`. Fallo almeno una volta a settimana.
+Compila queste righe (il resto lascialo com'è):
+```
+S3_ENDPOINT=s3-eu-central-1.ionoscloud.com      # l'endpoint annotato, senza https://
+S3_ACCESS_KEY=la-tua-access-key
+S3_SECRET_KEY=la-tua-secret-key
+S3_BUCKET=lmc-service-backup-7f3k
+S3_PREFIX=lmc                                  # cartella dentro il bucket (si crea da sola)
+S3_REGION=                                     # solo se dà errore di regione (es. de, eu-central-2, eu-south-2)
+```
+Serve `rclone` (l'installer lo mette): `rclone version`. Se è molto vecchio (< 1.55) aggiornalo: `curl https://rclone.org/install.sh | sudo bash`.
+> Non occorre `rclone config`: le chiavi vengono passate a rclone da `backup.sh` ogni volta, senza scriverle altrove.
 
-### 4.3 Copia automatica su IONOS Object Storage (S3)
-1. Cloud Panel IONOS › **Storage › Object Storage**: crea una chiave di accesso (*Access key* + *Secret key*) e un **bucket** (es. `lmc-backup`). Annota l'**endpoint** della regione del bucket (es. `s3-eu-central-1.ionoscloud.com`; è scritto nel pannello).
-2. Sulla VPS (`rclone` è già installato dallo script):
+**C) Prova la copia** (subito, senza aspettare la notte):
 ```bash
-rclone config
+sudo /srv/lmc/deploy/backup.sh
 ```
-   Rispondi: `n` (new remote) · nome `ionos` · storage `s3` · provider `IONOS Cloud` · `access_key_id` e `secret_access_key` copiati dal pannello · region/endpoint come da pannello · il resto invio.
-   Prova: `rclone lsd ionos:` deve elencare il bucket.
-3. Attiva la copia notturna: crea `/etc/lmc-backup.conf` (modello in `deploy/lmc-backup.conf.example`) con
-```
-RCLONE_REMOTE=ionos:lmc-backup/lmc
-```
-   Da quella notte `backup.sh` copia anche lì (e mantiene la stessa rotazione dei 7 giorni). Se la copia fallisce lo script lo scrive nel log.
-> Nota: la copia remota è una **sincronizzazione** della cartella dei backup: cancellando un file locale per rotazione sparisce anche dal bucket. Usa un bucket/cartella dedicato.
-
-### 4.4 Ripristino (se qualcosa va storto)
+Cerca nell'output queste righe: **«verifica cloud ok: lmc-data-… (… byte, controllo: md5)»** (una per i dati, una per i segreti) e **«copia su IONOS ok e verificata»**. Poi controlla:
 ```bash
-ls /var/backups/lmc                                     # scegli i file della data che vuoi
-sudo /srv/lmc/deploy/restore.sh /var/backups/lmc/lmc-data-AAAA-MM-GG_HHMM.tar.gz  /var/backups/lmc/lmc-secrets-AAAA-MM-GG_HHMM.tar.gz.enc
+sudo /srv/lmc/deploy/backup-status.sh        # mostra i file locali e quelli sul cloud IONOS
 ```
-Lo script chiede conferma (scrivi `SI`), **ferma il sito**, conserva lo stato attuale in `data.prima-del-ripristino-…`, ripristina database/foto/(.env), imposta i permessi e **riavvia**. Il secondo file (segreti) è facoltativo. Per ripristinare su un server nuovo: installa con `setup-vps.sh`, copia i file di backup in `/var/backups/lmc` e lancia `restore.sh`; la password di cifratura (`/root/.lmc-backup-pass`) deve essere la stessa usata per il backup.
-**Prova il ripristino almeno una volta** prima del go-live.
+e nel pannello IONOS, dentro il bucket, deve comparire la cartella `lmc/` con i due file `.enc`.
+Se compare **ERRORE**: «Access Denied/InvalidAccessKey» → chiavi sbagliate o incollate con uno spazio; «NoSuchBucket» → nome del bucket; «no such host/timeout» → endpoint sbagliato (controlla la regione) o firewall in uscita; «SignatureDoesNotMatch» → Secret key errata (rigenerala).
 
----
+### 4.4 Verifica automatica della copia e avvisi
+Dopo ogni caricamento `backup.sh` **controlla che il file sia davvero su IONOS**:
+1. il file **c'è** sul bucket;
+2. ha **esattamente la stessa dimensione** del file locale;
+3. ha la stessa **impronta md5**; se il cloud non la fornisce (caricamenti a blocchi) scarica il file e lo **confronta byte per byte**. Con `VERIFY_DOWNLOAD=1` in `lmc-backup.conf` questo confronto è sempre byte per byte.
+
+Se un controllo fallisce (o la copia non parte) lo script **esce con codice 3, non aggiorna «ultimo backup riuscito» e manda un avviso**: email a `OWNER_EMAIL` (serve SMTP nel `.env`) e WhatsApp a chi è «di turno» (serve Twilio configurato). Il backup **locale** resta comunque valido. Controllo manuale in qualsiasi momento: `sudo /srv/lmc/deploy/backup-status.sh --verify-remote` (e `VERIFY_DOWNLOAD=1 sudo …` per il confronto completo).
+
+### 4.5 Sicurezza delle chiavi e dei dati
+- **Cifratura obbligatoria:** `backup.sh` rifiuta di partire senza la password di cifratura e **rifiuta di copiare sul cloud con `ENCRYPT=0`**. Tutto ciò che arriva su IONOS è illeggibile senza la password (AES-256, PBKDF2).
+- **`.env` e `secret.key`** sono in un file cifrato a parte (`lmc-secrets-…`); il database (che contiene anche le chiavi Twilio/Vapi di Admin) e le foto sono nel file `lmc-data-…`, anch'esso cifrato.
+- **Le chiavi IONOS non finiscono su git:** vivono solo in `deploy/lmc-backup.conf` (o `/etc/lmc-backup.conf`), file **escluso dal `.gitignore`** e con permessi 600 (lo script avvisa se sono più larghi). Nel repository c'è solo il modello `lmc-backup.conf.example`, senza valori. Le chiavi non compaiono nei log.
+- Consigli: usa per il backup una chiave IONOS dedicata (revocabile senza toccare altro); se sospetti che un file di backup o la chiave siano usciti dal tuo controllo, **rigenera la chiave IONOS** e, se serve, cambia anche le chiavi API (Twilio/Vapi).
+
+### 4.6 Scaricare i backup sul PC (copia di sicurezza in più)
+```bash
+scp root@IP_DELLA_VPS:/var/backups/lmc/lmc-*  C:\backup-lmc\        # Windows (PowerShell)
+```
+Oppure con **WinSCP/FileZilla** (SFTP, host = IP, utente `root`): cartella `/var/backups/lmc`. I file sono cifrati: per aprirli serve la password del punto 4.1.
+
+### 4.7 Ripristino
+**Prima di tutto**, per sicurezza: ogni ripristino **ferma il sito**, **conserva lo stato attuale** in `data.prima-del-ripristino-…`, controlla il backup **prima** di toccare qualcosa (se la password è sbagliata o il file è rovinato si ferma senza modificare nulla) e poi **riavvia**.
+
+**a) Da un backup sul server** (`/var/backups/lmc`):
+```bash
+ls /var/backups/lmc                                      # scegli la data
+sudo /srv/lmc/deploy/restore.sh /var/backups/lmc/lmc-data-AAAA-MM-GG_HHMM.tar.gz.enc
+# aggiungi il file dei segreti SOLO se vuoi ripristinare anche .env e secret.key:
+sudo /srv/lmc/deploy/restore.sh /var/backups/lmc/lmc-data-….tar.gz.enc /var/backups/lmc/lmc-secrets-….tar.gz.enc
+```
+**b) Da IONOS Object Storage** (anche su un server nuovo, dopo `setup-vps.sh`):
+```bash
+sudo /srv/lmc/deploy/restore.sh --cloud-list             # elenca i backup sul cloud (dimensione, data, nome)
+sudo /srv/lmc/deploy/restore.sh --from-cloud latest      # scarica (controllando le impronte) e ripristina l'ULTIMO
+sudo /srv/lmc/deploy/restore.sh --from-cloud 2026-10-21_0330   # una data precisa
+sudo /srv/lmc/deploy/restore.sh --from-cloud latest --with-env # ripristina anche .env e secret.key (disastro: server nuovo)
+```
+Ti chiede conferma: scrivi **SI**. A fine ripristino:
+```bash
+curl -s https://DOMINIO/health             # deve dire status ok
+journalctl -u lmc -n 30 --no-pager         # nessun errore
+```
+**Server nuovo, da zero:** 1) installa con `setup-vps.sh` · 2) rimetti **la stessa password di cifratura** in `/root/.lmc-backup-pass` (`nano`, poi `chmod 600`) · 3) compila `deploy/lmc-backup.conf` con le chiavi IONOS · 4) `restore.sh --from-cloud latest --with-env`.
+**Prova il ripristino almeno una volta prima del go-live** (anche su una VPS di prova).
+
+### 4.8 Problemi comuni dei backup
+| Sintomo | Cosa fare |
+|---|---|
+| «manca la password di cifratura» | `ls -l /root/.lmc-backup-pass` deve esistere (permessi 600); se l'hai persa e hai una copia, rimettila; altrimenti i vecchi backup non sono recuperabili: creane una nuova (`python3 -c "import secrets;print(secrets.token_urlsafe(32))" > /root/.lmc-backup-pass; chmod 600 …`) e fai subito un nuovo backup |
+| Arriva l'avviso delle 08:00 «Backup notturno MANCANTE» | `tail -n 50 /var/log/lmc-backup.log`; `systemctl status cron`; spazio disco `df -h /`; lancia `sudo deploy/backup.sh` a mano |
+| «copia su IONOS NON riuscita» | vedi 4.3-C (chiavi/endpoint/bucket); `sudo deploy/backup-status.sh` per vedere cosa c'è sul cloud |
+| Disco pieno | riduci `KEEP_DAYS`, sposta i video grandi, o allarga il disco dal Cloud Panel IONOS |
+| Nessuna email di avviso | imposta `SMTP_*` e `OWNER_EMAIL` nel `.env`; per WhatsApp configura Twilio (Admin › Impostazioni) |
 
 ## Parte 5 – Uso quotidiano
 
@@ -185,6 +272,7 @@ Lo script chiede conferma (scrivi `SI`), **ferma il sito**, conserva lo stato at
 | Aggiornare il sito (git) | `cd /srv/lmc && git pull && .venv/bin/pip install -r requirements.txt && systemctl restart lmc` (**prima fai un backup**: `deploy/backup.sh`) |
 | Aggiornare (copia file) | ricopia le cartelle con `scp` come in 2.1 **senza** `data/`, poi `systemctl restart lmc` |
 | Spazio su disco | `df -h /` · `du -sh /srv/lmc/data /var/backups/lmc` |
+| Stato dei backup (locale + IONOS) | `sudo /srv/lmc/deploy/backup-status.sh` |
 
 Il nuovo avvio mostra nel log eventuali **avvisi di configurazione** (es. `COOKIE_SECURE=1 mancante`): `journalctl -u lmc -n 30 | grep ATTENZIONE`.
 

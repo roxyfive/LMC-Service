@@ -1,2 +1,5 @@
-# /etc/cron.d/lmc-backup — backup ogni notte alle 03:30 (fuso orario del server: l’installer lo imposta su Europe/Rome)
+# /etc/cron.d/lmc-backup — backup notturno + controllo di mattina (fuso orario del server: Europe/Rome, lo imposta l'installer)
+# m  h  g  M  gs  utente  comando
 30 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1
+# alle 08:00: se non risulta nessun backup riuscito nelle ultime 26 ore, avvisa (email + WhatsApp)
+0 8 * * * root /srv/lmc/deploy/backup-status.sh --check --alert >> /var/log/lmc-backup.log 2>&1

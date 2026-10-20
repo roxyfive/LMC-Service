@@ -69,10 +69,22 @@ fi
 
 echo "== 8/8 Backup notturno"
 [ -s /root/.lmc-backup-pass ] || { python3 -c 'import secrets;print(secrets.token_urlsafe(32))' > /root/.lmc-backup-pass; chmod 600 /root/.lmc-backup-pass; NEWPASS=1; }
+chmod +x "$APP"/deploy/*.sh
+# configurazione del backup (qui vanno, in seguito, le chiavi IONOS): file escluso da git, leggibile solo da root
+[ -f "$APP/deploy/lmc-backup.conf" ] || cp "$APP/deploy/lmc-backup.conf.example" "$APP/deploy/lmc-backup.conf"
+chown root:root "$APP/deploy/lmc-backup.conf"; chmod 600 "$APP/deploy/lmc-backup.conf"
 cp "$APP/deploy/lmc-backup.cron" /etc/cron.d/lmc-backup
 chmod 644 /etc/cron.d/lmc-backup
-chmod +x "$APP/deploy/backup.sh" "$APP/deploy/restore.sh"
 mkdir -p /var/backups/lmc && chmod 700 /var/backups/lmc
+cat > /etc/logrotate.d/lmc-backup <<'LR'
+/var/log/lmc-backup.log {
+    monthly
+    rotate 6
+    compress
+    missingok
+    notifempty
+}
+LR
 "$APP/deploy/backup.sh" || true
 systemctl restart lmc
 
@@ -86,4 +98,6 @@ if [ "${NEWPASS:-0}" = "1" ]; then
   echo "Password di cifratura dei backup (.env cifrato): $(cat /root/.lmc-backup-pass)"
   echo "  -> copiala in un posto sicuro FUORI dal VPS (gestore password): senza non si recupera il .env dai backup."
 fi
-echo "Backup notturno: ogni giorno alle 03:30 in /var/backups/lmc (7 giorni)."
+echo "Backup notturno: ogni giorno alle 03:30 in /var/backups/lmc (7 giorni, tutto cifrato). Controllo alle 08:00: se manca un backup arriva un avviso."
+echo "Copia su IONOS Object Storage: NON ancora attiva. Compila le chiavi in $APP/deploy/lmc-backup.conf (guida: docs/DEPLOY.md, Parte 4.3)."
+echo "Stato dei backup in qualsiasi momento:  sudo $APP/deploy/backup-status.sh"

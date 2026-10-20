@@ -1,10 +1,36 @@
-# /etc/lmc-backup.conf  (facoltativo)  — chmod 600
-APP_DIR=/srv/lmc
-BACKUP_DIR=/var/backups/lmc
-# quanti giorni di backup tenere
+# =====================================================================================================
+# Configurazione del backup — COPIA questo file in  deploy/lmc-backup.conf  e compilalo:
+#     cp /srv/lmc/deploy/lmc-backup.conf.example /srv/lmc/deploy/lmc-backup.conf
+#     chmod 600 /srv/lmc/deploy/lmc-backup.conf
+# Il file lmc-backup.conf contiene le CHIAVI DI IONOS: è escluso da git (.gitignore) e non va MAI condiviso.
+# (In alternativa il file può stare in /etc/lmc-backup.conf)
+# =====================================================================================================
+
+# --- rotazione ---
+# Giorni di backup tenuti sul server (cartella /var/backups/lmc) e sul cloud IONOS
 KEEP_DAYS=7
-# file con la password che cifra .env (creato dall'installer; copiala anche in un posto sicuro fuori dal VPS!)
+REMOTE_KEEP_DAYS=7
+
+# --- cifratura (lascia 1) ---
+# Password di cifratura: la crea l'installer in /root/.lmc-backup-pass. Copiala anche fuori dal server!
 PASS_FILE=/root/.lmc-backup-pass
-# copia fuori dal VPS con rclone (vedi docs/DEPLOY.md, sezione "Backup fuori dal VPS"). Vuoto = disattivata.
-# esempio IONOS Object Storage:  RCLONE_REMOTE=ionos:nome-del-bucket/lmc
-RCLONE_REMOTE=
+ENCRYPT=1
+
+# --- COPIA SU IONOS OBJECT STORAGE (S3) ---  vedi docs/DEPLOY.md, Parte 4.3
+# Endpoint della REGIONE del bucket, senza https:// (Frankfurt: s3-eu-central-1.ionoscloud.com, Berlino: s3-eu-central-2.ionoscloud.com,
+# Logroño: s3-eu-south-2.ionoscloud.com — controlla quello mostrato nel pannello IONOS accanto al bucket)
+S3_ENDPOINT=
+# Chiavi create in IONOS (Access key e Secret key)
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+# Nome del bucket (creato nel pannello) e cartella al suo interno
+S3_BUCKET=
+S3_PREFIX=lmc
+# Regione (facoltativa; es. de, eu-central-2, eu-south-2). Se la copia dà errore di "region", prova a impostarla.
+S3_REGION=
+
+# 1 = dopo la copia scarica i file dal cloud e li confronta byte per byte (più lento, massima sicurezza).
+# 0 = controlla presenza, dimensione e impronta (md5) senza scaricare (consigliato).
+VERIFY_DOWNLOAD=0
+# Ore dopo le quali "nessun backup recente" fa scattare l'avviso delle 08:00
+MAX_AGE_HOURS=26

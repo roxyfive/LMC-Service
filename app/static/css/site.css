@@ -499,3 +499,38 @@ h3{font-size:1.3rem;letter-spacing:-.015em}
 .reveal.in.sec-head:before,.reveal.in.forms-head:before,.reveal.in.contact-intro:before{color:rgba(196,161,90,.14)}
 @media(prefers-reduced-motion:reduce){.sec-head:before,.forms-head:before,.contact-intro:before{transition:none}}
 @media(max-width:600px){.intro-ctrl{gap:.6rem}.intro-bars{bottom:max(10.6rem,calc(env(safe-area-inset-bottom) + 10rem))}.intro-copy{bottom:12.4rem}}
+
+/* ===== intro: contatore in fondo alla riga delle barre (non copre più logo né testi) + adattamento a schermi bassi/stretti ===== */
+.intro-count{position:absolute;z-index:6;right:clamp(1.8rem,7vw,6rem);bottom:calc(max(5.6rem,calc(env(safe-area-inset-bottom) + 5rem)) - .62rem);margin:0;padding:0;border:0;background:none;backdrop-filter:none;display:block;font:700 .84rem/1 var(--tech);letter-spacing:.18em;color:#fff;text-shadow:0 1px 3px rgba(8,15,32,.95),0 2px 14px rgba(8,15,32,.9);font-variant-numeric:tabular-nums;white-space:nowrap}
+.intro-count #introNum{color:var(--gold-lt)}
+.intro-bars{right:calc(clamp(1.8rem,7vw,6rem) + 4.9rem)}
+.intro-cap{font-size:clamp(1.5rem,min(6.2vw,8.6vh),4.9rem);overflow-wrap:anywhere}
+@media(max-width:600px){
+  .intro-count{bottom:calc(max(10.6rem,calc(env(safe-area-inset-bottom) + 10rem)) - .62rem);right:clamp(1.2rem,5vw,1.8rem);font-size:.78rem}
+  .intro-bars{right:calc(clamp(1.2rem,5vw,1.8rem) + 4.4rem)}
+}
+@media(max-width:380px){.intro-copy,.intro-bars,.intro-ctrl{left:1.2rem}.intro-copy{right:1.2rem}.intro-ctrl{right:1.2rem}.intro-cap{font-size:clamp(1.3rem,8vw,1.7rem)}}
+@media(max-height:520px){
+  .intro-logo{width:52px;height:52px;top:.9rem;left:1.4rem}
+  .intro-copy{bottom:5.6rem}
+  .intro-cap{font-size:clamp(1.3rem,min(6.2vw,7.5vh),3rem);min-height:0}
+  .intro-sub{font-size:.95rem;margin-top:.4rem}
+  .intro-bars{bottom:3.7rem}
+  .intro-count{bottom:calc(3.7rem - .62rem)}
+  .intro-ctrl{bottom:.8rem;flex-wrap:nowrap}
+  .intro .chip,.intro .btn-gold{min-height:40px;padding:.55rem 1rem}
+}
+/* rifinitura: contatore centrato sulla riga delle barre e un po' più di aria sopra i pulsanti */
+.intro-bars{bottom:max(6.5rem,calc(env(safe-area-inset-bottom) + 5.9rem))}
+.intro-count{bottom:calc(max(6.5rem,calc(env(safe-area-inset-bottom) + 5.9rem)) - .3rem)}
+.intro-copy{bottom:clamp(9rem,20vh,12.3rem)}
+@media(max-width:600px){
+  .intro-bars{bottom:max(10.8rem,calc(env(safe-area-inset-bottom) + 10.2rem))}
+  .intro-count{bottom:calc(max(10.8rem,calc(env(safe-area-inset-bottom) + 10.2rem)) - .3rem)}
+  .intro-copy{bottom:12.8rem}
+}
+@media(max-height:520px){
+  .intro-bars{bottom:4.5rem}
+  .intro-count{bottom:calc(4.5rem - .3rem)}
+  .intro-copy{bottom:6.6rem}
+}

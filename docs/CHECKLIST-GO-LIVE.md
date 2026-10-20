@@ -42,7 +42,7 @@ La guida di tutto il pannello è in `docs/GUIDA-ADMIN.md`, il deploy in `docs/DE
 |---|---|---|---|
 | 23 | **Dominio** con record DNS **A** verso l'IP della VPS (e **AAAA** se usi IPv6) | Pannello domini IONOS | 🔴 |
 | 24 | **HTTPS** attivo (Let's Encrypt): serve per microfono, PWA e webhook | `deploy/setup-vps.sh` / `certbot` | 🔴 |
-| 25 | **Backup notturno attivo** + **password di cifratura** salvata fuori dal VPS + (consigliato) copia fuori VPS | `docs/DEPLOY.md` § Backup | 🔴 la password; 🟠 la copia esterna |
+| 25 | **Backup notturno attivo e cifrato**, **password di cifratura salvata fuori dal VPS**, **copia su IONOS Object Storage** (bucket + chiavi in `deploy/lmc-backup.conf`), prova di copia verificata («copia su IONOS ok e verificata») e **prova di ripristino** | `docs/DEPLOY.md` Parte 4 | 🔴 la password e il backup locale; 🟠 la copia IONOS |
 | 26 | **Monitoraggio** `https://DOMINIO/health` (es. UptimeRobot, controllo ogni 5 min, avviso via email) | servizio di monitoraggio | 🟠 |
 | 27 | Test finale su telefono: intro, form (invia un preventivo di prova), prenotazione, chat, microfono, tasto emergenza | – | 🔴 |
 | 28 | Registrare il sito su **Google Search Console** (sitemap: `https://DOMINIO/sitemap.xml`) e creare/aggiornare la scheda **Google Business Profile** | Google | 🟢 |

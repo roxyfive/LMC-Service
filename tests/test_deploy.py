@@ -78,7 +78,7 @@ missing = [l for l in labels if l and l.lower() not in guida.lower()]
 check("la guida admin copre tutte le voci del menu", labels and not missing, missing)
 check("checklist go-live con percorso e priorità per ogni voce", all(x in (ROOT / "docs" / "CHECKLIST-GO-LIVE.md").read_text() for x in ("Bloccante", "Dati societari", "ADMIN_PASSWORD", "SMTP", "APP_MODE=production", "Foto e video reali")))
 dep = (ROOT / "docs" / "DEPLOY.md").read_text()
-check("DEPLOY.md: IONOS, HTTPS, backup 7 giorni, ripristino, rclone, /health", all(x in dep for x in ("IONOS", "certbot", "7 giorni", "restore.sh", "rclone", "/health", "setup-vps.sh")))
+check("DEPLOY.md: IONOS, HTTPS, backup 7 giorni, ripristino, rclone, /health", all(x in dep for x in ("IONOS", "certbot", "7 giorni", "restore.sh", "rclone", "/health", "setup-vps.sh", "lmc-backup.conf", "--from-cloud", "backup-status.sh", "/etc/cron.d/lmc-backup", "03:30", "Key management", "verifica cloud ok")))
 
 # ---------- segreti e git ----------
 gi = (ROOT / ".gitignore").read_text()
@@ -93,7 +93,7 @@ check("nessuna chiave/token nel codice versionato", leak == "", leak[:200])
 check(".env.example e env.production.example senza valori segreti", all(not re.search(r"^(SECRET_KEY|ADMIN_PASSWORD|TWILIO_AUTH_TOKEN|VAPI_API_KEY|AI_API_KEY)=\S", (ROOT / f).read_text(), re.M) for f in (".env.example", "deploy/env.production.example")))
 
 # ---------- script di deploy ----------
-for sh in ("setup-vps.sh", "backup.sh", "restore.sh"):
+for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh"):
     check(f"deploy/{sh}: sintassi bash valida", subprocess.run(["bash", "-n", str(ROOT / "deploy" / sh)]).returncode == 0)
 svc = (ROOT / "deploy" / "lmc.service").read_text()
 check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "gunicorn run:app" in svc and "127.0.0.1:8010" in svc and "EnvironmentFile=/srv/lmc/.env" in svc and "Restart=always" in svc)
@@ -101,7 +101,7 @@ ng = (ROOT / "deploy" / "nginx-lmc.conf").read_text()
 check("nginx: gzip, cache statici, upload 200M, /health, rate limit webhook", all(x in ng for x in ("gzip on", "expires 7d", "client_max_body_size 200M", "location = /health", "zone=lmc_hooks")))
 check("manifest PWA con sfondo bianco", c.get("/manifest.webmanifest").get_json()["background_color"] == "#ffffff")
 
-# ---------- backup, rotazione e ripristino reali ----------
+# ---------- backup, rotazione e ripristino reali (locale: la copia cloud è provata in test_backup_cloud) ----------
 work = Path(tempfile.mkdtemp(prefix="lmc_bk_"))
 appdir, bdir = work / "app", work / "backups"
 (appdir / "data" / "uploads").mkdir(parents=True)
@@ -112,37 +112,38 @@ shutil.copy(Path(os.environ["DATA_DIR"]) / "lmc.db", appdir / "data" / "lmc.db")
 (appdir / "data" / "secret.key").write_text("chiave-di-sessione-segreta")
 (appdir / ".env").write_text("TWILIO_AUTH_TOKEN=token-molto-segreto\n")
 (work / "pass").write_text("password-di-test-backup\n")
-env = dict(os.environ, APP_DIR=str(appdir), BACKUP_DIR=str(bdir), PASS_FILE=str(work / "pass"), KEEP_DAYS="7", LMC_BACKUP_CONF=str(work / "nessun.conf"), RCLONE_REMOTE="")
+env = dict(os.environ, APP_DIR=str(appdir), BACKUP_DIR=str(bdir), PASS_FILE=str(work / "pass"), KEEP_DAYS="7", LMC_BACKUP_CONF=str(work / "nessun.conf"),
+           LMC_NO_RUNUSER="1", ALERT_CMD="true")
+for k in ("S3_BUCKET", "S3_ENDPOINT", "RCLONE_REMOTE"):
+    env.pop(k, None)
 bdir.mkdir()
-old = bdir / "lmc-data-2020-01-01_0330.tar.gz"
+old = bdir / "lmc-data-2020-01-01_0330.tar.gz.enc"
 old.write_bytes(b"vecchio")
 os.utime(old, (time.time() - 9 * 86400,) * 2)
-fresh = bdir / "lmc-data-fresco.tar.gz"
+fresh = bdir / "lmc-data-fresco.tar.gz.enc"
 fresh.write_bytes(b"recente")
 os.utime(fresh, (time.time() - 3 * 86400,) * 2)
 r = subprocess.run(["bash", str(ROOT / "deploy" / "backup.sh")], env=env, capture_output=True, text=True)
-check("backup.sh termina con successo", r.returncode == 0, r.stdout + r.stderr)
-datas = sorted(bdir.glob("lmc-data-20*_*.tar.gz")) if False else [p for p in bdir.glob("lmc-data-*.tar.gz") if "fresco" not in p.name and "2020" not in p.name]
+check("backup.sh (solo locale) termina con successo", r.returncode == 0, r.stdout + r.stderr)
+datas = [p for p in bdir.glob("lmc-data-*.tar.gz.enc") if "fresco" not in p.name and "2020" not in p.name]
 secs = list(bdir.glob("lmc-secrets-*.enc"))
-check("creati archivio dati e archivio segreti cifrato", len(datas) == 1 and len(secs) == 1)
-names = subprocess.run(["tar", "-tzf", str(datas[0])], capture_output=True, text=True).stdout
+check("creati archivio dati e archivio segreti, entrambi cifrati", len(datas) == 1 and len(secs) == 1 and not list(bdir.glob("lmc-data-20*_*.tar.gz")))
+dec = lambda f: subprocess.run(f"openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:{work/'pass'} -in {f}", shell=True, capture_output=True).stdout
+names = subprocess.run(["tar", "-tz"], input=dec(datas[0]), capture_output=True).stdout.decode()
 check("l'archivio contiene database, uploads e foto", "./lmc.db" in names and "uploads/x.webp" in names and "foto/organizzate/hero/a.jpg" in names)
 tmpdb = work / "estratto"
 tmpdb.mkdir()
-subprocess.run(["tar", "-xzf", str(datas[0]), "-C", str(tmpdb), "./lmc.db"], check=True)
+subprocess.run(["tar", "-xz", "-C", str(tmpdb), "./lmc.db"], input=dec(datas[0]), check=True)
 con = sqlite3.connect(tmpdb / "lmc.db")
 check("il database nel backup è integro e contiene i dati", con.execute("PRAGMA integrity_check").fetchone()[0] == "ok" and con.execute("select count(*) from admin_users").fetchone()[0] >= 1)
 con.close()
-raw = secs[0].read_bytes()
-check(".env NON è in chiaro nel backup cifrato", b"token-molto-segreto" not in raw and b"TWILIO" not in raw)
-dec = subprocess.run(f"openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:{work/'pass'} -in {secs[0]} | tar -xzO ./.env", shell=True, capture_output=True, text=True)
-check("il file cifrato si decifra con la password", "token-molto-segreto" in dec.stdout, dec.stderr)
+check("nei file di backup non c'è nulla in chiaro (.env, database)", all(b"token-molto-segreto" not in p.read_bytes() and b"SQLite format" not in p.read_bytes() for p in bdir.glob("lmc-*.enc")))
+check("il .env si decifra con la password", b"token-molto-segreto" in subprocess.run(["tar", "-xzO", "./.env"], input=dec(secs[0]), capture_output=True).stdout)
 check("rotazione: via i backup oltre 7 giorni, restano i recenti", not old.exists() and fresh.exists())
 check("cartella backup con permessi riservati (700)", oct(bdir.stat().st_mode & 0o777) == "0o700")
-env2 = dict(env, PASS_FILE=str(work / "assente"))
-r2 = subprocess.run(["bash", str(ROOT / "deploy" / "backup.sh")], env=env2, capture_output=True, text=True)
-check("senza password di cifratura .env non viene mai salvato in chiaro", r2.returncode == 2 and "NON salvato" in r2.stdout and not any(b"token-molto-segreto" in p.read_bytes() for p in bdir.glob("lmc-data-*.tar.gz") if p.stat().st_size > 20))
-# ripristino
+r2 = subprocess.run(["bash", str(ROOT / "deploy" / "backup.sh")], env=dict(env, PASS_FILE=str(work / "assente")), capture_output=True, text=True)
+check("senza password di cifratura non salva nulla (mai in chiaro) ed esce con errore", r2.returncode == 1 and "mai dati in chiaro" in r2.stdout)
+# ripristino da file locale
 (appdir / "data" / "lmc.db").write_bytes(b"ROTTO")
 shutil.rmtree(appdir / "foto")
 r3 = subprocess.run(["bash", str(ROOT / "deploy" / "restore.sh"), str(datas[0]), str(secs[0])], env=dict(env, LMC_YES="1", SERVICE="servizio-inesistente"), capture_output=True, text=True)

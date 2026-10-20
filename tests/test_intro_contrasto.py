@@ -67,9 +67,9 @@ with sync_playwright() as p:
                 seen.add(num)
                 rc = pg.evaluate(RECTS)
                 audio = rc["audio"]
-                pg.add_style_tag(content=".intro-copy>*,.intro-bars,.intro-ctrl{visibility:hidden!important}")
+                pg.add_style_tag(content=".intro-copy>*,.intro-count,.intro-bars,.intro-ctrl{visibility:hidden!important}")
                 im = Image.open(io.BytesIO(pg.screenshot())).convert("RGB")
-                pg.add_style_tag(content=".intro-copy>*,.intro-bars,.intro-ctrl{visibility:visible!important}")
+                pg.add_style_tag(content=".intro-copy>*,.intro-count,.intro-bars,.intro-ctrl{visibility:visible!important}")
                 for k in ("cap", "sub", "count"):
                     r = rc[k]
                     box = (max(0, int(r["x"])), max(0, int(r["y"])), min(w, int(r["x"] + r["w"])), min(h, int(r["y"] + r["h"])))

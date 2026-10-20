@@ -50,4 +50,5 @@ Le foto in `foto/organizzate/` (1 hero, 1 galleria, 3 installazioni) sono **imma
 ## Pubblicazione
 **Pubblicazione online (VPS IONOS):** `docs/DEPLOY.md` (installazione guidata con `deploy/setup-vps.sh`: gunicorn + systemd + nginx + HTTPS + backup notturno).
 Prima del go-live: `docs/CHECKLIST-GO-LIVE.md` (cosa compilare) e `docs/GUIDA-ADMIN.md` (tutto ciò che si gestisce dal pannello).
+Backup: notturno, cifrato, con copia verificata su IONOS Object Storage e avvisi (`docs/DEPLOY.md` Parte 4). Test: `python -m tests.test_backup_cloud` (usa un S3 emulato, serve `pip install "moto[server]" rclone-bin`).
 Controllo «sito attivo»: `GET /health` → `200 {"status":"ok"}`. Test di preparazione al go-live: `python -m tests.test_deploy`.
