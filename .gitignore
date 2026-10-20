@@ -26,3 +26,6 @@ venv/
 foto/da_social/*
 !foto/da_social/.gitkeep
 !foto/da_social/LEGGIMI.md
+
+# originali delle foto prima del miglioramento (copia locale, non versionata)
+foto/_originali/

@@ -141,12 +141,12 @@
 <div class="orn" aria-hidden="true"><i></i></div>
 <div class="band" id="skill-band"><section id="skill" class="sec" aria-labelledby="skill-h">
   <div class="sec-head reveal"><p class="kicker">Cosa facciamo</p><hr class="rule"><h2 id="skill-h">Le nostre skill</h2>
-    {% if demo %}<p class="note"><span class="demo-tag">Demo</span> Descrizioni e foto sono indicative e verranno sostituite con quelle reali di LMC Service.</p>{% endif %}</div>
+    {% if demo %}<p class="note"><span class="demo-tag">Demo</span> Descrizioni indicative: da confermare con LMC Service.</p>{% endif %}</div>
   <div class="skill-grid">
     {% for k in v.skills %}
-    <article class="skill reveal" style="--i:{{ loop.index0 }}" data-anim="zoom">
-      <div class="skill-ph">{% if k.img %}<img loading="lazy" decoding="async" src="/media/{{ k.img }}_960.webp" srcset="/media/{{ k.img }}_480.webp 480w, /media/{{ k.img }}_960.webp 960w, /media/{{ k.img }}_1600.webp 1600w"
-           sizes="(max-width:700px) 100vw, (max-width:1000px) 50vw, 33vw" alt="{{ k.alt }}" width="960" height="720">{% endif %}{% if demo %}<span class="demo-tag pos-tr">Demo</span>{% endif %}</div>
+    <article class="skill reveal{{ '' if k.img else ' no-ph' }}" style="--i:{{ loop.index0 }}" data-anim="zoom">
+      {% if k.img %}<div class="skill-ph"><img loading="lazy" decoding="async" src="/media/{{ k.img }}_960.webp" srcset="/media/{{ k.img }}_480.webp 480w, /media/{{ k.img }}_960.webp 960w, /media/{{ k.img }}_1600.webp 1600w"
+           sizes="(max-width:700px) 100vw, (max-width:1000px) 50vw, 33vw" alt="{{ k.alt }}" width="960" height="720">{% if demo and not v.real_photos %}<span class="demo-tag pos-tr">Demo</span>{% endif %}</div>{% endif %}
       <div class="skill-body">{{ skill_icon(k.slug) }}<h3>{{ k.nome }}</h3><p>{{ k.testo }}</p><a class="more" href="#preventivo" aria-label="Richiedi un preventivo per {{ k.nome }}">Richiedi un preventivo</a></div>
     </article>
     {% endfor %}
@@ -189,15 +189,25 @@
     </a>
     {% endfor %}
   </div>
-  {% if demo %}<p class="note" style="margin-top:1.4rem"><span class="demo-tag">Demo</span> Foto dimostrative: le foto reali vanno in <code>foto/organizzate/</code> (o dal pannello admin) e il sito si aggiorna da solo.</p>{% endif %}
+  {% if demo and has_placeholder %}<p class="note" style="margin-top:1.4rem"><span class="demo-tag">Demo</span> Foto dimostrative: le foto reali vanno in <code>foto/organizzate/</code> (o dal pannello admin) e il sito si aggiorna da solo.</p>{% endif %}
 </section>
 
 <div class="orn" aria-hidden="true"><i></i></div>
 <div class="band"><section id="show-demo" class="sec" aria-labelledby="show-h">
   <div class="sec-head reveal"><p class="kicker">In movimento</p><hr class="rule"><h2 id="show-h">Show demo</h2></div>
   {% if videos %}
-  <div class="vids">
-    {% for vd in videos %}<video class="lazyvid" muted loop playsinline preload="none" data-src="/media/{{ vd.filename }}.mp4" aria-label="{{ vd.title }}"></video>{% endfor %}
+  {% set vlist = videos %}
+  <div class="vids vids-real">
+    {% for vd in vlist %}
+    {% if loop.first %}
+    <figure class="vid vid-feat reveal"><video class="lazyvid" muted loop playsinline preload="none" poster="/media/{{ vd.filename }}_960.webp" data-src="/media/{{ vd.filename }}.mp4" aria-label="{{ vd.title }}"></video>
+      <figcaption><span class="vid-tag">In evidenza</span><b>{{ vd.title }}</b></figcaption></figure>
+    {% else %}
+    <figure class="vid reveal" style="--i:{{ loop.index0 }}"><button type="button" class="vid-play" data-src="/media/{{ vd.filename }}.mp4" aria-label="Riproduci: {{ vd.title }}">
+      <img loading="lazy" decoding="async" src="/media/{{ vd.filename }}_480.webp" alt="" width="270" height="480"><span class="vid-ico" aria-hidden="true"></span></button>
+      <figcaption>{{ vd.title }}</figcaption></figure>
+    {% endif %}
+    {% endfor %}
   </div>
   {% else %}
   <div class="vids">
@@ -237,12 +247,12 @@
                       ('Che servizi offrite?', 'Noleggio di attrezzature audio, video e luci, ledwall, organizzazione eventi, allestimenti e progettazione tecnica. Ci occupiamo anche di impianti di videosorveglianza.'),
                       ('Per quali eventi?', 'Matrimoni, eventi privati, live e congressi.'),
                       ('Quanto costa?', 'Non pubblichiamo prezzi fissi perché ogni evento è diverso: richiedi un preventivo indicando evento, data, luogo, ospiti e servizi.'),
-                      ('Come vi contatto?', 'Dal modulo preventivo, da WhatsApp, per telefono' ~ (' al ' ~ tel if tel else '') ~ ' oppure in DM su Instagram.'),
+                      ('Come vi contatto?', 'Dal modulo preventivo, da WhatsApp, per telefono' ~ (' al ' ~ tel if tel else '') ~ (', via email a ' ~ mail if mail else '') ~ ' oppure in DM su Instagram.'),
                       ('Siete disponibili per le urgenze?', (orari ~ '. ' if orari else '') ~ 'Per un guasto o un’urgenza usa il pulsante rosso “Emergenza 24h”: parli subito con l’assistente AI, che raccoglie la richiesta e avvisa chi è di turno; in alternativa chiami direttamente o lasci il tuo numero e ti richiamiamo.')] %}
 <div class="band"><section id="faq" class="sec" aria-labelledby="faq-h">
   <div class="sec-head reveal"><p class="kicker">Domande frequenti</p><hr class="rule"><h2 id="faq-h">Prima di scriverci</h2></div>
   <div class="faq reveal">
-    {% for qq, aa in faqs %}}
+    {% for qq, aa in faqs %}
     <details><summary>{{ qq }}</summary><p>{{ aa }}</p></details>
     {% endfor %}
   </div>
@@ -341,7 +351,7 @@
   <div class="foot-in">
     <div>
       <img class="fl" src="/static/img/logo-mono-white.svg" width="110" height="110" alt="La Music Company Service" loading="lazy">
-      <p>{{ s.brand }}<br>Service per eventi · {{ s.city }} · dal {{ s.founded }}</p>
+      <p>{{ s.brand }}<br>Service per eventi · {{ s.city }} · dal {{ s.founded }}{% if mail %}<br><a class="foot-mail" href="mailto:{{ mail }}">{{ mail }}</a>{% endif %}</p>
     </div>
     <nav aria-label="Esplora"><p class="foot-h">Esplora</p>
       <ul><li><a href="#chi-siamo">Chi siamo</a></li><li><a href="#skill">Le nostre skill</a></li><li><a href="#eventi">Eventi realizzati</a></li><li><a href="#preventivo">Richiedi un preventivo</a></li><li><a href="#contatti">Contatti</a></li></ul></nav>
@@ -356,7 +366,7 @@
       <ul><li><a href="/privacy">Informativa privacy</a></li><li><a href="/?intro=1">Rivedi l'intro</a></li>
       {% if demo %}<li>Foto e testi demo da sostituire · <span class="demo-tag">Demo</span></li>{% endif %}{% if s.dati_societari %}<li>{{ s.dati_societari }}</li>{% elif demo %}<li>Dati societari (P.IVA): da inserire</li>{% endif %}</ul></nav>
   </div>
-  <div class="legal"><span>© {{ s.brand }} · {{ s.city }}</span><span class="by">Realizzato da <img src="/static/img/fivetech-160.webp" alt="FiveTech" width="64" height="36" loading="lazy"> FiveTech</span></div>
+  <div class="legal"><span>© {{ s.brand }} · {{ s.city }}{% if v.real_photos %} · Foto: Merette Uiterwaal (uso autorizzato dal cliente){% endif %}</span><span class="by">Realizzato da <img src="/static/img/fivetech-160.webp" alt="FiveTech" width="64" height="36" loading="lazy"> FiveTech</span></div>
 </footer>
 
 <!-- LIGHTBOX -->

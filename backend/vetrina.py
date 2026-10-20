@@ -74,8 +74,10 @@ def _uniq(rows):
     return out
 
 
-def pick_skill_photos(images):
-    """Una foto per skill: prima per parola chiave (foto non ancora usate), poi per riuso, poi a rotazione."""
+def pick_skill_photos(images, fallback=False):
+    """Una foto per skill: per parola chiave (foto non ancora usate), poi riuso della stessa. Senza una foto pertinente
+    la skill resta SENZA foto (solo icona e testo): meglio niente che una foto che non c'entra. Con fallback=True
+    (solo per le slide dell'intro, che hanno bisogno di uno sfondo) si ripiega su una foto qualsiasi non ancora usata."""
     pref = {"installazioni": 0, "galleria": 1, "hero": 2, "": 3}
     pool = sorted(images, key=lambda m: pref.get(folder_of(m), 3))
     cand = {slug: [m for m in pool if re.search(kw, _text(m))] for slug, _n, _t, kw in SKILLS}
@@ -83,8 +85,9 @@ def pick_skill_photos(images):
     # prima le skill con meno foto candidate, così non se le rubano a vicenda
     for slug in sorted(cand, key=lambda k: len(cand[k])):
         hits = cand[slug]
-        pick = next((m for m in hits if m["id"] not in used), None) or (hits[0] if hits else None) \
-            or next((m for m in pool if m["id"] not in used), None) or (pool[0] if pool else None)
+        pick = next((m for m in hits if m["id"] not in used), None) or (hits[0] if hits else None)
+        if not pick and fallback:
+            pick = next((m for m in pool if m["id"] not in used), None) or (pool[0] if pool else None)
         if pick:
             used.add(pick["id"])
             out[slug] = pick
@@ -98,14 +101,17 @@ def build(media):
     by = lambda f: [m for m in pool if folder_of(m) == f]
     # hero della home: in evidenza, cartella hero, galleria, altre foto caricate dall'admin
     others = [m for m in pool if folder_of(m) not in ("hero", "galleria", "installazioni") and m["show_home"]]
-    hero_slides = _uniq([m for m in pool if m["featured"]] + by("hero") + by("galleria") + others)[:6] or pool[:6]
-    photos = pick_skill_photos(pool)
+    heroes = _uniq([m for m in pool if m["featured"] and folder_of(m) == "hero"] + by("hero"))
+    # con almeno 3 foto nella cartella hero la slideshow usa SOLO quelle (panoramiche scelte); altrimenti si completa con galleria e altre
+    hero_slides = heroes[:6] if len(heroes) >= 3 else (_uniq([m for m in pool if m["featured"]] + by("hero") + by("galleria") + others)[:6] or pool[:6])
+    photos = pick_skill_photos(pool)                      # per le card delle skill: solo foto pertinenti
+    photos_intro = pick_skill_photos(pool, fallback=True)  # per le slide dell'intro: sempre uno sfondo
     skills = [dict(slug=s, nome=n, testo=t, img=(photos[s]["filename"] if s in photos else None),
                    alt=(photos[s]["title"] if s in photos else n)) for s, n, t, _k in SKILLS]
     hero_pool = _uniq(by("hero") + [m for m in pool if m["featured"]] + hero_slides)
     steps = []
     for i, (sk, cap, sub) in enumerate(INTRO_STEPS):
-        m = photos.get(sk) if sk != "hero" else (hero_pool[(i // 6) % len(hero_pool)] if hero_pool else None)
+        m = photos_intro.get(sk) if sk != "hero" else (hero_pool[(i // 6) % len(hero_pool)] if hero_pool else None)
         steps.append(dict(cap=cap, sub=sub, img=f"/media/{m['filename']}_1600.webp" if m else ""))
     media_dir = Path(ROOT) / "app" / "static" / "media"
     cues = []
@@ -115,7 +121,7 @@ def build(media):
         pass
     if len(cues) != len(steps):
         cues = []
-    return dict(hero_slides=hero_slides, skills=skills, intro_steps=steps, voce_cues=cues,
+    return dict(hero_slides=hero_slides, skills=skills, real_photos=bool(real), intro_steps=steps, voce_cues=cues,
                 voce_url="/static/media/voce.mp3" if (media_dir / "voce.mp3").is_file() else "")
 
 

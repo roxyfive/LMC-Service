@@ -8,10 +8,10 @@ La guida di tutto il pannello è in `docs/GUIDA-ADMIN.md`, il deploy in `docs/DE
 
 | # | Cosa manca | Dove si inserisce | Stato oggi | |
 |---|---|---|---|---|
-| 1 | **Foto e video reali** al posto delle foto demo (hero, galleria, 3 installazioni) e dei segnaposto «FOTO IN ARRIVO». Cancellare poi `foto/organizzate/CREDITI.md` | Admin › Foto e video (Carica / Nascondi / Elimina) oppure cartelle `foto/organizzate/{hero,galleria,installazioni,video}` + «Sincronizza» | Demo temporanee (non sono lavori LMC; fonte e licenza da verificare) | 🔴 |
+| 1 | **Foto e video reali** del cliente (25 foto + 6 video, credito Merette Uiterwaal): già in `foto/organizzate/` e pubblicate. Mancano foto di **videosorveglianza** e **ledwall** (le due card skill sono senza immagine finché non arrivano). Tieni `foto/organizzate/CREDITI.md` | Admin › Foto e video, oppure cartelle `foto/organizzate/{hero,galleria,installazioni,video}` + «Sincronizza» | Reali ✅ (chiedere al cliente le foto mancanti) | 🟠 |
 | 2 | **P.IVA e dati societari** (ragione sociale, P.IVA, sede legale): obbligatori per un sito commerciale | Admin › Testi › *Dati societari nel footer* (compare nel footer e sull'intestazione dei PDF) | Vuoto | 🔴 |
 | 3 | **Informativa privacy completa** (fornitori, sede dei dati, conservazione, basi giuridiche) con il consulente. Il testo base c'è, ma è provvisorio | Admin › Testi › *Informativa privacy – testo principale* e *– dettagli* (il segnaposto «[DA COMPLETARE]» non viene mai mostrato al pubblico) | Testo base | 🔴 |
-| 4 | **Email di contatto del sito** | Admin › Testi › *Email* (oggi la riga Email è nascosta perché manca) | Mancante | 🟠 |
+| 4 | **Email di contatto del sito** | Admin › Testi › *Email* | `lamusiccompany.24@gmail.com` già inserita (sito, Team, footer, assistente) ✅ | 🟢 |
 | 5 | **Disponibilità appuntamenti reali** (fasce e giorni di chiusura) | Admin › Disponibilità | Default lun–ven 10–13 / 16–19 | 🔴 se si accettano prenotazioni |
 | 6 | **Testi dei servizi («skill») da confermare** con Pasquale (4 servizi) | Admin › Testi › *Servizi* | Indicativi | 🟠 |
 | 7 | **Testi «Come lavoriamo» e FAQ** da far approvare (sono nel codice) | `app/templates/index.html` (chiedere allo sviluppatore) | Indicativi | 🟠 |
@@ -50,5 +50,5 @@ La guida di tutto il pannello è in `docs/GUIDA-ADMIN.md`, il deploy in `docs/DE
 ## D. Da sapere
 - **Fatture**: i PDF «fattura» dell'admin sono documenti interni. La **fattura elettronica** (SDI) si emette con il vostro software/commercialista.
 - **Cookie**: il sito usa solo un cookie tecnico di sessione e statistiche anonime senza tracciamento; verifica con il consulente se serve altro.
-- **Foto demo e credits**: finché ci sono foto demo, tieni `foto/organizzate/CREDITI.md`; appena le sostituisci con foto vere puoi cancellarlo.
+- **Foto e credits**: le foto sono del cliente (La Music Company Service), fotografa Merette Uiterwaal, uso autorizzato sul sito del cliente: tieni `foto/organizzate/CREDITI.md`. Le foto sono migliorate con `python -m backend.enhance_foto` (gli originali stanno in `foto/_originali/`, solo sul PC, non su git).
 - **Prima del lancio** fai un backup manuale (`sudo /srv/lmc/deploy/backup.sh`) e prova un ripristino su una cartella di prova (vedi DEPLOY).

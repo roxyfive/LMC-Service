@@ -1,23 +1,45 @@
-# Crediti foto — ⚠️ FOTO DEMO TEMPORANEE
+# Crediti foto e video
 
-**Queste immagini sono solo DEMO** per riempire il sito in attesa delle foto reali di LMC Service.
-Vanno **sostituite** prima della pubblicazione definitiva (istruzioni in `LEGGIMI.md`).
-Non mostrano lavori, impianti o clienti di LMC Service.
+**Foto:** cliente **La Music Company Service** — credito fotografo **Merette Uiterwaal**.
+Uso autorizzato sul sito del cliente (comunicato dal cliente). Non utilizzare altrove senza permesso del fotografo.
+Il credito compare nel piè di pagina del sito («Foto: Merette Uiterwaal»).
 
-| File | Soggetto | Nome file originale | Fonte / autore | Licenza |
-|---|---|---|---|---|
-| `hero/hero-01.jpg` | Telecamere di videosorveglianza dome e bullet | installazione telecamera dome interno | *da indicare* | *da verificare* |
-| `galleria/galleria-01.jpg` | Concerto, luci sul palco e pubblico | concerto luci palco pubblico | *da indicare* | *da verificare* |
-| `installazioni/installazione-01.jpg` | Allestimento palco audio e luci all'esterno | allestimento palco audio luci esterno | *da indicare* | *da verificare* |
-| `installazioni/installazione-02.jpg` | Ledwall su palco da concerto | installazione ledwall palco concerto | *da indicare* | *da verificare* |
-| `installazioni/installazione-03.jpg` | Telecamera di videosorveglianza su muro esterno | installazione telecamera esterno muro | *da indicare* | *da verificare* |
+**Video:** riprese del cliente La Music Company Service (reel America's Cup e riprese di lavoro).
+Il video `video-01.mp4` (reel America's Cup) è stato ricompresso (H.264, qualità alta, 42 MB) per rispettare il limite di 60 MB; è il video in evidenza nella sezione «Show demo».
 
-## Da completare
-Autore e licenza **non sono registrati nei file** (nessun metadato) e non risultano nel repository.
-Chi ha scelto le immagini (Unsplash/Pexels o altra fonte) deve inserire qui fonte, autore e link:
-senza questi dati non si può confermare che siano liberamente utilizzabili.
-Se la licenza richiede l'attribuzione, riportarla anche nel sito. Quando le foto demo saranno sostituite
-con quelle reali, **elimina questo file** o aggiornalo con i crediti delle nuove immagini.
+Le foto sono state migliorate in modo uniforme con `python -m backend.enhance_foto` (esposizione, contrasto, colore, rumore, nitidezza leggera);
+gli originali sono nella cartella locale `foto/_originali/` (non versionata) e nella cronologia di git.
 
-Nota tecnica: i file hanno estensione `.jpg` ma contengono dati PNG. Il sito li legge senza problemi; le foto
-nuove importate con `importa_social.py` mantengono il loro formato originale.
+| File | Soggetto | File originale del cliente | Credito |
+|---|---|---|---|
+| `hero/hero-01.jpg` | Allestimento audio e luci in un cortile storico | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-278.jpg | Merette Uiterwaal |
+| `hero/hero-02.jpg` | Prove luci sul palco di un teatro | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-298.jpg | Merette Uiterwaal |
+| `hero/hero-03.jpg` | Riflettori d'atmosfera e casse su una facciata in pietra | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-267.jpg | Merette Uiterwaal |
+| `installazioni/installazione-01.jpg` | Palco allestito con riflettori, barre LED e teste mobili | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-382.jpg | Merette Uiterwaal |
+| `installazioni/installazione-02.jpg` | Teste mobili e riflettori in un cortile | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-191.jpg | Merette Uiterwaal |
+| `installazioni/installazione-03.jpg` | Cassa amplificata e proiettore su stativo | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-349.jpg | Merette Uiterwaal |
+| `installazioni/installazione-04.jpg` | Montaggio delle luci sulla struttura | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-122.jpg | Merette Uiterwaal |
+| `installazioni/installazione-05.jpg` | Il tecnico posiziona una testa mobile | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-118.jpg | Merette Uiterwaal |
+| `installazioni/installazione-06.jpg` | Regia audio: mixer digitale in flight case | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-133.jpg | Merette Uiterwaal |
+| `installazioni/installazione-07.jpg` | Proiettore teatrale in sala | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-334.jpg | Merette Uiterwaal |
+| `installazioni/installazione-08.jpg` | Mirror ball e giochi di luce | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-366.jpg | Merette Uiterwaal |
+| `galleria/galleria-01.jpg` | Il fonico applica il microfono prima dell'evento | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-409.jpg | Merette Uiterwaal |
+| `galleria/galleria-02.jpg` | Regia audio e luci a bordo evento | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-417.jpg | Merette Uiterwaal |
+| `galleria/galleria-03.jpg` | Il tecnico regola un faro su stativo | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-38.jpg | Merette Uiterwaal |
+| `galleria/galleria-04.jpg` | Preparazione dell'impianto prima dell'evento | La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-3.jpg | Merette Uiterwaal |
+| `galleria/galleria-05.jpg` | Regia video e luci | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-405.jpg | Merette Uiterwaal |
+| `galleria/galleria-06.jpg` | Il tecnico sistema una cassa sul palco | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-267.jpg | Merette Uiterwaal |
+| `galleria/galleria-07.jpg` | Una regia nascosta tra i palchi del teatro | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-237.jpg | Merette Uiterwaal |
+| `galleria/galleria-08.jpg` | Prove in teatro con i riflettori | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-199.jpg | Merette Uiterwaal |
+| `galleria/galleria-09.jpg` | Il tecnico di LMC Service alla regia | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-162.jpg | Merette Uiterwaal |
+| `galleria/galleria-10.jpg` | Al lavoro nella penombra, dietro le quinte | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-143.jpg | Merette Uiterwaal |
+| `galleria/galleria-11.jpg` | Regia audio in teatro | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-118.jpg | Merette Uiterwaal |
+| `galleria/galleria-12.jpg` | Il montaggio di una mirror ball sul palco | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-82.jpg | Merette Uiterwaal |
+| `galleria/galleria-13.jpg` | Collegamenti e controlli dietro le quinte | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-57.jpg | Merette Uiterwaal |
+| `galleria/galleria-14.jpg` | Luci e regia dietro le quinte | La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-26.jpg | Merette Uiterwaal |
+| `video/video-01.mp4` | Reel America's Cup | LAMUSICCOMPANY REEL AMERICAS CUP v2.mp4 | La Music Company Service |
+| `video/video-02.mp4` | Light show in sala | 0327(62).mp4 | La Music Company Service |
+| `video/video-03.mp4` | Giochi di luce rossi | 0327(60).mp4 | La Music Company Service |
+| `video/video-04.mp4` | Montaggio dell'impianto in quota | 0327(56).mp4 | La Music Company Service |
+| `video/video-05.mp4` | Rigging e luci sulle strutture | 0327(33).mp4 | La Music Company Service |
+| `video/video-06.mp4` | Al lavoro sulle strutture del palco | 0327(20).mp4 | La Music Company Service |

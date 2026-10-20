@@ -93,7 +93,7 @@ check("nessuna chiave/token nel codice versionato", leak == "", leak[:200])
 check(".env.example e env.production.example senza valori segreti", all(not re.search(r"^(SECRET_KEY|ADMIN_PASSWORD|TWILIO_AUTH_TOKEN|VAPI_API_KEY|AI_API_KEY)=\S", (ROOT / f).read_text(), re.M) for f in (".env.example", "deploy/env.production.example")))
 
 # ---------- script di deploy ----------
-for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh", "verifica-vps.sh", "verifica-online.sh", "collega-dominio.sh"):
+for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh", "verifica-vps.sh", "verifica-online.sh", "collega-dominio.sh", "aggiorna.sh"):
     check(f"deploy/{sh}: sintassi bash valida", subprocess.run(["bash", "-n", str(ROOT / "deploy" / sh)]).returncode == 0)
 svc = (ROOT / "deploy" / "lmc.service").read_text()
 check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "gunicorn run:app" in svc and "127.0.0.1:8010" in svc and "EnvironmentFile=/srv/lmc/.env" in svc and "Restart=always" in svc)

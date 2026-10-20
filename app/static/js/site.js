@@ -45,6 +45,15 @@
   }), { threshold: .3 });
   $$('.lazyvid').forEach(v => vio.observe(v));
 
+  /* video elenco: la locandina si trasforma nel video solo al tocco (niente 200 MB scaricati in automatico); ne parte uno alla volta */
+  $$('.vid-play').forEach(b => b.addEventListener('click', () => {
+    $$('.lazyvid, .vid video').forEach(v => v.pause());
+    const v = document.createElement('video');
+    v.src = b.dataset.src; v.controls = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('aria-label', b.getAttribute('aria-label') || '');
+    v.poster = (b.querySelector('img') || {}).src || ''; v.className = 'vid-live';
+    b.replaceWith(v); v.play().catch(() => { });
+  }));
+
   /* ---------- portfolio + lightbox accessibile ---------- */
   $$('.filters .chip').forEach(b => b.addEventListener('click', () => {
     $$('.filters .chip').forEach(x => x.classList.remove('on')); b.classList.add('on');

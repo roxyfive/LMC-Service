@@ -283,7 +283,7 @@ journalctl -u lmc -n 30 --no-pager         # nessun errore
 | Riavviare | `systemctl restart lmc` |
 | Log di nginx | `tail -n 50 /var/log/nginx/error.log` |
 | Modificare la configurazione | `nano /srv/lmc/.env` → salva → `systemctl restart lmc` |
-| Aggiornare il sito (git) | `cd /srv/lmc && git pull && .venv/bin/pip install -r requirements.txt && systemctl restart lmc` (**prima fai un backup**: `deploy/backup.sh`) |
+| Aggiornare il sito (git) | `sudo bash /srv/lmc/deploy/aggiorna.sh` (fa da solo: backup → `git pull` → dipendenze → `chown` di `foto/` e `data/` → riavvio → controllo `/health`). Le foto/video nuovi in `foto/organizzate/` si pubblicano da soli all'avvio; quelli spostati o cancellati su git spariscono dal sito |
 | Aggiornare (copia file) | ricopia le cartelle con `scp` come in 2.1 **senza** `data/`, poi `systemctl restart lmc` |
 | Spazio su disco | `df -h /` · `du -sh /srv/lmc/data /var/backups/lmc` |
 | Stato dei backup (locale + IONOS) | `sudo /srv/lmc/deploy/backup-status.sh` |

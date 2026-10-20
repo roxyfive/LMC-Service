@@ -28,7 +28,8 @@ Salva con **Salva tutto**. Un campo che non è nel modulo non viene mai azzerato
 - **Carica**: più file insieme (foto fino a 12 MB, video fino a 60 MB). Le foto vengono ottimizzate in automatico (versioni 400/800/1600 px WebP).
 - Per ogni elemento: titolo, didascalia, categoria (Eventi, Installazioni, Show Demo, Audio, Luci, Video, Progettazione, Meeting), caselle **Mostra in home / in galleria / nell'intro**, **In evidenza** (una sola: è la prima foto della hero), **Nascondi**, **Elimina**.
 - **Riordina** trascinando.
-- **Sincronizza cartella `foto/organizzate`**: pubblica le foto/video nuove copiate nelle sottocartelle `hero`, `galleria`, `installazioni`, `video` (succede anche a ogni avvio del sito).
+- **Sincronizza cartella `foto/organizzate`**: pubblica le foto/video nuove copiate nelle sottocartelle `hero`, `galleria`, `installazioni`, `video` (succede anche a ogni avvio del sito). Quelle spostate o cancellate dalla cartella spariscono dal sito. Il **primo video** (per ordine) è quello «In evidenza» nella sezione Show demo (oggi il reel America's Cup); accanto a `video-01.mp4` si può mettere `video-01.poster.jpg` come locandina, altrimenti si usa un fotogramma.
+- **Migliorare le foto prima di caricarle** (esposizione, colore, rumore, nitidezza leggeri, orientamento): `python -m backend.enhance_foto` — gli originali restano in `foto/_originali/`.
 - Il segnaposto «FOTO IN ARRIVO» compare finché non ci sono foto reali.
 
 ### 🧑‍🤝‍🧑 Team e Contatti (`/admin/m/team`)

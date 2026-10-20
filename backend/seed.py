@@ -55,7 +55,7 @@ def seed():
     # social dismessi: restano solo Instagram, Facebook, TikTok
     cur.execute("DELETE FROM settings WHERE key IN ('threads','x','linktree')")
     # dati reali del cliente: sostituiscono solo i segnaposto, mai ciò che l'admin ha già modificato
-    for k in ("telefono", "whatsapp", "orari", "zone"):
+    for k in ("telefono", "whatsapp", "orari", "zone", "email"):
         cur.execute("UPDATE settings SET value=? WHERE key=? AND (value='' OR value LIKE '[DA%' OR (key='zone' AND value LIKE 'Tutta Italia%'))",
                     (base[k], k))
     cur.execute("UPDATE settings SET value=? WHERE key='servizi' AND value LIKE '%Impianti audio per eventi, meeting e show.%'",
@@ -63,7 +63,9 @@ def seed():
     # team: il titolare è precaricato, il resto si gestisce da Admin > Team e Contatti
     if not cur.execute("SELECT 1 FROM team").fetchone():
         cur.execute("INSERT INTO team(name,role,phone,email,note,visible,sort,notify,on_duty) VALUES(?,?,?,?,?,?,?,?,?)",
-                    ("Pasquale", "Titolare", base["telefono"], "", "Aperto 24 ore", "si", 0, "si", "si"))
+                    ("Pasquale", "Titolare", base["telefono"], base["email"], "Aperto 24 ore", "si", 0, "si", "si"))
+    # sito già in produzione: la scheda di Pasquale riceve l'email se non ne ha una (non sovrascrive mai ciò che l'admin ha scritto)
+    cur.execute("UPDATE team SET email=? WHERE name='Pasquale' AND (email IS NULL OR email='')", (base["email"],))
     # una tantum: nei DB creati prima di notifiche/turni, il titolare risulta di turno e riceve le notifiche
     if not cur.execute("SELECT 1 FROM settings WHERE key='migr_team_duty'").fetchone():
         if not cur.execute("SELECT 1 FROM team WHERE on_duty='si'").fetchone():

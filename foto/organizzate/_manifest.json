@@ -1,182 +1,188 @@
 {
- "installazioni/installazione-01.jpg": {
-  "caption": "",
-  "data": "2026-10-19",
-  "origine": "allestimento palco audio luci esterno.jpg"
- },
- "galleria/galleria-01.jpg": {
-  "caption": "",
-  "data": "2026-10-19",
-  "origine": "concerto luci palco pubblico.jpg"
- },
- "installazioni/installazione-02.jpg": {
-  "caption": "",
-  "data": "2026-10-19",
-  "origine": "installazione ledwall palco concerto.jpg"
- },
  "hero/hero-01.jpg": {
-  "caption": "",
-  "data": "2026-10-19",
-  "origine": "installazione telecamera dome interno.jpg"
- },
- "installazioni/installazione-03.jpg": {
-  "caption": "",
-  "data": "2026-10-19",
-  "origine": "installazione telecamera esterno muro.jpg"
- },
- "video/video-01.mp4": {
-  "caption": "",
+  "caption": "Allestimento audio e luci in un cortile storico",
   "data": "2026-10-20",
-  "origine": "LAMUSICCOMPANY REEL AMERICAS CUP v2.mp4"
- },
- "video/video-02.mp4": {
-  "caption": "",
-  "data": "2026-10-20",
-  "origine": "0327(62).mp4"
- },
- "video/video-03.mp4": {
-  "caption": "",
-  "data": "2026-10-20",
-  "origine": "0327(60).mp4"
- },
- "video/video-04.mp4": {
-  "caption": "",
-  "data": "2026-10-20",
-  "origine": "0327(56).mp4"
- },
- "video/video-05.mp4": {
-  "caption": "",
-  "data": "2026-10-20",
-  "origine": "0327(33).mp4"
- },
- "video/video-06.mp4": {
-  "caption": "",
-  "data": "2026-10-20",
-  "origine": "0327(20).mp4"
- },
- "galleria/galleria-02.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-417.jpg"
- },
- "galleria/galleria-03.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-409.jpg"
- },
- "galleria/galleria-04.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-382.jpg"
- },
- "galleria/galleria-05.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-349.jpg"
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-278.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "hero/hero-02.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-278.jpg"
+  "caption": "Prove luci sul palco di un teatro",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-298.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "hero/hero-03.jpg": {
+  "caption": "Riflettori d'atmosfera e casse su una facciata in pietra",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-267.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-01.jpg": {
+  "caption": "Palco allestito con riflettori, barre LED e teste mobili",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-382.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-02.jpg": {
+  "caption": "Teste mobili e riflettori in un cortile",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-191.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-03.jpg": {
+  "caption": "Cassa amplificata e proiettore su stativo",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-349.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-04.jpg": {
+  "caption": "Montaggio delle luci sulla struttura",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-122.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-05.jpg": {
+  "caption": "Il tecnico posiziona una testa mobile",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-118.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-06.jpg": {
+  "caption": "Regia audio: mixer digitale in flight case",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-133.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-07.jpg": {
+  "caption": "Proiettore teatrale in sala",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-334.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "installazioni/installazione-08.jpg": {
+  "caption": "Mirror ball e giochi di luce",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-366.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "galleria/galleria-01.jpg": {
+  "caption": "Il fonico applica il microfono prima dell'evento",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-409.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "galleria/galleria-02.jpg": {
+  "caption": "Regia audio e luci a bordo evento",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-417.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "galleria/galleria-03.jpg": {
+  "caption": "Il tecnico regola un faro su stativo",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-38.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "galleria/galleria-04.jpg": {
+  "caption": "Preparazione dell'impianto prima dell'evento",
+  "data": "2026-10-20",
+  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-3.jpg",
+  "credito": "Merette Uiterwaal"
+ },
+ "galleria/galleria-05.jpg": {
+  "caption": "Regia video e luci",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-405.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-06.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-267.jpg"
+  "caption": "Il tecnico sistema una cassa sul palco",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-267.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-07.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-191.jpg"
+  "caption": "Una regia nascosta tra i palchi del teatro",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-237.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-08.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-133.jpg"
+  "caption": "Prove in teatro con i riflettori",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-199.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-09.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-122.jpg"
+  "caption": "Il tecnico di LMC Service alla regia",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-162.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-10.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-118.jpg"
+  "caption": "Al lavoro nella penombra, dietro le quinte",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-143.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-11.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-38.jpg"
+  "caption": "Regia audio in teatro",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-118.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-12.jpg": {
-  "caption": "",
-  "data": "2026-09-09",
-  "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-3.jpg"
+  "caption": "Il montaggio di una mirror ball sul palco",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-82.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-13.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-405.jpg"
+  "caption": "Collegamenti e controlli dietro le quinte",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-57.jpg",
+  "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-14.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-366.jpg"
+  "caption": "Luci e regia dietro le quinte",
+  "data": "2026-10-20",
+  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-26.jpg",
+  "credito": "Merette Uiterwaal"
  },
- "galleria/galleria-15.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-334.jpg"
+ "video/video-01.mp4": {
+  "caption": "Reel America's Cup",
+  "data": "2026-10-20",
+  "origine": "LAMUSICCOMPANY REEL AMERICAS CUP v2.mp4",
+  "credito": "La Music Company Service"
  },
- "galleria/galleria-16.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-298.jpg"
+ "video/video-02.mp4": {
+  "caption": "Light show in sala",
+  "data": "2026-10-20",
+  "origine": "0327(62).mp4",
+  "credito": "La Music Company Service"
  },
- "galleria/galleria-17.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-267.jpg"
+ "video/video-03.mp4": {
+  "caption": "Giochi di luce rossi",
+  "data": "2026-10-20",
+  "origine": "0327(60).mp4",
+  "credito": "La Music Company Service"
  },
- "galleria/galleria-18.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-237.jpg"
+ "video/video-04.mp4": {
+  "caption": "Montaggio dell'impianto in quota",
+  "data": "2026-10-20",
+  "origine": "0327(56).mp4",
+  "credito": "La Music Company Service"
  },
- "galleria/galleria-19.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-199.jpg"
+ "video/video-05.mp4": {
+  "caption": "Rigging e luci sulle strutture",
+  "data": "2026-10-20",
+  "origine": "0327(33).mp4",
+  "credito": "La Music Company Service"
  },
- "galleria/galleria-20.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-162.jpg"
- },
- "galleria/galleria-21.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-143.jpg"
- },
- "galleria/galleria-22.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-118.jpg"
- },
- "galleria/galleria-23.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-82.jpg"
- },
- "galleria/galleria-24.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-57.jpg"
- },
- "galleria/galleria-25.jpg": {
-  "caption": "",
-  "data": "2026-05-17",
-  "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-26.jpg"
+ "video/video-06.mp4": {
+  "caption": "Al lavoro sulle strutture del palco",
+  "data": "2026-10-20",
+  "origine": "0327(20).mp4",
+  "credito": "La Music Company Service"
  }
 }

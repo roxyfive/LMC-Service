@@ -5,6 +5,7 @@
 <body><main class="page">
 <h1>Informativa privacy</h1>
 <p>{{ s.privacy }}</p>
+{% if s.email and '[DA' not in s.email %}<p>Per esercitare i tuoi diritti o chiedere informazioni scrivi a <a href="mailto:{{ s.email }}">{{ s.email }}</a>.</p>{% endif %}
 <h2>Assistente virtuale, voce, WhatsApp e statistiche</h2>
 <ul>
 <li><b>Assistente automatico.</b> La chat risponde in automatico (non è una persona). I messaggi servono a rispondere; se scegli «Invia riepilogo su WhatsApp» (casella di consenso) nome, telefono e sintesi della richiesta vengono inviati al team di LMC Service.</li>
