@@ -135,16 +135,43 @@ check("credito fotografo nel footer", "Merette Uiterwaal" in home)
 # ---- tema nero/rosso ----
 css = open("app/static/css/site.css", encoding="utf-8").read()
 tema = css.split("TEMA NERO")[1]
-check("tema: sfondo nero e testi bianchi", "html,body{background:#000;color:#fff}" in tema)
+check("tema: sfondo nero e testi bianchi", "html,body{background:#16161c;color:#fff}" in tema)
 check("tema: accento rosso al posto dell'oro", "--gold:#e11d14" in tema and "--red:#e11d14" in tema)
-check("tema: skill e form con bordo rosso", ".skill{background:#0b0b0b;border:1px solid var(--red)}" in tema and "border:1px solid var(--red)" in tema.split("input,select,textarea")[1][:260])
+check("tema: skill e form con bordo rosso", ".skill{background:#1f1f26;border:1px solid var(--red)}" in tema and "border:1px solid var(--red)" in tema.split("input,select,textarea")[1][:260])
 check("tema: pulsanti secondari con bordo rosso", ".btn-line" in tema and "border-color:var(--red)" in tema)
 check("tema: tasto Emergenza resta rosso vivo", "#ff2d22" in tema and ".sos{" in tema)
 check("tema: font Montserrat/Space Grotesk mantenuti", "Montserrat" in css and "Space Grotesk" in css)
 intro_css = tema.split("INTRO")[1]
 check("intro: sfondo nero, cornice e barre rosse, testi bianchi",
-      ".intro{background:#000;color:#fff}" in intro_css and "rgba(225,29,20" in intro_css and ".intro-bars b{background:linear-gradient(90deg,#ff3a30,#e11d14)}" in intro_css and ".intro-cap{color:#fff" in intro_css)
+      ".intro{background:#16161c;color:#fff}" in intro_css and "rgba(225,29,20" in intro_css and ".intro-bars b{background:linear-gradient(90deg,#ff3a30,#e11d14)}" in intro_css and ".intro-cap{color:#fff" in intro_css)
 check("intro: il blocco ricolorazione non tocca posizione/dimensioni",
       not re.search(r"[{;](bottom|left|right|top|width|height|font-size|animation-duration|margin|padding)\s*:", intro_css))
+# ---- intro: una foto diversa per slide, abbinata al tema; tema grigio-nerastro (non nero puro) ----
+import random
+from backend import vetrina
+man_real = json.load(open("foto/organizzate/_manifest.json", encoding="utf-8"))   # le 25 foto vere: didascalie reali
+pool = []
+for i, (k, v) in enumerate((k, v) for k, v in man_real.items() if not k.startswith("video")):
+    pool.append(dict(id=i + 1, title=v["caption"], caption=v["caption"], source=f"cartella:{k}#x", filename=f"f{i}", placeholder=0))
+seen_sets = set()
+for seed in range(12):
+    ph = vetrina.pick_intro_photos(pool, random.Random(seed))
+    ids = [m["id"] for m in ph if m]
+    assert len(ids) == len(set(ids)), seed
+    seen_sets.add(tuple(ids))
+check("intro: nessuna foto ripetuta in nessuna delle 12 estrazioni (25 foto reali)", len(pool) == 25)
+check("intro: ogni visita può mostrare foto diverse (non sempre le stesse)", len(seen_sets) > 6)
+check("intro: foto insufficienti → meno slide, mai ripetizioni", len([m for m in vetrina.pick_intro_photos(pool[:4], random.Random(1)) if m]) == 4)
+for seed in range(12):
+    one = vetrina.pick_intro_photos(pool, random.Random(seed))
+    assert re.search(r"mixer|regia audio|fonico|microfon|cassa", vetrina._text(one[2])), (seed, vetrina._text(one[2]))
+    assert re.search(r"palco|montaggio|struttur|allestit|rigging", vetrina._text(one[1])), (seed, vetrina._text(one[1]))
+    assert re.search(r"barre led|riflettor|proiettor|mirror|giochi di luce|luci", vetrina._text(one[3])), (seed, vetrina._text(one[3]))
+    assert vetrina.folder_of(one[0]) == "hero" and vetrina.folder_of(one[6]) == "hero"
+check("intro: slide abbinate al tema (Audio→mixer/regia, Allestimenti→palco, Ledwall e luci→luci; prima e ultima da hero)", True)
+hh = c.get("/").get_data(as_text=True)
+srcs = re.findall(r'class="slide kb\d" alt="" (?:data-)?src="([^"]+)"', hh)
+check("intro in pagina: una immagine diversa per slide", len(srcs) == len(set(srcs)) >= 4)
+check("tema: sfondo grigio-nerastro #16161c, sezioni #1c1c22, mai #000 come sfondo", "--night:#16161c" in tema and ".band,.band:has(#richieste){background:#1c1c22" in tema and "background:#000;" not in tema.replace("background:#000;color", ""))
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

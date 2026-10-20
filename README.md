@@ -30,7 +30,7 @@ nella sezione Contatti del sito e l'assistente risponde con questi dati ("numero
 Telefono principale, WhatsApp e orari si modificano in Admin › Testi. Numeri della sezione "In cifre": DEMO finché non si imposta `stats` nelle impostazioni.
 
 ## Design e voce
-Tema nero (richiesta del cliente): sfondo #000, testi bianchi, contorni e accenti rossi (#e11d14), tasto Emergenza rosso vivo; vale anche per l'intro (solo colori). Titoli Montserrat ExtraBold, numeri e etichette Space Grotesk, testi Inter (font locali in `app/static/fonts/`, licenza OFL). Il tema è l'ultimo blocco di `app/static/css/site.css` («TEMA NERO»).
+Tema scuro morbido (grigio-nerastro): sfondo #16161c, sezioni alterne #1c1c22, testi bianchi, contorni e accenti rossi (#e11d14), tasto Emergenza rosso vivo; vale anche per l'intro (solo colori). Titoli Montserrat ExtraBold, numeri e etichette Space Grotesk, testi Inter (font locali in `app/static/fonts/`, licenza OFL). Il tema è l'ultimo blocco di `app/static/css/site.css` («TEMA NERO»).
 L'intro usa musica + didascalie animate: **nessuna voce sintetica del browser**. `app/static/media/voce.mp3` (voce italiana ElevenLabs, 44 s) è già inclusa e `voce.json` ne sincronizza le slide;
 per cambiarla vedi `docs/voce-script.md`. Test audio in un vero browser: `python -m tests.test_audio`. Analisi e ricerca del redesign: `docs/ANALISI-DESIGN.md`. Con `APP_MODE=demo` i testi/foto generici sono marcati DEMO.
 

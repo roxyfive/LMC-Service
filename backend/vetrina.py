@@ -5,6 +5,7 @@ vengono sostituite la home si aggiorna da sola. I testi sotto sono BOZZE descrit
 (nessun numero, cliente o premio): da far confermare al titolare.
 """
 import json
+import random
 import re
 from pathlib import Path
 from .config import FOTO_DIR, ROOT
@@ -33,6 +34,18 @@ INTRO_STEPS = [
     ("videosorveglianza", "Videosorveglianza", "Telecamere per eventi, locali e aziende"),
     ("eventi", "Eventi in tutta Italia", "Matrimoni, eventi privati, live e congressi"),
     ("hero", "Il tuo evento, sotto i riflettori", "Prenota un appuntamento o chiedi un preventivo"),
+]
+
+# Tema fotografico di ogni slide dell'intro (stesso ordine di INTRO_STEPS): parole chiave della foto più coerente e cartelle preferite.
+# Ogni foto compare in UNA sola slide; senza una foto pertinente si ripiega su una qualsiasi non ancora usata (mai su una già mostrata).
+INTRO_THEMES = [
+    (r"cortile storico|allestimento audio", ("hero",)),
+    (r"palco allestito|montaggio|struttur|allestit|rigging", ("installazioni", "galleria")),
+    (r"mixer|regia audio|fonico|microfon|cassa", ("installazioni", "galleria")),
+    (r"barre led|riflettor|proiettor|mirror|giochi di luce|luci", ("installazioni", "galleria")),
+    (r"regia video|collegament|controlli|regia", ("galleria", "installazioni")),
+    (r"teatro|prove|serata|pubblico|quinte", ("galleria", "hero")),
+    (r"riflettori d.atmosfera|facciata|prove luci", ("hero",)),
 ]
 
 # Numeri della sezione "In cifre": DEMO finché il titolare non fornisce quelli veri (settings.stats = JSON [{label,value,suffix}]).
@@ -94,6 +107,34 @@ def pick_skill_photos(images, fallback=False):
     return out
 
 
+def pick_intro_photos(pool, rng=None):
+    """Una foto DIVERSA per ogni slide dell'intro (nessuna ripetizione), abbinata per tema alla didascalia. Ritorna una lista
+    lunga quanto le slide che si riescono a coprire: se le foto non bastano le slide si riducono invece di ripetere."""
+    rng = rng or random.Random()           # a ogni visita l'intro mescola le foto pertinenti: non mostra sempre le stesse
+    pool = list(pool)
+    rng.shuffle(pool)
+    n = min(len(INTRO_STEPS), len(pool))
+    cand = []
+    for i in range(n):
+        rx, folders = INTRO_THEMES[i] if i < len(INTRO_THEMES) else ("", ())
+        rank = lambda m: (folders.index(folder_of(m)) if folder_of(m) in folders else len(folders))
+        hits = sorted([m for m in pool if rx and re.search(rx, _text(m))], key=rank)
+        cand.append(hits)
+    used, out = set(), [None] * n
+    for i in sorted(range(n), key=lambda k: len(cand[k])):      # prima le slide con meno scelta
+        pick = next((m for m in cand[i] if m["id"] not in used), None)
+        if pick:
+            used.add(pick["id"]); out[i] = pick
+    for i in range(n):                                          # le slide rimaste: foto non usata, preferibilmente della cartella giusta
+        if out[i] is None:
+            folders = INTRO_THEMES[i][1] if i < len(INTRO_THEMES) else ()
+            free = [m for m in pool if m["id"] not in used]
+            free.sort(key=lambda m: (folders.index(folder_of(m)) if folder_of(m) in folders else len(folders)))
+            if free:
+                used.add(free[0]["id"]); out[i] = free[0]
+    return out
+
+
 def build(media):
     imgs = [m for m in media if m["kind"] == "image"]
     real = [m for m in imgs if not m["placeholder"]]
@@ -105,14 +146,11 @@ def build(media):
     # con almeno 3 foto nella cartella hero la slideshow usa SOLO quelle (panoramiche scelte); altrimenti si completa con galleria e altre
     hero_slides = heroes[:6] if len(heroes) >= 3 else (_uniq([m for m in pool if m["featured"]] + by("hero") + by("galleria") + others)[:6] or pool[:6])
     photos = pick_skill_photos(pool)                      # per le card delle skill: solo foto pertinenti
-    photos_intro = pick_skill_photos(pool, fallback=True)  # per le slide dell'intro: sempre uno sfondo
     skills = [dict(slug=s, nome=n, testo=t, img=(photos[s]["filename"] if s in photos else None),
                    alt=(photos[s]["title"] if s in photos else n)) for s, n, t, _k in SKILLS]
-    hero_pool = _uniq(by("hero") + [m for m in pool if m["featured"]] + hero_slides)
-    steps = []
-    for i, (sk, cap, sub) in enumerate(INTRO_STEPS):
-        m = photos_intro.get(sk) if sk != "hero" else (hero_pool[(i // 6) % len(hero_pool)] if hero_pool else None)
-        steps.append(dict(cap=cap, sub=sub, img=f"/media/{m['filename']}_1600.webp" if m else ""))
+    intro_photos = pick_intro_photos(pool)               # slide dell'intro: una foto diversa per slide, mai ripetuta
+    steps = [dict(cap=cap, sub=sub, img=f"/media/{m['filename']}_1600.webp")
+             for (sk, cap, sub), m in zip(INTRO_STEPS, intro_photos) if m]
     media_dir = Path(ROOT) / "app" / "static" / "media"
     cues = []
     try:   # voce.json: inizio (in secondi) di ogni slide, ricavato dalle pause della voce

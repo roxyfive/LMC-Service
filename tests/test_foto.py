@@ -2,6 +2,7 @@
 import io
 import json
 import os
+import re
 import tempfile
 import zipfile
 from pathlib import Path
@@ -72,7 +73,7 @@ check("filtro Installazioni presente", 'data-cat="Installazioni"' in home and 'd
 check("hero reale", 'class="hs kb0 on" src="/media/' in home and "logo-1600" not in home.split('id="heroSlides"')[1].split("hero-shade")[0])
 check("sezione skill con 5 card (foto solo dove ce n'è una pertinente)", home.count('class="skill reveal') == 5)
 check("hero con slide dalle cartelle", home.count('class="hs ') >= 2)
-check("intro cinematografica con 7 passi", home.count('class="slide kb') == 7 and 'id="introData"' in home and "Entra nello show" not in home)
+check("intro cinematografica: una foto diversa per slide (poche foto → meno slide, mai ripetute)", 2 < home.count('class="slide kb') < 7 and len(set(re.findall(r'class="slide kb\d" alt="" (?:data-)?src="([^"]+)"', home))) == home.count('class="slide kb') and 'id="introData"' in home and "Entra nello show" not in home)
 js = open("app/static/js/site.js", encoding="utf-8").read()
 intro_js = js.split("/* ---------- intro:")[1]
 check("intro senza voce sintetica (solo musica + voce.mp3)", "speechSynthesis" not in intro_js and "SpeechSynthesisUtterance" not in intro_js)
@@ -81,7 +82,7 @@ check("font locali, niente CDN", "/static/fonts/montserrat" in home and "googlea
 check("sezione contatti con CTA preventivo", 'id="contatti"' in home and 'class="btn btn-gold" href="#preventivo">Richiedi un preventivo' in home)
 check("footer con rivedi intro e privacy", "Rivedi l'intro" in home and 'href="/privacy"' in home)
 check("un solo h1", home.count("<h1") == 1)
-check("voce.mp3 presente e collegata con i cue", '"voce":"/static/media/voce.mp3"' in home.replace(" ", "") and '"cues":[0.0' in home.replace(" ", ""))
+check("voce.mp3 presente e collegata (i cue restano solo con 7 slide complete)", '"voce":"/static/media/voce.mp3"' in home.replace(" ", "") and '"cues":[]' in home.replace(" ", ""))
 check("audio nel DOM (musica + voce)", 'id="introMusic"' in home and 'id="introVoce"' in home)
 check("video reale", 'class="lazyvid"' in home and "/static/media/loop1.mp4" not in home)
 from backend.foto_sync import sync
