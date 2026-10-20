@@ -4,7 +4,7 @@ import time
 from datetime import date
 from flask import (Blueprint, render_template, request, redirect, url_for, session, jsonify, abort,
                    flash, send_file)
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from .db import q, ex, get_setting, set_setting, all_settings
 from .security import admin_required, csrf_token, check_csrf
 from .config import CATEGORIES, MODE
@@ -228,13 +228,17 @@ def foto_reorder():
 
 
 # ---------- testi ----------
-TEXT_FIELDS = [("claim", "Claim", "text"), ("tagline", "Sottotitolo", "text"), ("chi_siamo", "Chi siamo (storia)", "area"),
+TEXT_FIELDS = [("brand", "Nome attività (completo)", "text"), ("brand_short", "Nome breve", "text"), ("owner", "Titolare (nome e cognome)", "text"),
+               ("city", "Città", "text"), ("founded", "Data di fondazione (es. 16/02/2025)", "text"),
+               ("claim", "Claim", "text"), ("tagline", "Sottotitolo", "text"), ("chi_siamo", "Chi siamo (storia)", "area"),
                ("zone", "Zone coperte", "text"), ("telefono", "Telefono", "text"), ("whatsapp", "WhatsApp (solo numeri, con prefisso 39)", "text"),
                ("email", "Email", "text"), ("indirizzo", "Indirizzo / città", "text"), ("orari", "Orari", "text"),
                ("instagram", "Instagram – URL del profilo", "text"), ("facebook", "Facebook – URL della pagina", "text"),
                ("facebook_nome", "Facebook – nome pagina mostrato nel footer", "text"), ("sito_url", "Sito ufficiale – URL (footer \"Seguici\")", "text"), ("tiktok", "TikTok – URL", "text"),
                ("chat_suggerimenti", "Suggerimenti chat – domande pronte, una per riga, max 4 (vuoto = automatiche dai dati del sito)", "area"),
-               ("privacy", "Informativa privacy", "area")]
+               ("dati_societari", "Dati societari nel footer (ragione sociale, P.IVA, sede legale)", "text"),
+               ("privacy", "Informativa privacy – testo principale", "area"),
+               ("privacy_extra", "Informativa privacy – dettagli (fornitori, sede dei dati, conservazione, basi giuridiche)", "area")]
 
 
 @bp.route("/testi", methods=["GET", "POST"])
@@ -242,18 +246,57 @@ TEXT_FIELDS = [("claim", "Claim", "text"), ("tagline", "Sottotitolo", "text"), (
 def testi():
     if request.method == "POST":
         for k, _l, _t in TEXT_FIELDS:
-            set_setting(k, request.form.get(k, "")[:3000])
+            if k in request.form:        # un campo assente dal modulo non viene azzerato
+                set_setting(k, request.form.get(k, "")[:3000])
         names, texts = request.form.getlist("sv_nome"), request.form.getlist("sv_testo")
         set_setting("servizi", json.dumps([{"nome": n[:60], "testo": t[:300]} for n, t in zip(names, texts) if n.strip()],
                                           ensure_ascii=False))
         set_setting("intro_righe", json.dumps([x.strip()[:140] for x in request.form.get("intro_righe", "").splitlines() if x.strip()],
                                               ensure_ascii=False))
+        set_setting("stats", json.dumps(_parse_stats(request.form.get("stats_righe", "")), ensure_ascii=False))
         flash("Testi salvati")
         return redirect(url_for("admin.testi"))
     s = all_settings()
     serv = json.loads(s.get("servizi", "[]") or "[]")
     intro = "\n".join(json.loads(s.get("intro_righe", "[]") or "[]"))
-    return render_template("admin/testi.html", s=s, fields=TEXT_FIELDS, serv=serv, intro=intro)
+    try:
+        stats = "\n".join(f"{x['label']} | {x['value']} | {x.get('suffix', '')}" for x in json.loads(s.get("stats", "") or "[]"))
+    except (ValueError, KeyError, TypeError):
+        stats = ""
+    return render_template("admin/testi.html", s=s, fields=TEXT_FIELDS, serv=serv, intro=intro, stats=stats)
+
+
+def _parse_stats(txt):
+    """Una cifra per riga: «Eventi realizzati | 150 | +» -> [{label, value, suffix}] (righe non valide ignorate, max 6)."""
+    out = []
+    for ln in txt.splitlines():
+        parts = [x.strip() for x in ln.split("|")]
+        if len(parts) >= 2 and parts[0] and parts[1].replace(".", "", 1).isdigit():
+            out.append({"label": parts[0][:40], "value": int(float(parts[1])), "suffix": (parts[2] if len(parts) > 2 else "")[:6]})
+    return out[:6]
+
+
+@bp.route("/password", methods=["GET", "POST"])
+@admin_required
+def password():
+    """Cambio password dell'amministratore (da fare subito dopo il primo accesso)."""
+    msg, ok = "", False
+    if request.method == "POST":
+        check_csrf()
+        u = q("SELECT * FROM admin_users WHERE username=?", (session.get("admin"),), one=True)
+        old, new, new2 = request.form.get("old", ""), request.form.get("new", ""), request.form.get("new2", "")
+        if not u or not check_password_hash(u["pw_hash"], old):
+            msg = "La password attuale non è corretta."
+        elif len(new) < 10:
+            msg = "La nuova password deve avere almeno 10 caratteri."
+        elif new != new2:
+            msg = "Le due nuove password non coincidono."
+        elif new == old:
+            msg = "Scegli una password diversa da quella attuale."
+        else:
+            ex("UPDATE admin_users SET pw_hash=? WHERE id=?", (generate_password_hash(new), u["id"]))
+            msg, ok = "Password cambiata. Alla prossima volta usa quella nuova.", True
+    return render_template("admin/password.html", msg=msg, ok=ok)
 
 
 # ---------- gestionale generico ----------

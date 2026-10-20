@@ -31,7 +31,9 @@ def document_pdf(d, client, s):
     c.drawString(15 * mm, y, "Da:")
     c.setFont("Helvetica", 10)
     c.drawString(15 * mm, y - 5 * mm, f"{s.get('brand', '')} – {s.get('owner', '')}")
-    c.drawString(15 * mm, y - 10 * mm, f"{s.get('indirizzo', '')}  |  {s.get('telefono', '')}  |  {s.get('email', '')}")
+    c.drawString(15 * mm, y - 10 * mm, f"{s.get('indirizzo', '')}  |  {s.get('telefono', '')}  |  {s.get('email', '')}".replace("[DA INSERIRE: email]", "").strip(" |"))
+    if s.get("dati_societari"):      # ragione sociale / P.IVA inseriti da Admin > Testi
+        c.drawString(15 * mm, y - 15 * mm, s["dati_societari"][:95])
     c.setFont("Helvetica-Bold", 10)
     c.drawString(110 * mm, y, "Per:")
     c.setFont("Helvetica", 10)

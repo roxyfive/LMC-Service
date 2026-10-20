@@ -1,8 +1,28 @@
+# --- SEGRETI: non devono MAI finire su git ---
 .env
+.env.*
+!.env.example
+*.key
+*.pem
+*.enc
+secret.key
+# --- dati del sito (database, caricamenti, log email, backup) ---
 data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+outbox.log
+backups/
+lmc-data-*.tar.gz
+lmc-secrets-*.enc
+.lmc-backup-pass
+lmc-backup.conf
+# --- vari ---
 __pycache__/
 *.pyc
 .venv/
+venv/
 foto/da_social/*
 !foto/da_social/.gitkeep
 !foto/da_social/LEGGIMI.md

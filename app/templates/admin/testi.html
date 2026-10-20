@@ -10,6 +10,8 @@
   <div class="form" style="margin:0"><label>Nome<input name="sv_nome" value="{{ serv[i].nome if i < serv|length else '' }}"></label>
   <label>Descrizione<input name="sv_testo" value="{{ serv[i].testo if i < serv|length else '' }}"></label></div>
   {% endfor %}
+  <h2>Cifre in evidenza (sezione «In cifre»)</h2>
+  <label>Una per riga: <code>Etichetta | numero | suffisso</code> — es. <code>Eventi realizzati | 150 | +</code>. Solo numeri veri. Vuoto = nessuna cifra inventata (in modalità demo compaiono quelle dimostrative).<textarea name="stats_righe" rows="5" placeholder="Eventi realizzati | 150 | +">{{ stats }}</textarea></label>
   <label>Frasi dell'intro (una per riga)<textarea name="intro_righe" rows="7">{{ intro }}</textarea></label>
   <button class="btn">Salva tutto</button>
 </form>

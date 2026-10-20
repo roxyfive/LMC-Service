@@ -1,0 +1,2 @@
+# /etc/cron.d/lmc-backup — backup ogni notte alle 03:30 (fuso orario del server: l’installer lo imposta su Europe/Rome)
+30 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1

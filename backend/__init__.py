@@ -19,6 +19,8 @@ def create_app():
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
     if os.getenv("COOKIE_SECURE") == "1":
         app.config["SESSION_COOKIE_SECURE"] = True
+    for w in config.production_warnings():     # solo in APP_MODE=production: configurazioni che metterebbero a rischio il sito online
+        print("ATTENZIONE:", w)
     init_db()
     from .seed import seed
     seed()
@@ -52,6 +54,19 @@ def create_app():
         ex("INSERT INTO calls(from_number,transcript,payload) VALUES(?,?,?)",
            (str(d.get("from", ""))[:40], str(d.get("transcript", ""))[:8000], str(d)[:8000]))
         return jsonify(ok=True)
+
+    @app.route("/health")
+    def health():
+        """Monitoraggio (UptimeRobot, IONOS, nginx): 200 se sito e database rispondono, 503 altrimenti. Nessun dato sensibile."""
+        try:
+            q("SELECT 1", one=True)
+        except Exception:
+            r = jsonify(status="error", db="down")
+            r.status_code = 503
+        else:
+            r = jsonify(status="ok", db="ok", mode=config.MODE)
+        r.headers["Cache-Control"] = "no-store"
+        return r
 
     @app.errorhandler(404)
     def nf(_e):

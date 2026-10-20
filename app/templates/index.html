@@ -354,7 +354,7 @@
     </ul></nav>{% endif %}
     <nav aria-label="Informazioni legali"><p class="foot-h">Note legali</p>
       <ul><li><a href="/privacy">Informativa privacy</a></li><li><a href="/?intro=1">Rivedi l'intro</a></li>
-      {% if demo %}<li>Foto e testi demo da sostituire · <span class="demo-tag">Demo</span></li><li>Dati societari (P.IVA): da inserire</li>{% endif %}</ul></nav>
+      {% if demo %}<li>Foto e testi demo da sostituire · <span class="demo-tag">Demo</span></li>{% endif %}{% if s.dati_societari %}<li>{{ s.dati_societari }}</li>{% elif demo %}<li>Dati societari (P.IVA): da inserire</li>{% endif %}</ul></nav>
   </div>
   <div class="legal"><span>© {{ s.brand }} · {{ s.city }}</span><span class="by">Realizzato da <img src="/static/img/fivetech-160.webp" alt="FiveTech" width="64" height="36" loading="lazy"> FiveTech</span></div>
 </footer>

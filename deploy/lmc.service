@@ -1,0 +1,28 @@
+# /etc/systemd/system/lmc.service  — il sito LMC Service (gunicorn) si avvia da solo e riparte se si blocca
+[Unit]
+Description=LMC Service (gunicorn)
+After=network.target
+
+[Service]
+User=lmc
+Group=lmc
+WorkingDirectory=/srv/lmc
+# Le chiavi stanno nel file .env (permessi 600). Nessun commento sulla stessa riga dei valori.
+EnvironmentFile=/srv/lmc/.env
+ExecStart=/srv/lmc/.venv/bin/gunicorn run:app \
+    --bind 127.0.0.1:8010 \
+    --workers 2 --threads 4 \
+    --timeout 60 --graceful-timeout 30 \
+    --max-requests 2000 --max-requests-jitter 200 \
+    --access-logfile - --error-logfile -
+Restart=always
+RestartSec=3
+# hardening: il servizio può scrivere solo in data/ e foto/
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/srv/lmc/data /srv/lmc/foto
+
+[Install]
+WantedBy=multi-user.target

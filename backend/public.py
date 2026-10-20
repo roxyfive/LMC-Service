@@ -358,7 +358,10 @@ def api_chat():
 
 @bp.route("/privacy")
 def privacy():
-    return render_template("privacy.html", s=ctx())
+    s = dict(ctx())
+    # i segnaposto "[DA COMPLETARE ...]" non devono mai comparire al pubblico: si completano da Admin > Testi
+    s["privacy"] = re.sub(r"\s*\[DA COMPLETARE[^\]]*\]", "", s.get("privacy", "") or "")
+    return render_template("privacy.html", s=s, demo=(os.getenv("APP_MODE", "demo") == "demo"))
 
 
 @bp.route("/robots.txt")
@@ -379,7 +382,7 @@ def manifest():
     return jsonify({
         "name": "La Music Company Service", "short_name": "LMC Service", "lang": "it",
         "start_url": "/", "scope": "/", "display": "standalone",
-        "background_color": "#f8f4ec", "theme_color": "#0e1a30",
+        "background_color": "#ffffff", "theme_color": "#0e1a30",
         "shortcuts": [
             {"name": "Richiedi un preventivo", "short_name": "Preventivo", "url": "/#preventivo", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},
             {"name": "Emergenza 24h", "short_name": "Emergenza", "url": "/?sos=1", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},

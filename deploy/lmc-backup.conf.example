@@ -1,0 +1,10 @@
+# /etc/lmc-backup.conf  (facoltativo)  — chmod 600
+APP_DIR=/srv/lmc
+BACKUP_DIR=/var/backups/lmc
+# quanti giorni di backup tenere
+KEEP_DAYS=7
+# file con la password che cifra .env (creato dall'installer; copiala anche in un posto sicuro fuori dal VPS!)
+PASS_FILE=/root/.lmc-backup-pass
+# copia fuori dal VPS con rclone (vedi docs/DEPLOY.md, sezione "Backup fuori dal VPS"). Vuoto = disattivata.
+# esempio IONOS Object Storage:  RCLONE_REMOTE=ionos:nome-del-bucket/lmc
+RCLONE_REMOTE=
