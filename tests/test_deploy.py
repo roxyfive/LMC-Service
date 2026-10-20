@@ -93,7 +93,7 @@ check("nessuna chiave/token nel codice versionato", leak == "", leak[:200])
 check(".env.example e env.production.example senza valori segreti", all(not re.search(r"^(SECRET_KEY|ADMIN_PASSWORD|TWILIO_AUTH_TOKEN|VAPI_API_KEY|AI_API_KEY)=\S", (ROOT / f).read_text(), re.M) for f in (".env.example", "deploy/env.production.example")))
 
 # ---------- script di deploy ----------
-for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh"):
+for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh", "verifica-vps.sh", "verifica-online.sh", "collega-dominio.sh"):
     check(f"deploy/{sh}: sintassi bash valida", subprocess.run(["bash", "-n", str(ROOT / "deploy" / sh)]).returncode == 0)
 svc = (ROOT / "deploy" / "lmc.service").read_text()
 check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "gunicorn run:app" in svc and "127.0.0.1:8010" in svc and "EnvironmentFile=/srv/lmc/.env" in svc and "Restart=always" in svc)
@@ -174,6 +174,7 @@ else:
             except Exception:
                 time.sleep(.5)
         body = urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5).read().decode()
+        vo = subprocess.run(["bash", str(ROOT / "deploy" / "verifica-online.sh"), f"http://127.0.0.1:{port}", "--no-system"], capture_output=True, text=True, timeout=120)
     finally:
         p.terminate()
         p.wait(timeout=10)
@@ -182,6 +183,7 @@ else:
     check("gunicorn parte e /health dice mode=production", hh is not None and '"mode":"production"' in hh.replace(" ", ""), hh)
     check("produzione: nessun bollino DEMO nella home", body is not None and "demo-tag" not in body and "foto e testi demo" not in body.lower())
     check("avvio in produzione: avviso se ADMIN_PASSWORD resta nel .env", "ADMIN_PASSWORD è ancora nel .env" in lg_txt)
+    check("verifica-online.sh: nessun problema bloccante su un sito in produzione", vo.returncode == 0 and "modalità production" in vo.stdout and "nessun bollino DEMO" in vo.stdout, vo.stdout[-700:])
     check("nessun dato sensibile nel log di avvio", "PrimoAvvio12345" not in lg_txt)
 
 print(f"\n{ok} ok, {fail} falliti")

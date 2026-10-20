@@ -33,6 +33,16 @@ ssh root@IP_DELLA_VPS
 
 ---
 
+### 1.5 Controllo preliminare della VPS (consigliato)
+Prima di installare, lancia sulla VPS il controllo che non modifica nulla (sistema, RAM, disco, porte 22/80/443 libere, firewall, DNS del dominio):
+```bash
+bash /srv/lmc/deploy/verifica-vps.sh www.tuodominio.it      # senza dominio: bash /srv/lmc/deploy/verifica-vps.sh
+```
+Le porte aperte **sul firewall IONOS** si controllano dal tuo PC (`Test-NetConnection IP -Port 80` in PowerShell, `nc -vz IP 80` su Mac/Linux): lo script ti ricorda i comandi.
+
+### 1.6 Non hai ancora il dominio?
+Installa con l'**IP** della VPS: `bash /srv/lmc/deploy/setup-vps.sh IP_DELLA_VPS` (sito in **HTTP**; microfono, PWA e installazione come app richiedono HTTPS e quindi non funzionano finché non colleghi il dominio). Quando il DNS punta alla VPS: `bash /srv/lmc/deploy/collega-dominio.sh www.tuodominio.it tua@email.it` (configura nginx, certificato HTTPS e cookie sicuri).
+
 ## Parte 2 – Installazione automatica (consigliata)
 
 ### 2.1 Copia il progetto sulla VPS
@@ -61,7 +71,11 @@ Può essere rilanciato senza danni (non cancella dati, non rigenera un `.env` es
 - la **password admin iniziale** → annotala e cambiala subito;
 - la **password di cifratura dei backup** → salvala in un gestore di password *fuori dalla VPS*.
 
-### 2.3 Controlli veloci
+### 2.3 Controlli (uno script fa tutto)
+```bash
+bash /srv/lmc/deploy/verifica-online.sh https://www.tuodominio.it
+```
+Controlla servizi, permessi del `.env`, `/health` in modalità production, nessun bollino DEMO, certificato HTTPS, redirect, gzip, log senza errori, backup. Manualmente:
 ```bash
 systemctl status lmc --no-pager        # deve dire: active (running)
 curl -s https://www.tuodominio.it/health   # deve rispondere {"db":"ok","mode":"production","status":"ok"}
