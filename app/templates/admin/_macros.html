@@ -1,0 +1,12 @@
+{% macro righe(items, tariffe) %}
+<div id="lines"><div class="scroll"><table class="lines"><thead><tr><th>Descrizione</th><th>Q.tà</th><th>Prezzo €</th><th class="r">Importo €</th><th></th></tr></thead><tbody>
+{% for it in items %}<tr><td><input name="desc" value="{{ it.desc }}" placeholder="Descrizione" aria-label="Descrizione"></td>
+<td class="q"><input name="qty" value="{{ '%g'|format(it.qty) }}" inputmode="decimal" aria-label="Quantità"></td>
+<td class="p"><input name="price" value="{{ '%g'|format(it.price) }}" inputmode="decimal" aria-label="Prezzo"></td>
+<td class="t num">0,00</td><td><button type="button" class="btn s d" data-del aria-label="Togli la riga">✕</button></td></tr>{% endfor %}
+</tbody></table></div>
+<p style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center"><button type="button" class="btn s g" id="addLine">+ Aggiungi riga</button>
+{% if tariffe %}<select id="tarPick" aria-label="Aggiungi dal listino" style="max-width:340px"><option value="">+ dal listino tariffe…</option>
+{% for t in tariffe %}<option value="{{ t.id }}" data-name="{{ t.name }}" data-price="{{ '%g'|format(t.price) }}">{{ t.category }} · {{ t.name }} — € {{ t.price|eur }} {{ t.unit }}</option>{% endfor %}</select>{% endif %}</p></div>
+{% endmacro %}
+{% macro stato_badge(s) %}<span class="badge {{ {'pagata':'ok','saldato':'ok','emessa':'b','parziale':'w','scaduta':'no','bozza':'','annullata':'no','da versare':'w','accettato':'ok','rifiutato':'no','inviato':'b'}.get(s,'') }}">{{ s }}</span>{% endmacro %}

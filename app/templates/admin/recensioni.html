@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}{% block title %}Recensioni{% endblock %}{% block body %}
+<h1>Recensioni</h1>
+{% if not base_ok %}<div class="flash warn">Per inviare le richieste automatiche imposta l'indirizzo pubblico del sito: in <code>.env</code> <code>PUBLIC_URL=https://…</code> oppure Testi › «Sito ufficiale – URL». Le richieste manuali funzionano comunque (il link usa l'indirizzo da cui sei collegato).</div>{% endif %}
+{% if link %}<div class="flash"><b>Link personale della recensione</b> (copialo e mandalo anche su WhatsApp):<br><span class="pw" style="font-size:.9rem">{{ link }}</span></div>{% endif %}
+<p class="tabs">{% for s,l in [('in attesa','Da approvare'),('approvata','Pubblicate'),('richiesta','Richieste inviate'),('rifiutata','Rifiutate')] %}<a class="{{ 'on' if tab==s }}" href="/admin/recensioni?t={{ s }}">{{ l }} ({{ counts[s] }})</a>{% endfor %}</p>
+<div class="grid2">
+<section class="panel"><h2 style="margin-top:0">Chiedi una recensione</h2>
+<form method="post" action="/admin/recensioni/richiedi" class="form" style="border:0;padding:0;background:none;margin:0"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="full">Da un evento o appuntamento<select name="da"><option value="">— scegli —</option>
+{% for e in events %}<option value="event:{{ e.id }}">Evento {{ e.date|dmy }} · {{ e.title }}{% if e.name %} ({{ e.name }}){% endif %}</option>{% endfor %}
+{% for a in apps %}<option value="appt:{{ a.id }}">Appuntamento · {{ a.name }} ({{ a.event_type }} {{ a.event_date|dmy }})</option>{% endfor %}</select></label>
+<label>…oppure nome cliente<input name="author"></label><label>Email<input name="email" type="email"></label><label class="full">Evento (come comparirà)<input name="event" placeholder="es. Matrimonio"></label>
+<button class="btn">Invia richiesta</button></form>
+<form method="post" action="/admin/recensioni/automatiche" class="form inline" style="margin-top:.8rem"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="chk"><input type="checkbox" name="auto" {{ 'checked' if auto }}> Invia da solo la richiesta il giorno dopo l'evento (solo clienti con email)</label><button class="btn s g">Salva</button><button class="btn s o" name="run" value="1">Esegui ora</button></form></section>
+<section class="panel"><h2 style="margin-top:0">Aggiungi una recensione ricevuta altrove</h2>
+<form method="post" action="/admin/recensioni/aggiungi" class="form" style="border:0;padding:0;background:none;margin:0"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Nome<input name="author" required></label><label>Stelle<select name="stars">{% for n in [5,4,3] %}<option>{{ n }}</option>{% endfor %}</select></label><label>Evento<input name="event"></label><label>Fonte<input name="source" placeholder="Google, Facebook…"></label>
+<label class="full">Testo (solo recensioni reali)<textarea name="text" rows="3" required></textarea></label><button class="btn">Pubblica sul sito</button></form></section>
+</div>
+<h2>{{ {'in attesa':'Da approvare','approvata':'Pubblicate sul sito','richiesta':'Richieste inviate (in attesa di risposta)','rifiutata':'Rifiutate'}.get(tab,'Tutte') }}</h2>
+{% for r in rows %}<div class="item"><div class="row"><span class="stars" aria-label="{{ r.stars }} stelle">{{ '★' * (r.stars or 0) }}<span>{{ '★' * (5 - (r.stars or 0)) }}</span></span> <b>{{ r.author }}</b>{% if r.event %}<span class="mut">· {{ r.event }}</span>{% endif %} <span class="badge">{{ r.source }}</span> <small class="mut">{{ (r.created or r.requested_at or '')[:10]|dmy }}</small></div>
+{% if r.status == 'richiesta' %}<p class="mut">Richiesta inviata {% if r.email %}a {{ r.email }}{% endif %} — il cliente non ha ancora risposto. Link: <code>{{ base }}/recensione/{{ r.token }}</code></p>
+<form method="post" action="/admin/recensioni/{{ r.id }}/elimina"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="t" value="{{ tab }}"><button class="btn s d" data-confirm="Eliminare la richiesta?">Elimina</button></form>
+{% else %}
+<form method="post" action="/admin/recensioni/{{ r.id }}/modifica" class="form" style="background:none;border:0;padding:.4rem 0;margin:0"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="t" value="{{ tab }}">
+<label>Nome<input name="author" value="{{ r.author }}"></label><label>Stelle<select name="stars">{% for n in [5,4,3,2,1] %}<option {{ 'selected' if n==r.stars }}>{{ n }}</option>{% endfor %}</select></label><label>Evento<input name="event" value="{{ r.event }}"></label>
+<label class="full">Testo<textarea name="text" rows="3">{{ r.text }}</textarea></label>
+<div class="row full" style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn s g">Salva modifiche</button>
+{% if r.status != 'approvata' %}<button class="btn s" formaction="/admin/recensioni/{{ r.id }}/stato" name="stato" value="approvata">✔ Approva e pubblica</button>{% endif %}
+{% if r.status != 'rifiutata' %}<button class="btn s d" formaction="/admin/recensioni/{{ r.id }}/stato" name="stato" value="{{ 'rifiutata' if r.status=='in attesa' else 'in attesa' }}">{{ 'Rifiuta' if r.status=='in attesa' else 'Togli dal sito' }}</button>{% endif %}
+<button class="btn s d" formaction="/admin/recensioni/{{ r.id }}/elimina" data-confirm="Eliminare definitivamente?">✕</button></div></form>{% endif %}</div>
+{% else %}<p class="mut">Niente qui.</p>{% endfor %}
+{% endblock %}

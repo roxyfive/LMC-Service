@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}{% block title %}Tariffe{% endblock %}{% block body %}
+<h1>Tariffe (listino base)</h1>
+<p class="mut">Prezzi di partenza usati quando prepari preventivi e fatture (menu «dal listino») e, se vuoi, per la <b>stima indicativa</b> nel configuratore del sito. Le voci con <b>0 €</b> e disattivate sono segnaposto: inserisci tu i prezzi veri.</p>
+<form method="post" class="form inline"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="pubbliche_toggle" value="1">
+  <label class="chk"><input type="checkbox" name="tariffe_pubbliche" {{ 'checked' if pubbliche }}> Mostra nel configuratore del sito una stima indicativa «da € …» (solo voci marcate «sul sito»)</label><button class="btn s g">Salva</button></form>
+<section class="panel"><h2 style="margin-top:0">Nuova voce</h2>
+<form method="post" class="form" style="margin:0"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Nome<input name="name" required placeholder="es. Impianto audio per 100 persone"></label>
+<label>Categoria<select name="category">{% for c in cats %}<option>{{ c }}</option>{% endfor %}</select></label>
+<label>Servizio del sito<select name="service"><option value="">— nessuno —</option>{% for s in services %}<option>{{ s }}</option>{% endfor %}</select></label>
+<label>Unità<select name="unit">{% for u in units %}<option>{{ u }}</option>{% endfor %}</select></label>
+<label>Prezzo € (IVA esclusa)<input name="price" inputmode="decimal" required></label><label>Note<input name="note"></label>
+<label class="chk"><input type="checkbox" name="public"> Sul sito (stima)</label><button class="btn">Aggiungi</button></form></section>
+<h2>Listino</h2>
+<div class="scroll"><table><tr><th>Nome</th><th>Categoria</th><th>Servizio sito</th><th>Unità</th><th>Prezzo €</th><th>Note</th><th>Attiva</th><th>Sul sito</th><th></th></tr>
+{% for t in rows %}<tr id="t{{ t.id }}"><form method="post" action="/admin/tariffe/{{ t.id }}"><input type="hidden" name="csrf" value="{{ csrf }}">
+<td><input name="name" value="{{ t.name }}" aria-label="Nome" style="min-width:200px"></td>
+<td><select name="category" aria-label="Categoria">{% for c in cats %}<option {{ 'selected' if c==t.category }}>{{ c }}</option>{% endfor %}</select></td>
+<td><select name="service" aria-label="Servizio"><option value="">—</option>{% for s in services %}<option {{ 'selected' if s==t.service }}>{{ s }}</option>{% endfor %}</select></td>
+<td><select name="unit" aria-label="Unità">{% for u in units %}<option {{ 'selected' if u==t.unit }}>{{ u }}</option>{% endfor %}</select></td>
+<td><input name="price" value="{{ '%g'|format(t.price) }}" inputmode="decimal" style="width:90px" aria-label="Prezzo"></td><td><input name="note" value="{{ t.note }}" aria-label="Note"></td>
+<td><input type="checkbox" name="active" {{ 'checked' if t.active }} aria-label="Attiva"></td><td><input type="checkbox" name="public" {{ 'checked' if t.public }} aria-label="Sul sito"></td>
+<td class="nw"><button class="btn s">Salva</button> <button class="btn s d" formaction="/admin/tariffe/{{ t.id }}/elimina" data-confirm="Eliminare la tariffa?">✕</button></td></form></tr>
+{% else %}<tr><td colspan="9" class="mut">Nessuna tariffa.</td></tr>{% endfor %}</table></div>
+{% endblock %}

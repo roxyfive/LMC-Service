@@ -1,0 +1,5 @@
+{% extends "admin/base.html" %}{% block title %}Accesso non consentito{% endblock %}{% block body %}
+<h1>Accesso non consentito</h1>
+<div class="card-s"><p>Il tuo ruolo (<b>{{ role_label }}</b>) non può aprire questa pagina. Se ti serve, chiedilo al titolare.</p>
+<a class="btn" href="/admin/">Torna alla dashboard</a></div>
+{% endblock %}

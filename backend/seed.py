@@ -66,6 +66,19 @@ def seed():
                     ("Pasquale", "Titolare", base["telefono"], base["email"], "Aperto 24 ore", "si", 0, "si", "si"))
     # sito già in produzione: la scheda di Pasquale riceve l'email se non ne ha una (non sovrascrive mai ciò che l'admin ha scritto)
     cur.execute("UPDATE team SET email=? WHERE name='Pasquale' AND (email IS NULL OR email='')", (base["email"],))
+    # listino tariffe di partenza: voci SENZA prezzo e disattivate (i prezzi veri li inserisce il titolare in Admin › Tariffe)
+    if not cur.execute("SELECT 1 FROM tariffe").fetchone():
+        for n, cat, svc, unit, note in [
+                ("Impianto audio per eventi (casse + mixer + microfoni)", "Audio", "Audio", "a evento", "Da compilare: prezzo base per un evento medio"),
+                ("Ledwall", "Ledwall / Video", "Video", "al mq", "Da compilare: prezzo al metro quadro"),
+                ("Luci per la serata (set base)", "Luci", "Luci", "a serata", "Da compilare"),
+                ("Allestimento palco", "Allestimenti", "Allestimenti", "a evento", "Da compilare"),
+                ("Tecnico / fonico", "Personale", "", "all'ora", "Da compilare"),
+                ("Trasporto e montaggio/smontaggio", "Trasporto", "", "a evento", "Da compilare")]:
+            cur.execute("INSERT INTO tariffe(name,category,service,unit,price,note,active,public,sort) VALUES(?,?,?,?,0,?,0,0,?)",
+                        (n, cat, svc, unit, note, 0))
+    # il primo utente (titolare) porta il nome del titolare, se non ne ha uno
+    cur.execute("UPDATE admin_users SET name='Pasquale' WHERE username='admin' AND (name IS NULL OR name='')")
     # una tantum: nei DB creati prima di notifiche/turni, il titolare risulta di turno e riceve le notifiche
     if not cur.execute("SELECT 1 FROM settings WHERE key='migr_team_duty'").fetchone():
         if not cur.execute("SELECT 1 FROM team WHERE on_duty='si'").fetchone():

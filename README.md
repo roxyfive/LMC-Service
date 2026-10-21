@@ -43,6 +43,12 @@ Controllo doppioni/qualità: `python -m backend.controllo_foto` (vedi `docs/CONT
 `python importa_social.py foto/da_social/*.zip` → estrae, rinomina e smista in `foto/organizzate/`; poi riavvia il sito
 (o Admin › Foto › Sincronizza). Dettagli in `foto/organizzate/LEGGIMI.md`. Test: `python -m tests.test_foto`
 
+## Gestionale, ruoli e kit di consegna
+- Admin completo: dashboard, agenda, richieste, preventivi, fatture (PDF, numerazione, SDI), acconti, recensioni, galleria eventi, tariffe, statistiche, WhatsApp, utenti e registro attività. Guida: `docs/GUIDA-ADMIN.md`; proposte in attesa di ok: `docs/PROPOSTE-GESTIONALE.md`; fatturazione elettronica: `docs/FATTURAZIONE-SDI.md`.
+- Ruoli: **ADMIN** (tutto) e **COLLABORATORE** (agenda, richieste, galleria in bozza, materiale, eventi). Permessi controllati dal server (`backend/rbac.py`), azioni sensibili nel registro attività.
+- `python -m backend.kit_consegna` → cartella `consegna/` (non versionata) con 2 guide PDF, 2 QR da stampare, 2 video tutorial (9:16 e 16:9) e `LEGGIMI.txt`. Screenshot su database di prova. Voci narranti in `backend/kit_assets/audio/` (con `ELEVENLABS_API_KEY` nel `.env` le mancanti si generano da sole). Test: `python -m tests.test_kit`.
+- Da compilare dopo il deploy: *Fatture > Dati fiscali* (P.IVA, IBAN), *Tariffe*, `PUBLIC_URL` nel `.env`, utenti collaboratori.
+
 ## Rigenerare materiali
 `python -m backend.make_assets` (loghi/icone/musica) · `python video/make_video.py` · `python docs/make_pdf.py`
 

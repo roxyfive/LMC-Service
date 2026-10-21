@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}{% from "admin/_macros.html" import stato_badge %}{% block title %}Fatture{% endblock %}{% block body %}
+<h1>Fatture</h1>
+{% if fiscal_missing %}<div class="flash warn">Mancano dati fiscali per le fatture: {{ fiscal_missing|join(', ') }}. <a href="/admin/fatture/impostazioni">Compilali ora</a> (Partita IVA e sede compaiono sul PDF).</div>{% endif %}
+<div class="cards">
+  <div><b>€ {{ cards.emesse|eur }}</b><span>fatturato {{ years[0] }}</span></div>
+  <div><b>€ {{ cards.incassate|eur }}</b><span>incassato su fatture {{ years[0] }}</span></div>
+  <div><b>€ {{ cards.da_incassare|eur }}</b><span>da incassare</span></div>
+  <div><b>{{ cards.scadute }}</b><span>fatture scadute</span></div>
+</div>
+<p style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center"><a class="btn" href="/admin/fatture/nuova">+ Nuova fattura</a><a class="btn g" href="/admin/fatture/impostazioni">⚙ Dati fiscali e numerazione</a>
+<span style="margin-left:auto" class="mut">Filtra:</span>
+<a class="btn s {{ 'o' if not stato }}" href="/admin/fatture{{ '?anno=' ~ anno if anno }}">Tutte</a>
+{% for s in ['bozza','emessa','parziale','scaduta','pagata','annullata'] %}<a class="btn s {{ 'o' if stato==s else 'g' }}" href="/admin/fatture?stato={{ s }}{{ '&anno=' ~ anno if anno }}">{{ s }}</a>{% endfor %}
+<select onchange="location='/admin/fatture?anno='+this.value+'{{ '&stato=' ~ stato if stato }}'" aria-label="Anno"><option value="">Tutti gli anni</option>{% for y in years %}<option {{ 'selected' if y==anno }}>{{ y }}</option>{% endfor %}</select></p>
+<div class="scroll"><table><tr><th>N.</th><th>Cliente</th><th>Data</th><th>Scadenza</th><th class="r">Totale</th><th class="r">Residuo</th><th>Stato</th><th>SDI</th><th></th></tr>
+{% for v in rows %}<tr><td class="nw"><a href="/admin/fatture/{{ v.id }}"><b>{{ v.number or 'bozza #' ~ v.id }}</b></a></td><td>{{ v.client_name or '—' }}</td>
+<td class="nw num">{{ v.issue_date|dmy }}</td><td class="nw num">{{ v.due_date|dmy }}</td><td class="r nw num">€ {{ v.total|eur }}</td>
+<td class="r nw num">{% if v.status in ('emessa','pagata') %}€ {{ v.resid|eur }}{% else %}—{% endif %}</td><td>{{ stato_badge(v.show) }}</td><td class="mut">{{ v.sdi_status if v.status in ('emessa','pagata') else '' }}</td>
+<td class="nw"><a class="btn s" href="/admin/fatture/{{ v.id }}.pdf" target="_blank">PDF</a></td></tr>
+{% else %}<tr><td colspan="9" class="mut">Nessuna fattura.</td></tr>{% endfor %}</table></div>
+{% endblock %}

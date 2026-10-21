@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}{% block title %}WhatsApp{% endblock %}{% block body %}
+<h1>WhatsApp</h1>
+<div class="cards">
+  <div><b>{{ 'Attivo' if tw_ready else 'Non attivo' }}</b><span>integrazione Twilio{% if sender %} · mittente {{ sender }}{% endif %}</span></div>
+  <div><b class="num">{{ sent7 }}</b><span>messaggi inviati (7 giorni)</span></div>
+  <div><b class="num {{ 'down' if err7 }}">{{ err7 }}</b><span>errori (7 giorni)</span></div>
+  <div><b class="num">{{ rec.duty }}</b><span>destinatari «di turno»</span></div>
+</div>
+{% if not tw_ready %}<div class="flash warn">WhatsApp non è configurato: senza Twilio nessun avviso parte (il sito funziona lo stesso). Inserisci le credenziali in <a href="/admin/impostazioni#wa">Impostazioni › WhatsApp / Twilio</a>.</div>{% endif %}
+<div class="grid2">
+<section class="panel"><h2 style="margin-top:0">Cosa viene inviato</h2><ul style="padding-left:1.1rem;display:grid;gap:.4rem;margin:0">
+<li><b>Avviso immediato</b> a ogni nuovo preventivo/appuntamento: <span class="badge {{ 'ok' if flag else 'no' }}">{{ 'attivo' if flag else 'spento' }}</span></li>
+<li><b>Report</b> giornaliero, settimanale e mensile (<a href="/admin/report">Report</a>)</li>
+<li><b>Emergenza 24h</b> e riepiloghi della chat/assistente vocale: <span class="badge {{ 'ok' if vapi else '' }}">assistente vocale {{ 'attivo' if vapi else 'non configurato' }}</span></li>
+<li><b>Riepilogo manuale</b>: su ogni richiesta, il pulsante «📲 Riepilogo» in <a href="/admin/richieste">Richieste</a> (o in Agenda) lo invia a chi è di turno.</li></ul>
+<p><a class="btn s" href="/admin/impostazioni#wa">Impostazioni WhatsApp</a> <a class="btn s g" href="/admin/m/team">Chi riceve gli avvisi (Team)</a></p></section>
+<section class="panel"><h2 style="margin-top:0">Ultimi invii</h2>
+<div class="scroll"><table><tr><th>Quando (UTC)</th><th>A</th><th>Tipo</th><th>Esito</th></tr>
+{% for r in log %}<tr><td class="nw num">{{ r.ts[:16] }}</td><td class="nw">{{ r.to_num }}</td><td>{{ r.kind }}</td><td><span class="badge {{ 'ok' if r.ok else 'no' }}">{{ 'ok' if r.ok else 'errore' }}</span> <span class="mut">{{ r.detail[:60] }}</span></td></tr>
+{% else %}<tr><td colspan="4" class="mut">Nessun invio registrato.</td></tr>{% endfor %}</table></div></section>
+</div>
+{% endblock %}

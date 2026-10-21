@@ -308,11 +308,13 @@
       Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico', Videosorveglianza: 'telecamere e controllo degli spazi',
       Progettazione: 'progetto tecnico su misura con sopralluogo'
     };
+    let PRICES = {};      // stima indicativa: solo se il titolare l'ha attivata in Admin › Tariffe
+    fetch('/api/tariffe', { cache: 'no-store' }).then(r => r.json()).then(d => { if (d.enabled) { PRICES = d.prices; render(); } }).catch(() => {});
     const render = () => {
       const s = [...val.servizi]; go.disabled = !(val.tipo && s.length);
       if (!val.tipo || !s.length) { out.innerHTML = '<p class="mut">Seleziona almeno tipo di evento e servizi: qui comparirà la tua proposta.</p>'; return; }
       out.innerHTML = '<h3>La tua proposta di partenza</h3><p><b>' + val.tipo + '</b>' + (val.ospiti ? ' · ' + val.ospiti + ' ospiti' : '') + '</p><ul>' +
-        s.map(x => '<li>' + (HINT[x] || x) + '</li>').join('') + '</ul><p class="mut">Verrà inserita nelle note del preventivo: la rifiniamo insieme dopo il tuo messaggio.</p>';
+        s.map(x => '<li>' + (HINT[x] || x) + '</li>').join('') + '</ul>' + (() => { const t = s.reduce((a, x) => a + (PRICES[x] || 0), 0); return t ? '<p><b>Stima indicativa: da € ' + t.toLocaleString('it-IT') + '</b> <span class="mut">(IVA esclusa, a seconda di sala, ospiti e allestimento: il preventivo è su misura)</span></p>' : ''; })() + '<p class="mut">Verrà inserita nelle note del preventivo: la rifiniamo insieme dopo il tuo messaggio.</p>';
     };
     $$('.opts', root).forEach(g => g.addEventListener('click', e => {
       const b = e.target.closest('.opt'); if (!b) return; const name = g.dataset.name, v = b.dataset.v, multi = g.classList.contains('multi');

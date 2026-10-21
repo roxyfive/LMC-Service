@@ -72,8 +72,8 @@ check("email inserita da admin compare nei contatti", "info@example.it" in home)
 
 # ---------- documentazione di go-live ----------
 guida = (ROOT / "docs" / "GUIDA-ADMIN.md").read_text()
-nav = open(ROOT / "app/templates/admin/base.html").read()
-labels = [re.sub(r"^[^A-Za-zÀ-ù]+", "", t).strip() for t in re.findall(r'<a href="/[^"]*"[^>]*>([^<]+)</a>', nav)]
+from backend.rbac import MENU        # il menu è generato dal ruolo: le voci sono elencate in rbac.MENU
+labels = [m[1] for m in MENU]
 missing = [l for l in labels if l and l.lower() not in guida.lower()]
 check("la guida admin copre tutte le voci del menu", labels and not missing, missing)
 check("checklist go-live con percorso e priorità per ogni voce", all(x in (ROOT / "docs" / "CHECKLIST-GO-LIVE.md").read_text() for x in ("Bloccante", "Dati societari", "ADMIN_PASSWORD", "SMTP", "APP_MODE=production", "Foto e video reali")))

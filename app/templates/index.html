@@ -221,7 +221,7 @@
 <section id="dicono" class="sec" aria-labelledby="dicono-h">
   <div class="sec-head reveal"><p class="kicker">Parlano di noi</p><hr class="rule"><h2 id="dicono-h">Dicono di noi</h2></div>
   {% if reviews %}
-  <div class="grid3">{% for r in reviews %}<blockquote class="card reveal" style="--i:{{ loop.index0 % 3 }}"><p>“{{ r.text }}”</p><footer>— {{ r.author }}{% if r.source %}, {{ r.source }}{% endif %}</footer></blockquote>{% endfor %}</div>
+  <div class="grid3">{% for r in reviews %}<blockquote class="card reveal" style="--i:{{ loop.index0 % 3 }}">{% if r.stars %}<div class="stars" role="img" aria-label="{{ r.stars }} stelle su 5">{{ "★" * r.stars }}<span>{{ "★" * (5 - r.stars) }}</span></div>{% endif %}<p>“{{ r.text }}”</p><footer>— {{ r.author }}{% if r.event %}, {{ r.event }}{% elif r.source and r.source not in ("dal sito", "richiesta via email") %}, {{ r.source }}{% endif %}</footer></blockquote>{% endfor %}</div>
   {% else %}
   <p class="note"><span class="demo-tag">Demo</span> Qui compariranno le recensioni reali dei clienti (dalla storia in evidenza “Dicono di noi”). Nessuna recensione è inventata.</p>
   {% endif %}

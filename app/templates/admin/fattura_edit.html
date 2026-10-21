@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}{% from "admin/_macros.html" import righe %}{% block title %}{{ 'Modifica bozza' if inv else 'Nuova fattura' }}{% endblock %}{% block body %}
+<h1>{{ 'Modifica bozza' if inv else 'Nuova fattura' }}</h1>
+<p class="mut">La fattura nasce come <b>bozza</b>: il numero progressivo viene assegnato solo quando premi «Emetti». I prezzi sono <b>IVA esclusa</b>.</p>
+<form method="post" action="/admin/fatture/salva">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+{% if inv %}<input type="hidden" name="id" value="{{ inv.id }}">{% endif %}
+<input type="hidden" name="source_type" value="{{ pre.source_type or '' }}"><input type="hidden" name="source_id" value="{{ pre.source_id or '' }}">
+<div class="form">
+  <label>Cliente<select name="client_id" required><option value="">— scegli —</option>{% for c in clients %}<option value="{{ c.id }}" {{ 'selected' if pre.client_id and pre.client_id|int==c.id }}>{{ c.name }}</option>{% endfor %}</select>
+    <small class="mut">Indirizzo, P.IVA/CF e codice SDI si completano in <a href="/admin/m/clienti">Clienti</a>.</small></label>
+  <label>Data fattura<input type="date" name="issue_date" value="{{ (inv.issue_date if inv else '') or '' }}"><small class="mut">vuoto = oggi</small></label>
+  <label>Scadenza pagamento<input type="date" name="due_date" value="{{ (inv.due_date if inv else '') or '' }}"><small class="mut">vuoto = {{ f.fat_giorni }} giorni dall'emissione</small></label>
+  <label>IVA %<input id="iva_pct" name="iva_pct" value="{{ '%g'|format(inv.iva_pct) if inv else f.fat_iva }}" inputmode="decimal"></label>
+  <label>Evento collegato<select name="event_id"><option value="">—</option>{% for e in events %}<option value="{{ e.id }}" {{ 'selected' if pre.event_id and pre.event_id==e.id }}>{{ e.date|dmy }} · {{ e.title }}</option>{% endfor %}</select></label>
+  <label class="full">Note (compaiono sulla fattura)<input name="notes" value="{{ pre.notes }}" maxlength="500"></label>
+</div>
+<h2>Voci</h2>
+{{ righe(pre['items'], tariffe) }}
+<div class="totbox panel"><div><span>Imponibile</span><b class="num">€ <span id="t_imp">0,00</span></b></div><div><span>IVA</span><b class="num">€ <span id="t_iva">0,00</span></b></div><div class="big"><span>Totale</span><b class="num">€ <span id="t_tot">0,00</span></b></div></div>
+<p><button class="btn">Salva bozza</button> <a class="btn g" href="/admin/fatture">Annulla</a></p>
+</form>
+{% endblock %}

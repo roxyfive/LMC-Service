@@ -108,6 +108,8 @@ def _background(app):
                 if time.time() - last_rem > 3600:
                     last_rem = time.time()
                     reminders_once()
+                    from . import reviews
+                    reviews.auto_requests()
         except Exception:
             pass
         time.sleep(60)

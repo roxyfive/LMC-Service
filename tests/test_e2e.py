@@ -71,7 +71,7 @@ check("login errato", "Credenziali errate" in c.post("/admin/login", data={"csrf
 r = c.post("/admin/login", data={"csrf": csrf(lg), "username": "admin", "password": PW})
 check("login ok", r.status_code == 302 and c.get("/admin/").status_code == 200)
 for p in ["richieste", "disponibilita", "foto", "testi", "m/clienti", "m/fornitori", "m/magazzino", "m/eventi", "m/prima-nota",
-          "m/recensioni", "documenti", "chiamate"]:
+          "documenti", "chiamate"]:
     check(f"admin/{p}", c.get(f"/admin/{p}").status_code == 200)
 adm = c.get("/admin/foto").get_data(as_text=True)
 A = {"X-CSRF-Token": csrf(adm)}
@@ -84,32 +84,37 @@ ex = im.getexif()
 ex[274] = 6
 im.save(buf, "JPEG", exif=ex)
 buf.seek(0)
-r = c.post("/admin/foto/upload", data={"files": [(buf, "telefono.jpg")], "category": "Luci"},
+r = c.post("/admin/foto/upload", data={"files": [(buf, "telefono.jpg")], "category": "Luci", "caption": "Foto dal telefono"},
            headers=FETCH, content_type="multipart/form-data")
 check("upload immagine", r.get_json()["ok"] == ["telefono.jpg"], r.get_data(as_text=True))
-r = c.post("/admin/foto/upload", data={"files": [(io.BytesIO(b"MZ\x90\x00 evil"), "virus.exe")]},
+r = c.post("/admin/foto/upload", data={"files": [(io.BytesIO(b"MZ\x90\x00 evil"), "virus.exe")], "caption": "x"},
            headers=FETCH, content_type="multipart/form-data")
 check("exe rifiutato", r.get_json()["ok"] == [] and r.get_json()["errors"], r.get_data(as_text=True))
-r = c.post("/admin/foto/upload", data={"files": [(io.BytesIO(b"non immagine"), "falso.jpg")]},
+r = c.post("/admin/foto/upload", data={"files": [(io.BytesIO(b"non immagine"), "falso.jpg")], "caption": "x"},
            headers=FETCH, content_type="multipart/form-data")
 check("falso jpg rifiutato", r.get_json()["ok"] == [])
 r = c.post("/admin/foto/upload", data={"files": [(io.BytesIO(b"x"), "a.jpg")]}, content_type="multipart/form-data")
 check("upload senza CSRF rifiutato", r.status_code == 400)
 home = c.get("/").get_data(as_text=True)
-check("foto nuova in galleria", 'alt="telefono"' in home)
+check("foto nuova NON in galleria finché non è pubblicata (parte nascosta)", 'alt="telefono"' not in home and 'alt="Foto dal telefono"' not in home)
 with app.app_context():
-    row = q("SELECT id,filename FROM media WHERE title='telefono'", one=True)
+    new_id = q("SELECT id FROM media WHERE source=\"caricata dall'admin\" ORDER BY id DESC", one=True)["id"]
+c.post(f"/admin/foto/{new_id}/pubblica", data={"csrf": A["X-CSRF-Token"]})
+home = c.get("/").get_data(as_text=True)
+check("foto nuova in galleria dopo «Pubblica»", 'alt="Foto dal telefono"' in home)
+with app.app_context():
+    row = q("SELECT id,filename FROM media WHERE title='Foto dal telefono'", one=True)
     mid, fname = row["id"], row["filename"]
 check("file servito", c.get(f"/media/{fname}_960.webp").status_code == 200)
 check("traversal bloccato", c.get("/media/..%2f..%2fdata%2flmc.db").status_code == 404)
 im2 = Image.open(io.BytesIO(c.get(f"/media/{fname}_960.webp").data))
 check("EXIF ruotata (900x600 -> verticale)", im2.height > im2.width, im2.size)
 c.post(f"/admin/foto/{mid}/elimina", data={"csrf": A["X-CSRF-Token"]})
-check("elimina foto", 'alt="telefono"' not in c.get("/").get_data(as_text=True))
+check("elimina foto", 'alt="Foto dal telefono"' not in c.get("/").get_data(as_text=True))
 
 # gestionale + PDF
-r = c.post("/admin/documenti", data={"csrf": A["X-CSRF-Token"], "kind": "preventivo", "client_id": "1",
-                                     "items": "Impianto audio;1;350\nLuci;2;100"})
+r = c.post("/admin/documenti", data={"csrf": A["X-CSRF-Token"], "client_id": "1",
+                                     "desc": ["Impianto audio", "Luci"], "qty": ["1", "2"], "price": ["350", "100"]})
 check("crea documento", r.status_code == 302)
 pdf = c.get("/admin/documenti/1.pdf")
 check("PDF generato", pdf.status_code == 200 and pdf.data[:4] == b"%PDF")

@@ -1,0 +1,9 @@
+{% extends "admin/base.html" %}{% block title %}Registro attività{% endblock %}{% block body %}
+<h1>Registro attività</h1>
+<form class="form inline" method="get"><label>Utente<select name="utente"><option value="">tutti</option>{% for u in users %}<option {{ 'selected' if u==who }}>{{ u }}</option>{% endfor %}</select></label>
+<label>Azione contiene<input name="azione" value="{{ act }}" placeholder="es. fattura"></label><button class="btn s">Filtra</button></form>
+<div class="scroll"><table><tr><th>Quando (UTC)</th><th>Chi</th><th>Ruolo</th><th>Azione</th><th>Dettagli</th><th>IP</th></tr>
+{% for r in rows %}<tr><td class="nw num">{{ r.ts[:19] }}</td><td><b>{{ r.username or '—' }}</b></td><td>{{ r.role }}</td><td>{{ r.action }}</td><td class="mut" style="word-break:break-word;max-width:420px">{{ r.detail }}</td><td class="mut nw">{{ r.ip }}</td></tr>
+{% else %}<tr><td colspan="6" class="mut">Nessuna attività registrata.</td></tr>{% endfor %}</table></div>
+<p class="mut">Ultime 300 azioni. Le password e i token non vengono mai scritti nel registro.</p>
+{% endblock %}

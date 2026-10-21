@@ -128,6 +128,8 @@ fi
 # --- 5) segno l'ultimo backup riuscito (lo legge backup-status.sh) ---
 if [ "$FAIL" = "0" ]; then
   printf 'time=%s\nstamp=%s\ndata=%s\ncloud=%s\n' "$(date -Is)" "$STAMP" "$(basename "$DATA_FILE")" "$REMOTE_STATE" > "$BACKUP_DIR/LAST_OK"
+  # copia dello stato (nessun segreto) nella cartella dati: la pagina Admin › Backup la legge senza accedere a /root
+  cp "$BACKUP_DIR/LAST_OK" "$APP_DIR/data/backup-status.txt" 2>/dev/null && chmod 644 "$APP_DIR/data/backup-status.txt" && { id "$APP_USER" >/dev/null 2>&1 && chown "$APP_USER" "$APP_DIR/data/backup-status.txt" 2>/dev/null || true; }
 fi
 KEPT="$(find "$BACKUP_DIR" -maxdepth 1 \( -name 'lmc_2*' -o -name 'lmc-data-*' \) | wc -l)"
 if [ "$FAIL" = "0" ]; then LOG "Backup LMC OK: $DATA_FILE ($(du -h "$DATA_FILE" | cut -f1)) · segreti: ${SEC_FILE:+ok} · cloud: $REMOTE_STATE · copie locali: $KEEP_DAYS giorni ($KEPT file)"

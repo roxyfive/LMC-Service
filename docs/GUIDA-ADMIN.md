@@ -84,16 +84,39 @@ L'URL del webhook Vapi da incollare nel pannello Vapi è `https://TUO-DOMINIO/we
 ---
 
 ## 5. GESTIONALE
-| Voce | Cosa fa |
-|---|---|
-| 👥 **Clienti** | Anagrafica: nome, telefono, email, note |
-| 🚚 **Fornitori** | Nome, categoria, contatti, note |
-| 🎛️ **Magazzino** | Attrezzature: categoria (audio/luci/video), quantità, stato (disponibile / in uso / in riparazione / fuori servizio) |
-| 🎤 **Eventi** | Calendario eventi: titolo, data, luogo, cliente, note + **assegna attrezzatura** all'evento (controlla le quantità) |
-| 🧾 **Preventivi/Fatture** | Crea il documento (cliente, voci `descrizione;quantità;prezzo`, note), scarica il **PDF**, cambia stato, elimina |
-| 💶 **Prima nota** | Entrate/uscite con totali |
+Il menu a sinistra (su telefono: pulsante in alto) mostra **solo le voci consentite al tuo ruolo**. Ruoli: **ADMIN** (tutto) e **COLLABORATORE** (agenda, richieste, galleria in sola bozza, materiale, eventi, assistente).
 
-> ⚠️ I PDF «fattura» sono documenti interni: **la fattura elettronica ufficiale** si emette con il tuo software/commercialista (SDI).
+| Voce | Cosa fa | Ruolo |
+|---|---|---|
+| **Dashboard** | Appuntamenti di oggi, nuove richieste, incassi del mese, prossimi eventi | tutti (incassi: solo admin) |
+| **Agenda** | Calendario mensile a colori; clic su un giorno: conferma, blocca/sblocca, note | tutti |
+| **Richieste** | Richieste e prenotazioni dal sito; cambio stato; «Invia riepilogo» su WhatsApp | tutti |
+| **Preventivi** | Crea il preventivo (voci `descrizione;quantità;prezzo`), PDF, stato, trasformalo in fattura | admin |
+| **Fatture** | Bozza, numero progressivo assegnato all'emissione, PDF elegante, stati (bozza/emessa/parziale/pagata/scaduta), stato SDI manuale. **Dati fiscali** (P.IVA, sede, IBAN, numerazione, IVA) in *Fatture > Dati fiscali* | admin |
+| **Acconti** | Pagamenti parziali (metodo, data, nota), residuo e stato calcolati da soli, riepilogo incassato/da incassare | admin |
+| **Clienti** | Anagrafica con indirizzo, P.IVA, CF, codice SDI, PEC | admin |
+| **Galleria** | Foto con didascalia obbligatoria, tipo evento e data; partono nascoste; solo l'admin pubblica o elimina | tutti (pubblica: admin) |
+| **Recensioni** | Richiesta dopo l'evento (link personale), stelle e testo, approvazione prima della pubblicazione | admin |
+| **Testi del sito** | Tutti i testi del sito in un solo modulo | admin |
+| **Tariffe** | Listino base; usato nei preventivi e (se «pubbliche») nella stima del configuratore | admin |
+| **Materiale** | Attrezzature, quantità e stato | tutti |
+| **Eventi** | Calendario eventi, attrezzatura assegnata con controllo quantità | tutti |
+| **Assistente e chat** | Chiamate e chat dell'assistente AI | tutti |
+| **WhatsApp** | Stato di Twilio, destinatari dei report, ultimi invii | admin |
+| **Statistiche** | Incassi per mese/anno, eventi per tipo, servizi richiesti, conversione richieste → confermati | admin |
+| **Report e visite** | Visite al sito e report | admin |
+| **Team e contatti** | Persone mostrate nel sito e destinatari delle notifiche | admin |
+| **Utenti e permessi** | Crea utenti, assegna il ruolo, disattiva, reimposta la password | admin |
+| **Registro attività** | Chi ha fatto cosa e quando (azioni sensibili) | admin |
+| **Impostazioni** | Dati societari, cifre del sito, SMTP, ecc. | admin |
+| **Backup** | Stato dell'ultimo backup (locale + Google Drive) | admin |
+
+**Prima del primo uso compila:** *Fatture > Dati fiscali* (P.IVA, sede, IBAN, numerazione), *Tariffe* (i prezzi), `PUBLIC_URL` nel `.env` (link delle email di recensione) e crea gli utenti collaboratori.
+
+> ⚠️ I PDF «fattura» sono copie di cortesia: **la fattura elettronica ufficiale** si emette con il tuo software/commercialista (SDI). Dettagli in [`FATTURAZIONE-SDI.md`](FATTURAZIONE-SDI.md).
+
+### Kit di consegna (guide PDF, QR, video)
+`python -m backend.kit_consegna` genera in `consegna/` due guide PDF (Admin e Cliente), due QR da stampare, due video tutorial (verticale 9:16 e orizzontale 16:9) e un `LEGGIMI.txt`. Usa dati di prova: il database vero non viene toccato. Opzioni: `--url`, `--solo-pdf`, `--shots CARTELLA`.
 
 ---
 

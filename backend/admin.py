@@ -6,18 +6,20 @@ from flask import (Blueprint, render_template, request, redirect, url_for, sessi
                    flash, send_file)
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import q, ex, get_setting, set_setting, all_settings
-from .security import admin_required, csrf_token, check_csrf
+from .security import admin_required, csrf_token, check_csrf, current_user
+from . import rbac
 from .config import CATEGORIES, MODE
 from .media import save_upload, delete_files
 from .mailer import send_mail
-from .pdfgen import document_pdf
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 _attempts = {}
 
 MODULES = {
     "clienti": {"table": "clients", "title": "Clienti", "fields": [
-        ("name", "Nome", "text"), ("phone", "Telefono", "text"), ("email", "Email", "text"), ("notes", "Note", "area")]},
+        ("name", "Nome / ragione sociale", "text"), ("phone", "Telefono", "text"), ("email", "Email", "text"),
+        ("address", "Indirizzo (per fattura)", "text"), ("piva", "Partita IVA", "text"), ("cf", "Codice fiscale", "text"),
+        ("sdi_code", "Codice destinatario SDI", "text"), ("pec", "PEC", "text"), ("notes", "Note", "area")]},
     "fornitori": {"table": "suppliers", "title": "Fornitori", "fields": [
         ("name", "Nome", "text"), ("category", "Categoria", "text"), ("phone", "Telefono", "text"),
         ("email", "Email", "text"), ("notes", "Note", "area")]},
@@ -27,7 +29,8 @@ MODULES = {
         ("notes", "Note", "area")]},
     "eventi": {"table": "events", "title": "Calendario eventi", "fields": [
         ("title", "Titolo", "text"), ("date", "Data", "date"), ("place", "Luogo", "text"),
-        ("client_id", "Cliente", "client"), ("notes", "Note", "area")]},
+        ("event_type", "Tipo di evento", "select:Matrimonio,Festa privata,Evento aziendale / Meeting,Concerto / Show,Discoteca / Locale,Altro"),
+        ("status", "Stato", "select:confermato,svolto,annullato"), ("client_id", "Cliente", "client"), ("notes", "Note", "area")]},
     "prima-nota": {"table": "journal", "title": "Prima nota", "fields": [
         ("date", "Data", "date"), ("description", "Descrizione", "text"), ("type", "Tipo", "select:entrata,uscita"),
         ("amount", "Importo €", "number"), ("notes", "Note", "area")]},
@@ -36,8 +39,6 @@ MODULES = {
         ("note", "Nota (es. orari, disponibilità)", "area"), ("visible", "Mostra sul sito e all'assistente", "select:si,no"),
         ("sort", "Ordine (0 = primo)", "number"),
         ("notify", "Riceve notifiche e report su WhatsApp", "select:si,no"), ("on_duty", "Di turno (riceve riepiloghi ed emergenze)", "select:si,no")]},
-    "recensioni": {"table": "reviews", "title": "Dicono di noi", "fields": [
-        ("author", "Autore", "text"), ("text", "Testo (solo recensioni reali)", "area"), ("source", "Fonte", "text")]},
 }
 
 
@@ -57,32 +58,32 @@ def login():
         if len(_attempts[ip]) >= 5:
             err = "Troppi tentativi. Riprova tra 5 minuti."
         else:
-            u = q("SELECT * FROM admin_users WHERE username=?", (request.form.get("username", ""),), one=True)
+            un = request.form.get("username", "").strip()
+            u = q("SELECT * FROM admin_users WHERE lower(username)=lower(?)", (un,), one=True)
             if u and check_password_hash(u["pw_hash"], request.form.get("password", "")):
-                session.clear()
-                session["admin"] = u["username"]
-                return redirect(url_for("admin.dashboard"))
-            _attempts[ip].append(now)
-            err = "Credenziali errate."
+                if not u["active"]:
+                    rbac.audit("Accesso rifiutato (utente disattivato)", un, user=u)
+                    err = "Questo utente è stato disattivato. Contatta il titolare."
+                else:
+                    session.clear()
+                    session["uid"] = u["id"]
+                    session["admin"] = u["username"]
+                    ex("UPDATE admin_users SET last_login=datetime('now') WHERE id=?", (u["id"],))
+                    rbac.audit("Accesso", "", user=u)
+                    return redirect(url_for("admin.dashboard"))
+            else:
+                _attempts[ip].append(now)
+                rbac.audit("Accesso fallito", un[:40])
+                err = "Credenziali errate."
     return render_template("admin/login.html", err=err, csrf=csrf_token())
 
 
 @bp.route("/logout", methods=["POST"])
 @admin_required
 def logout():
+    rbac.audit("Uscita")
     session.clear()
     return redirect(url_for("pub.index"))
-
-
-@bp.route("/")
-@admin_required
-def dashboard():
-    today = date.today().isoformat()
-    agenda = q("SELECT * FROM appointments WHERE slot_date>=? AND status!='annullato' ORDER BY slot_date,slot_time", (today,))
-    new_q = q("SELECT COUNT(*) c FROM quotes WHERE status='nuova'", one=True)["c"]
-    pend = q("SELECT COUNT(*) c FROM appointments WHERE status='in attesa'", one=True)["c"]
-    evs = q("SELECT * FROM events WHERE date>=? ORDER BY date LIMIT 8", (today,))
-    return render_template("admin/dashboard.html", agenda=agenda, new_q=new_q, pend=pend, evs=evs)
 
 
 # ---------- richieste ----------
@@ -100,11 +101,8 @@ def app_stato(i):
     st = request.form.get("stato")
     if st not in ("in attesa", "confermato", "annullato", "completato"):
         abort(400)
-    ex("UPDATE appointments SET status=? WHERE id=?", (st, i))
-    a = q("SELECT * FROM appointments WHERE id=?", (i,), one=True)
-    if a and st in ("confermato", "annullato"):
-        send_mail(a["email"], f"Appuntamento {st} – LMC Service",
-                  f"Ciao {a['name']}, il tuo appuntamento del {a['slot_date']} alle {a['slot_time']} è {st}.\nLMC Service")
+    from .admin_gest import set_appointment_status
+    set_appointment_status(i, st)
     return redirect(request.referrer or url_for("admin.richieste"))
 
 
@@ -112,7 +110,7 @@ def app_stato(i):
 @admin_required
 def quote_stato(i):
     st = request.form.get("stato")
-    if st not in ("nuova", "in lavorazione", "inviata", "chiusa"):
+    if st not in ("nuova", "in lavorazione", "inviata", "confermata", "chiusa"):
         abort(400)
     ex("UPDATE quotes SET status=? WHERE id=?", (st, i))
     return redirect(url_for("admin.richieste"))
@@ -154,35 +152,63 @@ def disponibilita():
                            days=["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"])
 
 
-# ---------- foto e video ----------
+# ---------- foto e video (galleria eventi) ----------
 @bp.route("/foto")
 @admin_required
 def foto():
-    return render_template("admin/foto.html", items=q("SELECT * FROM media ORDER BY featured DESC, sort, id"), cats=CATEGORIES)
+    flt = request.args.get("v", "")
+    sql = "SELECT * FROM media WHERE placeholder=0"
+    if flt == "bozze":
+        sql += " AND hidden=1"
+    elif flt == "pubblicate":
+        sql += " AND hidden=0"
+    items = q(sql + " ORDER BY featured DESC, sort, id")
+    cnt = dict(tutte=q("SELECT COUNT(*) c FROM media WHERE placeholder=0", one=True)["c"], bozze=q("SELECT COUNT(*) c FROM media WHERE placeholder=0 AND hidden=1", one=True)["c"])
+    cnt["pubblicate"] = cnt["tutte"] - cnt["bozze"]
+    return render_template("admin/foto.html", items=items, cats=CATEGORIES, flt=flt, cnt=cnt,
+                           events=q("SELECT id,title,date FROM events ORDER BY date DESC LIMIT 80"),
+                           invoices=q("SELECT id,number,client_name FROM invoices WHERE number IS NOT NULL AND number!='' ORDER BY id DESC LIMIT 60"),
+                           event_types=["Matrimonio", "Festa privata", "Evento aziendale / Meeting", "Concerto / Show", "Discoteca / Locale", "Altro"])
 
 
 @bp.route("/foto/upload", methods=["POST"])
 @admin_required
 def foto_upload():
+    """Caricamento con didascalia OBBLIGATORIA, tipo e data dell'evento. Le foto partono NASCOSTE: si pubblicano quando si vuole."""
     ok, errs = [], []
-    cat = request.form.get("category") if request.form.get("category") in CATEGORIES else "Eventi"
+    f = request.form
+    cat = f.get("category") if f.get("category") in CATEGORIES else "Eventi"
+    caption = f.get("caption", "").strip()[:300]
+    if not caption:
+        msg = "Scrivi una didascalia: è obbligatoria (serve a chi guarda e a Google)."
+        if request.headers.get("X-Requested-With") == "fetch":
+            return jsonify(ok=[], errors=[msg])
+        flash(msg)
+        return redirect(url_for("admin.foto"))
+    ev = int(f["event_id"]) if f.get("event_id", "").isdigit() else None
+    inv = int(f["invoice_id"]) if f.get("invoice_id", "").isdigit() else None
     mx = q("SELECT COALESCE(MAX(sort),0) m FROM media", one=True)["m"]
-    for f in request.files.getlist("files"):
-        if not f.filename:
+    who = current_user()["username"]
+    for fl in request.files.getlist("files"):
+        if not fl.filename:
             continue
         try:
-            base, kind = save_upload(f)
+            base, kind = save_upload(fl)
             mx += 1
-            ex("INSERT INTO media(filename,kind,title,category,sort,source) VALUES(?,?,?,?,?,?)",
-               (base, kind, os.path.splitext(f.filename)[0][:60], cat, mx, "caricata dall'admin"))
-            ok.append(f.filename)
+            ex("""INSERT INTO media(filename,kind,title,caption,category,sort,source,hidden,event_type,event_date,event_id,invoice_id,uploaded_by)
+                  VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               (base, kind, (f.get("title", "").strip() or caption)[:60], caption, cat, mx, "caricata dall'admin", 1, f.get("event_type", "")[:60],
+                f.get("event_date", "")[:10], ev, inv, who))
+            ok.append(fl.filename)
         except ValueError as e:
-            errs.append(f"{f.filename}: {e}")
+            errs.append(f"{fl.filename}: {e}")
     if request.headers.get("X-Requested-With") == "fetch":
         return jsonify(ok=ok, errors=errs)
     for e in errs:
         flash(e)
-    return redirect(url_for("admin.foto"))
+    if ok:
+        flash(f"{len(ok)} file caricati e NASCOSTI: controllali e premi «Pubblica» quando vuoi.")
+    return redirect(url_for("admin.foto", v="bozze"))
 
 
 @bp.route("/foto/sincronizza", methods=["POST"])
@@ -199,13 +225,32 @@ def foto_sync():
 def foto_update(i):
     f = request.form
     cat = f.get("category") if f.get("category") in CATEGORIES else "Eventi"
-    if f.get("featured"):
-        ex("UPDATE media SET featured=0")
-    ex("""UPDATE media SET title=?,caption=?,category=?,show_home=?,show_gallery=?,show_intro=?,featured=?,hidden=?
-          WHERE id=?""", (f.get("title", "")[:100], f.get("caption", "")[:300], cat, int(bool(f.get("show_home"))),
-                          int(bool(f.get("show_gallery"))), int(bool(f.get("show_intro"))),
-                          int(bool(f.get("featured"))), int(bool(f.get("hidden"))), i))
-    return redirect(url_for("admin.foto") + f"#m{i}")
+    caption = f.get("caption", "").strip()[:300]
+    if not caption:
+        flash("La didascalia è obbligatoria.")
+        return redirect(url_for("admin.foto") + f"#m{i}")
+    ev = int(f["event_id"]) if f.get("event_id", "").isdigit() else None
+    inv = int(f["invoice_id"]) if f.get("invoice_id", "").isdigit() else None
+    if rbac.is_admin():
+        if f.get("featured"):
+            ex("UPDATE media SET featured=0")
+        ex("""UPDATE media SET title=?,caption=?,category=?,show_home=?,show_gallery=?,show_intro=?,featured=?,hidden=?,event_type=?,event_date=?,event_id=?,invoice_id=?
+              WHERE id=?""", (f.get("title", "")[:100], caption, cat, int(bool(f.get("show_home"))), int(bool(f.get("show_gallery"))),
+                              int(bool(f.get("show_intro"))), int(bool(f.get("featured"))), int(bool(f.get("hidden"))), f.get("event_type", "")[:60],
+                              f.get("event_date", "")[:10], ev, inv, i))
+    else:      # il collaboratore corregge titolo, didascalia e dati dell'evento: pubblicare o togliere dal sito è del titolare
+        ex("UPDATE media SET title=?,caption=?,category=?,event_type=?,event_date=?,event_id=? WHERE id=?",
+           (f.get("title", "")[:100], caption, cat, f.get("event_type", "")[:60], f.get("event_date", "")[:10], ev, i))
+    return redirect(url_for("admin.foto", v=request.args.get("v", "")) + f"#m{i}")
+
+
+@bp.route("/foto/<int:i>/pubblica", methods=["POST"])
+@admin_required
+def foto_publish(i):
+    r = q("SELECT hidden FROM media WHERE id=?", (i,), one=True) or abort(404)
+    ex("UPDATE media SET hidden=? WHERE id=?", (0 if r["hidden"] else 1, i))
+    flash("Pubblicata sul sito." if r["hidden"] else "Nascosta: non è più visibile sul sito.")
+    return redirect(request.referrer or url_for("admin.foto"))
 
 
 @bp.route("/foto/<int:i>/elimina", methods=["POST"])
@@ -279,13 +324,13 @@ def _parse_stats(txt):
 @bp.route("/password", methods=["GET", "POST"])
 @admin_required
 def password():
-    """Cambio password dell'amministratore (da fare subito dopo il primo accesso)."""
+    """Cambio password dell'utente collegato (obbligatorio al primo accesso con una password temporanea)."""
     msg, ok = "", False
+    u = current_user()
     if request.method == "POST":
         check_csrf()
-        u = q("SELECT * FROM admin_users WHERE username=?", (session.get("admin"),), one=True)
         old, new, new2 = request.form.get("old", ""), request.form.get("new", ""), request.form.get("new2", "")
-        if not u or not check_password_hash(u["pw_hash"], old):
+        if not check_password_hash(u["pw_hash"], old):
             msg = "La password attuale non è corretta."
         elif len(new) < 10:
             msg = "La nuova password deve avere almeno 10 caratteri."
@@ -294,9 +339,9 @@ def password():
         elif new == old:
             msg = "Scegli una password diversa da quella attuale."
         else:
-            ex("UPDATE admin_users SET pw_hash=? WHERE id=?", (generate_password_hash(new), u["id"]))
+            ex("UPDATE admin_users SET pw_hash=?, must_change=0 WHERE id=?", (generate_password_hash(new), u["id"]))
             msg, ok = "Password cambiata. Alla prossima volta usa quella nuova.", True
-    return render_template("admin/password.html", msg=msg, ok=ok)
+    return render_template("admin/password.html", msg=msg, ok=ok, forced=bool(u["must_change"]) and not ok)
 
 
 # ---------- gestionale generico ----------
@@ -364,61 +409,6 @@ def event_equipment(i):
     return redirect(url_for("admin.mod_edit", mod="eventi", i=i))
 
 
-# ---------- documenti (preventivi / fatture) ----------
-def _parse_items(txt):
-    items = []
-    for ln in txt.splitlines():
-        p = [x.strip() for x in ln.split(";")]
-        if len(p) >= 3 and p[0]:
-            try:
-                items.append({"desc": p[0][:120], "qty": float(p[1].replace(",", ".")), "price": float(p[2].replace(",", "."))})
-            except ValueError:
-                continue
-    return items
-
-
-@bp.route("/documenti", methods=["GET", "POST"])
-@admin_required
-def documenti():
-    if request.method == "POST":
-        items = _parse_items(request.form.get("items", ""))
-        total = round(sum(x["qty"] * x["price"] for x in items), 2)
-        kind = "fattura" if request.form.get("kind") == "fattura" else "preventivo"
-        n = q("SELECT COUNT(*) c FROM documents WHERE kind=?", (kind,), one=True)["c"] + 1
-        num = f"{'F' if kind == 'fattura' else 'P'}{date.today().year}-{n:03d}"
-        ex("INSERT INTO documents(kind,number,client_id,date,items,total,notes) VALUES(?,?,?,?,?,?,?)",
-           (kind, num, request.form.get("client_id") or None, date.today().isoformat(),
-            json.dumps(items, ensure_ascii=False), total, request.form.get("notes", "")[:500]))
-        return redirect(url_for("admin.documenti"))
-    docs = q("""SELECT d.*,c.name client FROM documents d LEFT JOIN clients c ON c.id=d.client_id ORDER BY d.id DESC""")
-    return render_template("admin/documenti.html", docs=docs, clients=q("SELECT id,name FROM clients ORDER BY name"))
-
-
-@bp.route("/documenti/<int:i>.pdf")
-@admin_required
-def documento_pdf(i):
-    d = q("SELECT * FROM documents WHERE id=?", (i,), one=True) or abort(404)
-    cl = q("SELECT * FROM clients WHERE id=?", (d["client_id"],), one=True) if d["client_id"] else None
-    path = document_pdf(d, cl, all_settings())
-    return send_file(path, mimetype="application/pdf", download_name=f"{d['number']}.pdf")
-
-
-@bp.route("/documenti/<int:i>/stato", methods=["POST"])
-@admin_required
-def documento_stato(i):
-    st = request.form.get("stato")
-    if st in ("bozza", "inviato", "pagato", "annullato"):
-        ex("UPDATE documents SET status=? WHERE id=?", (st, i))
-    return redirect(url_for("admin.documenti"))
-
-
-@bp.route("/documenti/<int:i>/elimina", methods=["POST"])
-@admin_required
-def documento_del(i):
-    ex("DELETE FROM documents WHERE id=?", (i,))
-    return redirect(url_for("admin.documenti"))
-
-
 # ---------- telefono (predisposto) ----------
 @bp.route("/chiamate")
 @admin_required
@@ -434,4 +424,7 @@ def chiamate():
                            enabled=os.getenv("PHONE_AI_ENABLED") == "1")
 
 
+rbac.install(bp)
 from . import admin_ext  # noqa: E402,F401  (registra Impostazioni e Report sullo stesso blueprint)
+from . import admin_gest  # noqa: E402,F401  (dashboard, agenda, fatture, acconti, tariffe, statistiche, utenti...)
+from . import reviews  # noqa: E402,F401  (recensioni: pagine admin e pagina pubblica)

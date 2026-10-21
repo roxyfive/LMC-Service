@@ -1,0 +1,49 @@
+{% extends "admin/base.html" %}{% from "admin/_macros.html" import stato_badge %}{% block title %}Fattura {{ v.number or 'bozza' }}{% endblock %}{% block body %}
+<h1>Fattura {{ v.number or '(bozza #' ~ v.id ~ ')' }} {{ stato_badge(v.show) }}</h1>
+{% if v.status == 'bozza' and missing %}<div class="flash warn">Prima di emettere compila i dati fiscali ({{ missing|join(', ') }}): <a href="/admin/fatture/impostazioni">Dati fiscali</a>.</div>{% endif %}
+<div class="acts">
+  <a class="btn" href="/admin/fatture/{{ v.id }}.pdf" target="_blank">📄 PDF</a>
+  {% if v.status == 'bozza' %}<a class="btn g" href="/admin/fatture/{{ v.id }}/modifica">✏️ Modifica</a>
+    <form method="post" action="/admin/fatture/{{ v.id }}/emetti"><input type="hidden" name="csrf" value="{{ csrf }}">{% if missing %}<input type="hidden" name="forza" value="1">{% endif %}<button class="btn o" data-confirm="Emettere la fattura? Riceverà il numero progressivo e non sarà più modificabile.">{{ 'Emetti comunque' if missing else 'Emetti (assegna il numero)' }}</button></form>
+    <form method="post" action="/admin/fatture/{{ v.id }}/elimina"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn d" data-confirm="Eliminare la bozza?">Elimina bozza</button></form>
+  {% elif v.status in ('emessa','pagata') %}
+    {% if v.resid > 0.005 %}<form method="post" action="/admin/fatture/{{ v.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn o" name="stato" value="pagata" data-confirm="Segnare come pagata? Registro l'incasso del residuo € {{ v.resid|eur }}.">Segna come pagata</button></form>{% endif %}
+    <form method="post" action="/admin/fatture/{{ v.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn d" name="stato" value="annullata" data-confirm="Annullare la fattura? Il numero non si riusa.">Annulla fattura</button></form>{% endif %}
+  <a class="btn g" href="/admin/fatture">← Elenco</a></div>
+
+<div class="grid2">
+<section class="panel"><h2 style="margin-top:0">Dati</h2>
+<dl class="kv"><dt>Cliente</dt><dd><b>{{ v.client_name or '—' }}</b>{% if v.client_addr %}<br>{{ v.client_addr }}{% endif %}{% if v.client_piva %}<br>P.IVA {{ v.client_piva }}{% endif %}{% if v.client_cf %} · C.F. {{ v.client_cf }}{% endif %}{% if v.client_sdi %}<br>Cod. SDI {{ v.client_sdi }}{% endif %}{% if v.client_pec %} · PEC {{ v.client_pec }}{% endif %}</dd>
+<dt>Data</dt><dd class="num">{{ v.issue_date|dmy or '—' }}</dd><dt>Scadenza</dt><dd class="num">{{ v.due_date|dmy or '—' }}</dd>
+<dt>Imponibile</dt><dd class="num">€ {{ v.imponibile|eur }}</dd><dt>IVA {{ '%g'|format(v.iva_pct) }}%</dt><dd class="num">€ {{ v.iva|eur }}</dd><dt>Totale</dt><dd class="num"><b>€ {{ v.total|eur }}</b></dd>
+{% if v.status in ('emessa','pagata') %}<dt>Incassato</dt><dd class="num">€ {{ v.paid|eur }}</dd><dt>Residuo</dt><dd class="num"><b>€ {{ (v.resid if v.resid > 0 else 0)|eur }}</b></dd>{% endif %}</dl>
+<div class="scroll" style="margin-top:.8rem"><table><tr><th>Voce</th><th class="r">Q.tà</th><th class="r">Prezzo</th><th class="r">Importo</th></tr>
+{% for it in v.items_l %}<tr><td>{{ it.desc }}</td><td class="r num">{{ '%g'|format(it.qty) }}</td><td class="r num">{{ it.price|eur }}</td><td class="r num">{{ (it.qty*it.price)|eur }}</td></tr>{% endfor %}</table></div>
+{% if v.notes %}<p class="mut">Note: {{ v.notes }}</p>{% endif %}
+{% if v.source_type == 'doc' %}<p class="mut">Da preventivo <a href="/admin/documenti#d{{ v.source_id }}">#{{ v.source_id }}</a></p>{% endif %}
+{% if photos %}<p class="mut">Foto dell'evento collegate: {{ photos|length }} (<a href="/admin/foto">Galleria</a>)</p>{% endif %}
+</section>
+
+<section class="panel">
+{% if v.status in ('emessa','pagata') %}
+<h2 style="margin-top:0">Acconti e incassi</h2>
+<div class="scroll"><table><tr><th>Data</th><th class="r">Importo</th><th>Metodo</th><th>Note</th><th></th></tr>
+{% for p in pays %}<tr><td class="nw num">{{ p.date|dmy }}</td><td class="r num">€ {{ p.amount|eur }}</td><td>{{ p.method }}</td><td class="mut">{{ p.note }}</td>
+<td><form method="post" action="/admin/acconti/{{ p.id }}/elimina"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="back" value="/admin/fatture/{{ v.id }}"><button class="btn s d" data-confirm="Eliminare questo incasso?">✕</button></form></td></tr>
+{% else %}<tr><td colspan="5" class="mut">Nessun incasso registrato.</td></tr>{% endfor %}</table></div>
+<form method="post" action="/admin/acconti/nuovo" class="form" style="margin-top:.8rem"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="target" value="inv:{{ v.id }}"><input type="hidden" name="back" value="/admin/fatture/{{ v.id }}">
+<label>Importo €<input name="amount" inputmode="decimal" required placeholder="{{ v.resid|eur }}"></label><label>Data<input type="date" name="date" value="{{ today }}"></label>
+<label>Metodo<select name="method">{% for m in methods %}<option>{{ m }}</option>{% endfor %}</select></label><label class="full">Note<input name="note" placeholder="es. acconto 30% alla conferma"></label><button class="btn">Registra incasso</button></form>
+{% endif %}
+
+<h2>Fattura elettronica (SDI)</h2>
+<form method="post" action="/admin/fatture/{{ v.id }}/dettagli" class="form stack">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Stato su SDI<select name="sdi_status">{% for s in sdi_states %}<option {{ 'selected' if s==v.sdi_status }}>{{ s }}</option>{% endfor %}</select></label>
+<label>Nota SDI (es. identificativo, motivo dello scarto)<input name="sdi_note" value="{{ v.sdi_note }}"></label>
+{% if v.status != 'bozza' %}<label>Scadenza<input type="date" name="due_date" value="{{ v.due_date or '' }}"></label><label>Note fattura<input name="notes" value="{{ v.notes }}"></label>{% endif %}
+<button class="btn g">Salva</button>
+<p class="mut">Il PDF è la <b>copia di cortesia</b>. La fattura elettronica valida (XML FatturaPA) si genera e si trasmette con il tuo software/intermediario o dal portale «Fatture e Corrispettivi» dell'Agenzia delle Entrate: qui segni a che punto è. Cosa serve: <code>docs/FATTURAZIONE-SDI.md</code>.</p>
+</form></section>
+</div>
+{% endblock %}

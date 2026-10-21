@@ -535,6 +535,9 @@ h3{font-size:1.3rem;letter-spacing:-.015em}
   .intro-copy{bottom:6.6rem}
 }
 
+/* recensioni: stelle */
+.stars{color:#ffb020;letter-spacing:.12em;font-size:1.05rem;margin:0 0 .5rem}.stars span{color:#ffffff33}
+
 /* =====================================================================================================
    TEMA NERO (richiesta del cliente): sfondo nero, testi bianchi, contorni/bordi ROSSI, accento rosso al posto dell'oro.
    Il tasto Emergenza resta rosso vivo. Font invariati (Montserrat / Space Grotesk / Inter). Contrasti AA.
@@ -727,3 +730,4 @@ fieldset{border-color:var(--red)}
 .intro :focus-visible{outline-color:#fff}
 .intro-logo{filter:drop-shadow(0 4px 14px rgba(22,22,28,.7))}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #e11d1466}50%{box-shadow:0 0 0 10px #e11d1400}}
+

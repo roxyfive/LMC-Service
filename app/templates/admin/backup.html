@@ -1,0 +1,8 @@
+{% extends "admin/base.html" %}{% block title %}Backup{% endblock %}{% block body %}
+<h1>Backup</h1>
+<div class="cards"><div><b>{{ 'OK' if ok else ('Attenzione' if info else 'Nessun dato') }}</b><span>{% if age is not none %}ultimo backup riuscito {{ info.time[:16].replace('T',' ') }} ({{ age }} ore fa){% else %}il server non ha ancora scritto lo stato{% endif %}</span></div>
+{% if info.cloud %}<div><b>{{ info.cloud }}</b><span>copia fuori dal server (cloud)</span></div>{% endif %}
+{% if info.data %}<div><b class="num" style="font-size:1rem">{{ info.data }}</b><span>archivio più recente</span></div>{% endif %}</div>
+{% if not ok %}<div class="flash warn">{% if info %}L'ultimo backup riuscito è più vecchio di 26 ore: controlla il log <code>/var/log/backup-lmc.log</code> sul server.{% else %}Lo stato compare dopo il primo backup riuscito (<code>deploy/backup.sh</code>, vedi docs/DEPLOY.md Parte 4).{% endif %}</div>{% endif %}
+<section class="panel"><h2 style="margin-top:0">Come funziona</h2><ul style="padding-left:1.1rem;display:grid;gap:.4rem;margin:0"><li>Ogni notte alle 03:20 il server salva database, foto/video e impostazioni, <b>cifrati</b>.</li><li>Una seconda copia, cifrata e verificata, va su Google Drive (cartella <code>lmc/</code>).</li><li>Se qualcosa non va arriva un'email di avviso.</li><li>Per ripristinare serve un tecnico: <code>deploy/restore.sh</code>.</li></ul></section>
+{% endblock %}

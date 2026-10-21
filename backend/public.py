@@ -8,7 +8,7 @@ from flask import (Blueprint, render_template, request, jsonify, send_from_direc
                    Response, url_for, session)
 from .db import q, ex, get_setting, all_settings
 from .config import UPLOADS, CATEGORIES
-from .security import check_csrf, csrf_token
+from .security import check_csrf, csrf_token, current_user
 from .mailer import send_mail
 from . import ai
 from . import vetrina
@@ -82,7 +82,7 @@ def index():
     intro = [m for m in media if m["show_intro"] and m["kind"] == "image"] or home[:6]
     videos = [m for m in media if m["kind"] == "video"]
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
-    reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
+    reviews = q("SELECT * FROM reviews WHERE hidden=0 AND status='approvata' ORDER BY id DESC")
     s["team"] = q("SELECT * FROM team WHERE visible='si' ORDER BY sort, id")
     v = vetrina.build(media)
     # una foto compare UNA sola volta nella home: quelle già usate come immagine di una card «skill» non si ripetono in galleria
@@ -105,7 +105,7 @@ def media_file(name):
         abort(404)
     base = name.split(".")[0].split("_")[0]
     row = q("SELECT hidden FROM media WHERE filename=?", (base,), one=True)
-    if not row or (row["hidden"] and not session.get("admin")):
+    if not row or (row["hidden"] and not bool(current_user())):
         abort(404)
     resp = send_from_directory(UPLOADS, name)
     resp.headers["Cache-Control"] = "public, max-age=604800"
@@ -231,7 +231,7 @@ def api_config():
     on, number, hours = _emergency_cfg()
     num = notify.normalize_number(number)
     r = jsonify(
-        wa_ready=notify.twilio_ready(), admin=bool(session.get("admin")),
+        wa_ready=notify.twilio_ready(), admin=bool(current_user()),
         vapi=dict(enabled=notify.vapi_ready(), public_key=notify.cfg("vapi_public_key"), assistant_id=notify.cfg("vapi_assistant_id"),
                   emergency_assistant_id=notify.cfg("vapi_emergency_assistant_id")),
         suggestions=ai.suggestions(),
@@ -334,6 +334,18 @@ def webhook_vapi():
     if notify.twilio_ready() and _wa_cap_ok():
         notify.fire(text, "emergency" if emerg else "vapi_call")
     return jsonify(ok=True)
+
+
+@bp.route("/api/tariffe")
+def api_tariffe():
+    """Stima indicativa per il configuratore: solo se il titolare l'ha attivata e solo voci marcate «sul sito» con un prezzo > 0 (nessun segreto)."""
+    out = {}
+    if get_setting("tariffe_pubbliche", "0") == "1":
+        for t in q("SELECT service, MIN(price) p FROM tariffe WHERE active=1 AND public=1 AND price>0 AND service!='' AND unit!='al mq' GROUP BY service"):
+            out[t["service"]] = round(t["p"])
+    r = jsonify(enabled=bool(out), prices=out)
+    r.headers["Cache-Control"] = "no-store"
+    return r
 
 
 @bp.route("/api/csrf")
