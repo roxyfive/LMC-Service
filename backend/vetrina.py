@@ -45,7 +45,7 @@ INTRO_THEMES = [
     (r"barre led|riflettor|proiettor|mirror|giochi di luce|luci", ("installazioni", "galleria")),
     (r"regia video|collegament|controlli|regia", ("galleria", "installazioni")),
     (r"teatro|prove|serata|pubblico|quinte", ("galleria", "hero")),
-    (r"riflettori d.atmosfera|facciata|prove luci", ("hero",)),
+    (r"pomeriggio|riflettori d.atmosfera|facciata|prove luci|palco in cortile", ("hero",)),
 ]
 
 # Numeri della sezione "In cifre": DEMO finché il titolare non fornisce quelli veri (settings.stats = JSON [{label,value,suffix}]).
@@ -159,7 +159,7 @@ def build(media):
         pass
     if len(cues) != len(steps):
         cues = []
-    return dict(hero_slides=hero_slides, skills=skills, real_photos=bool(real), intro_steps=steps, voce_cues=cues,
+    return dict(hero_slides=hero_slides, skills=skills, skill_ids={m["id"] for m in photos.values()}, real_photos=bool(real), intro_steps=steps, voce_cues=cues,
                 voce_url="/static/media/voce.mp3" if (media_dir / "voce.mp3").is_file() else "")
 
 

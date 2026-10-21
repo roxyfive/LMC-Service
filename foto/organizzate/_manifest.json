@@ -1,33 +1,48 @@
 {
  "hero/hero-01.jpg": {
-  "caption": "Allestimento audio e luci in un cortile storico",
+  "caption": "Il palco nel cortile storico, audio e luci pronti",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-278.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Allestimento audio e luci in un cortile storico"
+  ]
  },
  "hero/hero-02.jpg": {
-  "caption": "Prove luci sul palco di un teatro",
+  "caption": "Regia in sala durante le prove luci sul palco",
   "data": "2026-10-20",
   "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-298.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Prove luci sul palco di un teatro"
+  ]
  },
  "hero/hero-03.jpg": {
-  "caption": "Riflettori d'atmosfera e casse su una facciata in pietra",
+  "caption": "Il palco in cortile nella luce del pomeriggio",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-267.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Riflettori d'atmosfera e casse su una facciata in pietra"
+  ]
  },
  "installazioni/installazione-01.jpg": {
-  "caption": "Palco allestito con riflettori, barre LED e teste mobili",
+  "caption": "Il palco da vicino: riflettori, barre LED, teste mobili",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-382.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Palco allestito con riflettori, barre LED e teste mobili"
+  ]
  },
  "installazioni/installazione-02.jpg": {
-  "caption": "Teste mobili e riflettori in un cortile",
+  "caption": "Teste mobili e riflettori a lato del palco",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-191.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Teste mobili e riflettori in un cortile"
+  ]
  },
  "installazioni/installazione-03.jpg": {
   "caption": "Cassa amplificata e proiettore su stativo",
@@ -78,16 +93,22 @@
   "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-03.jpg": {
-  "caption": "Il tecnico regola un faro su stativo",
+  "caption": "Il tecnico configura la cassa con il tablet",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-38.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Il tecnico regola un faro su stativo"
+  ]
  },
  "galleria/galleria-04.jpg": {
-  "caption": "Preparazione dell'impianto prima dell'evento",
+  "caption": "Il tecnico collega la consolle DJ prima dell'evento",
   "data": "2026-10-20",
   "origine": "La Music Company Wedding Lauro 9 september 2026 (c) Merette Uiterwaal-3.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Preparazione dell'impianto prima dell'evento"
+  ]
  },
  "galleria/galleria-05.jpg": {
   "caption": "Regia video e luci",
@@ -138,10 +159,13 @@
   "credito": "Merette Uiterwaal"
  },
  "galleria/galleria-13.jpg": {
-  "caption": "Collegamenti e controlli dietro le quinte",
+  "caption": "Un tecnico tra i palchi del teatro, cavi e controlli",
   "data": "2026-10-20",
   "origine": "La Music Company Service 17 mei 2026 (c) Merette Uiterwaal-57.jpg",
-  "credito": "Merette Uiterwaal"
+  "credito": "Merette Uiterwaal",
+  "prima": [
+   "Collegamenti e controlli dietro le quinte"
+  ]
  },
  "galleria/galleria-14.jpg": {
   "caption": "Luci e regia dietro le quinte",
@@ -162,22 +186,31 @@
   "credito": "La Music Company Service"
  },
  "video/video-03.mp4": {
-  "caption": "Giochi di luce rossi",
+  "caption": "Giochi di luce rossi: fasci laser in sala",
   "data": "2026-10-20",
   "origine": "0327(60).mp4",
-  "credito": "La Music Company Service"
+  "credito": "La Music Company Service",
+  "prima": [
+   "Giochi di luce rossi"
+  ]
  },
  "video/video-04.mp4": {
-  "caption": "Montaggio dell'impianto in quota",
+  "caption": "Luci e laser sull'impianto in quota",
   "data": "2026-10-20",
   "origine": "0327(56).mp4",
-  "credito": "La Music Company Service"
+  "credito": "La Music Company Service",
+  "prima": [
+   "Montaggio dell'impianto in quota"
+  ]
  },
  "video/video-05.mp4": {
-  "caption": "Rigging e luci sulle strutture",
+  "caption": "Rigging: un operatore sulle strutture in quota",
   "data": "2026-10-20",
   "origine": "0327(33).mp4",
-  "credito": "La Music Company Service"
+  "credito": "La Music Company Service",
+  "prima": [
+   "Rigging e luci sulle strutture"
+  ]
  },
  "video/video-06.mp4": {
   "caption": "Al lavoro sulle strutture del palco",

@@ -84,8 +84,12 @@ def index():
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
     reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
     s["team"] = q("SELECT * FROM team WHERE visible='si' ORDER BY sort, id")
-    used = {m["category"] for m in gallery}
     v = vetrina.build(media)
+    # una foto compare UNA sola volta nella home: quelle già usate come immagine di una card «skill» non si ripetono in galleria
+    taken = v["skill_ids"] | {m["id"] for m in v["hero_slides"]}
+    rest = [m for m in gallery if m["id"] not in taken]
+    gallery = rest if len(rest) >= 4 else gallery          # con pochissime foto la galleria non si svuota
+    used = {m["category"] for m in gallery}
     v["stats"] = vetrina.stats(s, os.getenv("APP_MODE", "demo") == "demo")
     on, number, hours = _emergency_cfg()
     emg = dict(on=bool(on and notify.normalize_number(number)), number=notify.normalize_number(number), open_now=_open_now(hours), hours=hours)

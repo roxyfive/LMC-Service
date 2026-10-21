@@ -4,6 +4,7 @@ Cartelle: hero, galleria, installazioni, video. Ogni file nuovo viene ottimizzat
 tabella `media` (idempotente: la colonna `source` ricorda cosa è già stato importato).
 Uso manuale: `python -m backend.foto_sync`
 """
+import fcntl
 import hashlib
 import json
 import re
@@ -13,7 +14,7 @@ from pathlib import Path
 import shutil
 from io import BytesIO
 from PIL import Image, ImageOps
-from .config import FOTO_DIR, UPLOADS, MAX_VID
+from .config import FOTO_DIR, UPLOADS, MAX_VID, DATA
 from .db import q, ex
 from .media import save_image_obj, delete_files, _is_video
 import secrets
@@ -65,7 +66,49 @@ def _poster_image(path):
 
 
 def sync():
-    """Importa i file nuovi. Ritorna (importati, saltati) come liste di messaggi."""
+    """Importa i file nuovi. Ritorna (importati, saltati) come liste di messaggi.
+    Con più worker gunicorn ogni worker sincronizza all'avvio: senza un blocco tra processi due worker leggevano «nulla di importato»
+    nello stesso istante e inserivano ENTRAMBI le stesse foto (foto doppie in galleria). Ora la sincronizzazione è serializzata
+    da un lock su file e, a ogni giro, le righe doppie già presenti nel database vengono ripulite."""
+    DATA.mkdir(parents=True, exist_ok=True)
+    with open(DATA / ".foto_sync.lock", "w") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        try:
+            done, skipped = _sync_locked()
+            removed = dedupe()
+            done += [f"doppione rimosso: {r}" for r in removed]
+            return done, skipped
+        finally:
+            fcntl.flock(lk, fcntl.LOCK_UN)
+
+
+def dedupe():
+    """Toglie dal database le righe doppie della stessa foto di cartella (stessa chiave `cartella:cartella/file`): ne resta UNA
+    (quella che corrisponde al file attuale; a parità, in evidenza, poi la più vecchia) con i suoi file."""
+    groups = {}
+    for r in q("SELECT id,filename,source,featured,hidden,sort FROM media WHERE source LIKE 'cartella:%' ORDER BY id"):
+        groups.setdefault(r["source"][len("cartella:"):].split("#")[0], []).append(r)
+    removed = []
+    for key, rows in groups.items():
+        if len(rows) < 2:
+            continue
+        cur = None
+        f = FOTO_DIR / key
+        if f.is_file():
+            cur = "cartella:" + key + "#" + hashlib.sha1(f.read_bytes()).hexdigest()[:12]
+        keep = sorted(rows, key=lambda r: (r["source"] != cur, not r["featured"], r["id"]))[0]
+        for r in rows:
+            if r["id"] == keep["id"]:
+                continue
+            if r["featured"] and not keep["featured"]:
+                ex("UPDATE media SET featured=1 WHERE id=?", (keep["id"],))
+            delete_files(r["filename"])
+            ex("DELETE FROM media WHERE id=?", (r["id"],))
+            removed.append(key)
+    return removed
+
+
+def _sync_locked():
     done, skipped = [], []
     if not FOTO_DIR.is_dir():
         return done, skipped
@@ -139,19 +182,37 @@ def sync():
             first = q("SELECT id FROM media WHERE source LIKE 'cartella:hero/%' AND hidden=0 AND kind='image' ORDER BY sort, id LIMIT 1", one=True)
             if first:
                 ex("UPDATE media SET featured=1 WHERE id=?", (first["id"],))
-    # locandine dei video già importati prima che esistessero (sito in produzione che si aggiorna con git pull)
+    # locandine dei video già importati: mancanti, oppure cambiate nella cartella (si ricorda l'impronta di ogni locandina)
     for r in q("SELECT filename,source FROM media WHERE kind='video' AND source LIKE 'cartella:video/%'"):
-        if not (UPLOADS / f"{r['filename']}_960.webp").exists():
-            key = r["source"][len("cartella:"):].split("#")[0]
+        key = r["source"][len("cartella:"):].split("#")[0]
+        pj = (FOTO_DIR / key).with_suffix(".poster.jpg")
+        sig = hashlib.sha1(pj.read_bytes()).hexdigest()[:12] if pj.is_file() else ""
+        k = "poster:" + r["filename"]
+        prev = q("SELECT value FROM settings WHERE key=?", (k,), one=True)
+        if not (UPLOADS / f"{r['filename']}_960.webp").exists() or (sig and (prev["value"] if prev else "") != sig):
             poster = _poster_image(FOTO_DIR / key)
             if poster is not None:
                 save_image_obj(poster, r["filename"])
+        if sig and (prev is None or prev["value"] != sig):
+            ex("INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)", (k, sig))
     if done:
         # con foto vere pubblicate i segnaposto non servono più
         ex("UPDATE media SET hidden=1, featured=0 WHERE placeholder=1")
         if not q("SELECT 1 FROM media WHERE kind='image' AND show_intro=1 AND hidden=0", one=True):
             ex("UPDATE media SET show_intro=1 WHERE kind='image' AND hidden=0 AND placeholder=0 AND id IN "
                "(SELECT id FROM media WHERE kind='image' AND hidden=0 AND placeholder=0 ORDER BY sort LIMIT 6)")
+    # didascalie corrette nel manifest: si aggiornano anche le foto già pubblicate, ma solo se nessuno le ha modificate a mano
+    # (la didascalia nel database deve essere vuota o una delle vecchie elencate in "prima" del manifest)
+    for r in q("SELECT id,title,caption,source FROM media WHERE source LIKE 'cartella:%'"):
+        key = r["source"][len("cartella:"):].split("#")[0]
+        meta = manifest.get(key) or {}
+        cap = (meta.get("caption") or "").strip()
+        if not cap or r["caption"] == cap or not (not r["caption"] or r["caption"] in (meta.get("prima") or [])):
+            continue
+        old_title = _title(Path(key), key.split("/")[0], {"caption": r["caption"]})
+        ex("UPDATE media SET caption=?, title=? WHERE id=?",
+           (cap[:300], _title(Path(key), key.split("/")[0], meta) if r["title"] in (old_title, "") else r["title"], r["id"]))
+        done.append(f"didascalia aggiornata: {key}")
     return done, skipped
 
 

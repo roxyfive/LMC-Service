@@ -37,7 +37,7 @@ per cambiarla vedi `docs/voce-script.md`. Test audio in un vero browser: `python
 ## ⚠️ Foto DEMO da sostituire
 Le foto in `foto/organizzate/` sono **le foto reali del cliente** (25 foto + 6 video, credito Merette Uiterwaal, uso autorizzato sul sito del cliente: vedi `CREDITI.md`).
 Prima della pubblicazione sono state migliorate con `python -m backend.enhance_foto` (orientamento, esposizione, colore, rumore, nitidezza; originali in `foto/_originali/`, non su git).
-Per aggiungerne: copiale nelle sottocartelle, lancia `python -m backend.enhance_foto`, riavvia il sito (o Admin › Foto › Sincronizza); sulla VPS basta `deploy/aggiorna.sh`. Dettagli in `foto/organizzate/LEGGIMI.md`.
+Controllo doppioni/qualità: `python -m backend.controllo_foto` (vedi `docs/CONTROLLO-FOTO.md`). Per aggiungerne: copiale nelle sottocartelle, lancia `python -m backend.enhance_foto`, riavvia il sito (o Admin › Foto › Sincronizza); sulla VPS basta `deploy/aggiorna.sh`. Dettagli in `foto/organizzate/LEGGIMI.md`.
 
 ## Foto e video reali da Instagram/Facebook
 `python importa_social.py foto/da_social/*.zip` → estrae, rinomina e smista in `foto/organizzate/`; poi riavvia il sito
