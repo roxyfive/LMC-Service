@@ -130,7 +130,7 @@ python3 -c "import secrets;print(secrets.token_urlsafe(32))" > /root/.lmc-backup
 cat /root/.lmc-backup-pass                   # SALVA questa password in un gestore di password fuori dal VPS
 cp deploy/lmc-backup.conf.example deploy/lmc-backup.conf && chmod 600 deploy/lmc-backup.conf
 cp deploy/lmc-backup.cron /etc/cron.d/lmc-backup && chmod 644 /etc/cron.d/lmc-backup
-mkdir -p /var/backups/lmc && chmod 700 /var/backups/lmc
+mkdir -p /root/backups_lmc && chmod 700 /root/backups_lmc
 chmod +x deploy/*.sh && deploy/backup.sh
 ```
 Le impostazioni di nginx incluse: compressione **gzip**, cache dei file statici (7 giorni; 30 per audio/video dell'intro), **upload fino a 200 MB** (foto e video dall'admin), limiti anti-abuso su `/api/` e `/webhook/`, endpoint `/health` senza log.
@@ -145,9 +145,9 @@ Le impostazioni di nginx incluse: compressione **gzip**, cache dei file statici 
 ### 4.0 In breve: cosa succede ogni notte
 | Ora | Cosa | Dove finiscono i file |
 |---|---|---|
-| **03:30** | `deploy/backup.sh` (lo lancia `cron`): copia consistente del **database** + controllo di integrità, **foto/video** (`data/uploads` e `foto/`), **`.env` e `secret.key`** | `/var/backups/lmc/` sul server |
-| subito dopo | tutto viene **cifrato** (AES-256) con la password in `/root/.lmc-backup-pass` e riletto per prova | `lmc-data-AAAA-MM-GG_HHMM.tar.gz.enc` e `lmc-secrets-AAAA-MM-GG_HHMM.tar.gz.enc` |
-| subito dopo | **rotazione**: si cancellano i backup più vecchi di 7 giorni (locale **e** cloud) | – |
+| **03:20** | `deploy/backup.sh` (lo lancia `cron` tramite il guard del server, 4.9): copia consistente del **database** + controllo di integrità, **foto/video** (`data/uploads` e `foto/`), **`.env` e `secret.key`** | `/root/backups_lmc/` sul server |
+| subito dopo | tutto viene **cifrato** (AES-256) con la password in `/root/.lmc-backup-pass` e riletto per prova | `lmc_AAAAMMGG_HHMMSS.tar.gz.enc` e `lmc_secrets_AAAAMMGG_HHMMSS.tar.gz.enc` |
+| subito dopo | **rotazione**: si cancellano i backup più vecchi di 14 giorni (locale **e** cloud) | – |
 | subito dopo | **copia su IONOS Object Storage** (se configurata, 4.3) e **verifica**: file presente, stessa dimensione, stessa impronta md5 (o confronto byte per byte) | bucket IONOS, cartella `lmc/` |
 | se qualcosa fallisce | **avviso** via email al titolare (`OWNER_EMAIL`) e WhatsApp a chi è «di turno» | – |
 | **08:00** | `backup-status.sh --check --alert`: se nelle ultime 26 ore non risulta nessun backup riuscito (es. il server era spento), **avviso** | – |
@@ -164,10 +164,10 @@ Copiala in un **gestore di password** (o stampala e conservala in cassaforte). *
 ### 4.2 Verificare e modificare la pianificazione sul VPS
 Il backup è un compito di `cron` definito in **`/etc/cron.d/lmc-backup`**:
 ```
-30 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1
+20 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1   # sul server LMC questa riga sta invece nel crontab di root, via guard (4.9)
 0  8 * * * root /srv/lmc/deploy/backup-status.sh --check --alert >> /var/log/lmc-backup.log 2>&1
 ```
-(minuto · ora · giorno · mese · giorno-settimana · utente · comando → **03:30 ogni notte**; il fuso orario del server è Europe/Rome, impostato dall'installer).
+(minuto · ora · giorno · mese · giorno-settimana · utente · comando → **03:20 ogni notte**; il fuso orario del server è Europe/Rome, impostato dall'installer).
 
 | Cosa vuoi fare | Comando |
 |---|---|
@@ -178,10 +178,10 @@ Il backup è un compito di `cron` definito in **`/etc/cron.d/lmc-backup`**:
 | Leggere il log dei backup | `tail -n 40 /var/log/lmc-backup.log` — ogni notte ci sono righe «backup dati ok», «copia su IONOS ok e verificata», «backup terminato» |
 | **Stato completo** (ultimo riuscito, file locali e sul cloud) | `sudo /srv/lmc/deploy/backup-status.sh` |
 | Lanciarlo subito a mano | `sudo /srv/lmc/deploy/backup.sh` |
-| Cambiare l'orario | `sudo nano /etc/cron.d/lmc-backup` → cambia `30 3` (es. `0 2` = le 02:00) → salva (Ctrl+O, Invio, Ctrl+X). Cron rilegge il file da solo |
-| Cambiare la rotazione | in `deploy/lmc-backup.conf`: `KEEP_DAYS=7` (locale) e `REMOTE_KEEP_DAYS=7` (cloud) |
+| Cambiare l'orario | `sudo nano /etc/cron.d/lmc-backup` → cambia `20 3` (es. `0 2` = le 02:00) → salva (Ctrl+O, Invio, Ctrl+X). Cron rilegge il file da solo |
+| Cambiare la rotazione | in `deploy/lmc-backup.conf`: `KEEP_DAYS=14` (locale) e `REMOTE_KEEP_DAYS=14` (cloud) |
 
-**Rotazione dei 7 giorni:** ogni notte vengono cancellati i file `lmc-data-*`/`lmc-secrets-*` più vecchi di 7 giorni, quindi restano le ultime **7 notti**. Spazio occupato: `du -sh /var/backups/lmc`.
+**Rotazione dei 14 giorni** (come gli altri backup del server): ogni notte vengono cancellati i file `lmc_*` (e i vecchi `lmc-data-*`/`lmc-secrets-*`) più vecchi di 14 giorni, quindi restano le ultime **14 notti**. Spazio occupato: `du -sh /root/backups_lmc`.
 **Esiti dello script:** `0` tutto ok · `1` errore (nessun backup salvato) · `3` backup locale ok ma copia IONOS non riuscita/non verificata.
 
 ### 4.3 Copia su IONOS Object Storage (S3) – passo per passo
@@ -235,19 +235,19 @@ Se un controllo fallisce (o la copia non parte) lo script **esce con codice 3, n
 
 ### 4.6 Scaricare i backup sul PC (copia di sicurezza in più)
 ```bash
-scp root@IP_DELLA_VPS:/var/backups/lmc/lmc-*  C:\backup-lmc\        # Windows (PowerShell)
+scp root@IP_DELLA_VPS:/root/backups_lmc/lmc-*  C:\backup-lmc\        # Windows (PowerShell)
 ```
-Oppure con **WinSCP/FileZilla** (SFTP, host = IP, utente `root`): cartella `/var/backups/lmc`. I file sono cifrati: per aprirli serve la password del punto 4.1.
+Oppure con **WinSCP/FileZilla** (SFTP, host = IP, utente `root`): cartella `/root/backups_lmc`. I file sono cifrati: per aprirli serve la password del punto 4.1.
 
 ### 4.7 Ripristino
 **Prima di tutto**, per sicurezza: ogni ripristino **ferma il sito**, **conserva lo stato attuale** in `data.prima-del-ripristino-…`, controlla il backup **prima** di toccare qualcosa (se la password è sbagliata o il file è rovinato si ferma senza modificare nulla) e poi **riavvia**.
 
-**a) Da un backup sul server** (`/var/backups/lmc`):
+**a) Da un backup sul server** (`/root/backups_lmc`):
 ```bash
-ls /var/backups/lmc                                      # scegli la data
-sudo /srv/lmc/deploy/restore.sh /var/backups/lmc/lmc-data-AAAA-MM-GG_HHMM.tar.gz.enc
+ls /root/backups_lmc                                      # scegli la data
+sudo /srv/lmc/deploy/restore.sh /root/backups_lmc/lmc_AAAAMMGG_HHMMSS.tar.gz.enc
 # aggiungi il file dei segreti SOLO se vuoi ripristinare anche .env e secret.key:
-sudo /srv/lmc/deploy/restore.sh /var/backups/lmc/lmc-data-….tar.gz.enc /var/backups/lmc/lmc-secrets-….tar.gz.enc
+sudo /srv/lmc/deploy/restore.sh /root/backups_lmc/lmc-data-….tar.gz.enc /root/backups_lmc/lmc-secrets-….tar.gz.enc
 ```
 **b) Da IONOS Object Storage** (anche su un server nuovo, dopo `setup-vps.sh`):
 ```bash
@@ -273,6 +273,21 @@ journalctl -u lmc -n 30 --no-pager         # nessun errore
 | Disco pieno | riduci `KEEP_DAYS`, sposta i video grandi, o allarga il disco dal Cloud Panel IONOS |
 | Nessuna email di avviso | imposta `SMTP_*` e `OWNER_EMAIL` nel `.env`; per WhatsApp configura Twilio (Admin › Impostazioni) |
 
+### 4.9 Integrazione nel sistema di backup già presente sul server (guard + Google Drive)
+Se sulla VPS girano già altri backup (guard `/usr/local/bin/lexpro-backup-guard.sh`, cartelle `/root/backups_<nome>`, copia offsite su Google Drive con
+`/root/.config/fivetech-backup/rclone.conf`, remote `ftbos_gdrive_personal:`), LMC usa **lo stesso meccanismo** invece di uno parallelo:
+
+| Aspetto | Come funziona per LMC |
+|---|---|
+| Cartella e nomi | `/root/backups_lmc/lmc_AAAAMMGG_HHMMSS.tar.gz.enc` (+ `lmc_secrets_…` per `.env` e `secret.key`), rotazione 14 giorni, verifica di lettura, riga finale «Backup LMC OK: <percorso> (<dimensione>) …» |
+| Pianificazione | riga nel **crontab di root** alle **03:20**, tramite il guard: `20 3 * * * /usr/local/bin/lexpro-backup-guard.sh "LMC Service (Flask + foto/video)" /srv/lmc/deploy/backup.sh >> /var/log/backup-lmc.log 2>&1` |
+| Avviso di fallimento | `backup.sh` esce con codice ≠ 0 (`1` errore · `3` copia su Drive non riuscita/non verificata) → il guard manda l'email di allarme come per gli altri progetti (`VIA_GUARD=1` evita gli avvisi doppi) |
+| Copia offsite | `RCLONE_REMOTE=ftbos_gdrive_personal:lmc` + `RCLONE_CONFIG=/root/.config/fivetech-backup/rclone.conf` in `deploy/lmc-backup.conf` (nessuna chiave nel repo), cartella `lmc/` su Drive; file **cifrati** e **verificati** (presenza, dimensione, md5) a ogni notte; script offsite degli altri progetti (`offsite-gdrive.sh`, formato `.ftbk`) **non** usato |
+| Controllo 08:00 | resta `backup-status.sh --check --alert` in `/etc/cron.d/lmc-backup` (avvisa se non c'è un backup riuscito nelle ultime 26 ore) |
+
+I comandi esatti da lanciare sulla VPS sono nella risposta di consegna (e riassunti in `docs/CHECKLIST-GO-LIVE.md`, punto 25). Nota: `rclone delete` su Drive
+sposta i vecchi file nel cestino di Drive (si svuota da solo dopo 30 giorni).
+
 ## Parte 5 – Uso quotidiano
 
 | Cosa | Comando |
@@ -285,7 +300,7 @@ journalctl -u lmc -n 30 --no-pager         # nessun errore
 | Modificare la configurazione | `nano /srv/lmc/.env` → salva → `systemctl restart lmc` |
 | Aggiornare il sito (git) | `sudo bash /srv/lmc/deploy/aggiorna.sh` (fa da solo: backup → `git pull` → dipendenze → `chown` di `foto/` e `data/` → riavvio → controllo `/health`). Le foto/video nuovi in `foto/organizzate/` si pubblicano da soli all'avvio; quelli spostati o cancellati su git spariscono dal sito |
 | Aggiornare (copia file) | ricopia le cartelle con `scp` come in 2.1 **senza** `data/`, poi `systemctl restart lmc` |
-| Spazio su disco | `df -h /` · `du -sh /srv/lmc/data /var/backups/lmc` |
+| Spazio su disco | `df -h /` · `du -sh /srv/lmc/data /root/backups_lmc` |
 | Stato dei backup (locale + IONOS) | `sudo /srv/lmc/deploy/backup-status.sh` |
 
 Il nuovo avvio mostra nel log eventuali **avvisi di configurazione** (es. `COOKIE_SECURE=1 mancante`): `journalctl -u lmc -n 30 | grep ATTENZIONE`.

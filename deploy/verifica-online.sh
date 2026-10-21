@@ -61,7 +61,8 @@ echo "$LOGS" | grep -q 'ATTENZIONE' && { warn "avvisi di configurazione:"; echo 
 echo "== Backup"
 [ -f /etc/cron.d/lmc-backup ] && ok "cron del backup installato ($(grep -c backup /etc/cron.d/lmc-backup) righe)" || bad "/etc/cron.d/lmc-backup mancante"
 [ -s /root/.lmc-backup-pass ] && ok "password di cifratura presente (SALVALA fuori dal VPS)" || bad "/root/.lmc-backup-pass mancante"
-if [ -f /var/backups/lmc/LAST_OK ]; then ok "ultimo backup riuscito: $(grep '^time=' /var/backups/lmc/LAST_OK | cut -d= -f2) · cloud: $(grep '^cloud=' /var/backups/lmc/LAST_OK | cut -d= -f2)"; else warn "nessun backup riuscito ancora: sudo $APP/deploy/backup.sh"; fi
+BKD="$(grep -s '^BACKUP_DIR=' "$APP/deploy/lmc-backup.conf" | tail -1 | cut -d= -f2)"; BKD="${BKD:-/root/backups_lmc}"; [ -f "$BKD/LAST_OK" ] || BKD=/var/backups/lmc
+if [ -f "$BKD/LAST_OK" ]; then ok "ultimo backup riuscito: $(grep '^time=' "$BKD/LAST_OK" | cut -d= -f2) · cloud: $(grep '^cloud=' "$BKD/LAST_OK" | cut -d= -f2)"; else warn "nessun backup riuscito ancora: sudo $APP/deploy/backup.sh"; fi
 fi
 echo
 echo "RISULTATO: $BAD problemi · $WARN avvisi"

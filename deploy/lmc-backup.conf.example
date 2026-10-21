@@ -7,16 +7,27 @@
 # =====================================================================================================
 
 # --- rotazione ---
-# Giorni di backup tenuti sul server (cartella /var/backups/lmc) e sul cloud IONOS
-KEEP_DAYS=7
-REMOTE_KEEP_DAYS=7
+# Giorni di backup tenuti sul server e sul cloud (come gli altri backup del server: 14)
+KEEP_DAYS=14
+REMOTE_KEEP_DAYS=14
+# Cartella dei backup locali: stesso schema degli altri progetti (/root/backups_<nome>)
+BACKUP_DIR=/root/backups_lmc
 
 # --- cifratura (lascia 1) ---
 # Password di cifratura: la crea l'installer in /root/.lmc-backup-pass. Copiala anche fuori dal server!
 PASS_FILE=/root/.lmc-backup-pass
 ENCRYPT=1
 
-# --- COPIA SU IONOS OBJECT STORAGE (S3) ---  vedi docs/DEPLOY.md, Parte 4.3
+# =====================================================================================================
+# COPIA OFFSITE — scegli UNA delle due opzioni (A oppure B)
+# =====================================================================================================
+#
+# --- A) GOOGLE DRIVE con la configurazione rclone GIÀ ESISTENTE sul server (è il sistema usato dagli altri progetti) ---
+#     Nessuna chiave nel repo: si usa il remote che c'è già. Decommenta le due righe e lascia vuote le chiavi S3 qui sotto.
+#RCLONE_REMOTE=ftbos_gdrive_personal:lmc
+#RCLONE_CONFIG=/root/.config/fivetech-backup/rclone.conf
+#
+# --- B) IONOS OBJECT STORAGE (S3) ---  vedi docs/DEPLOY.md, Parte 4.3
 # Endpoint della REGIONE del bucket, senza https:// (Frankfurt: s3-eu-central-1.ionoscloud.com, Berlino: s3-eu-central-2.ionoscloud.com,
 # Logroño: s3-eu-south-2.ionoscloud.com — controlla quello mostrato nel pannello IONOS accanto al bucket)
 S3_ENDPOINT=
@@ -34,3 +45,7 @@ S3_REGION=
 VERIFY_DOWNLOAD=0
 # Ore dopo le quali "nessun backup recente" fa scattare l'avviso delle 08:00
 MAX_AGE_HOURS=26
+
+# 1 = lo script gira sotto /usr/local/bin/lexpro-backup-guard.sh (come gli altri backup): l'email di errore la manda il guard
+# quando lo script esce con codice ≠ 0, quindi qui si evitano gli avvisi doppi. 0 = avvisi propri del sito (email + WhatsApp).
+VIA_GUARD=0

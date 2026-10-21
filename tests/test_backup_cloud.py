@@ -117,10 +117,10 @@ S3_PREFIX=lmc
     out = r.stdout + r.stderr
     check("backup.sh con copia IONOS termina con successo (exit 0)", r.returncode == 0, out[-800:])
     check("il log dichiara copia ok e verificata", "copia su IONOS ok e verificata" in out and out.count("verifica cloud ok") == 2, out[-600:])
-    local = sorted(p.name for p in bdir.glob("lmc-*"))
-    data_f = next(bdir.glob("lmc-data-20*_*.tar.gz.enc"), None)
-    sec_f = next(bdir.glob("lmc-secrets-*.enc"), None)
-    check("locale: archivio dati e segreti entrambi CIFRATI (.enc)", data_f is not None and sec_f is not None and not list(bdir.glob("lmc-data-20*_*.tar.gz")), local)
+    local = sorted(p.name for p in bdir.glob("lmc*"))
+    data_f = next(bdir.glob("lmc_2*.tar.gz.enc"), None)
+    sec_f = next(bdir.glob("lmc_secrets_*.enc"), None)
+    check("locale: archivio dati e segreti entrambi CIFRATI (.enc)", data_f is not None and sec_f is not None and not list(bdir.glob("lmc_2*.tar.gz")), local)
     check("locale: nessun contenuto leggibile (né token né database)", all(b"TOKEN-TWILIO" not in p.read_bytes() and b"SQLite format" not in p.read_bytes() and b"env-token" not in p.read_bytes() for p in bdir.glob("lmc-*.enc")))
     remote = {x["Name"]: x for x in ls()}
     check("cloud: i due file nuovi sono arrivati con la stessa dimensione", data_f.name in remote and sec_f.name in remote and remote[data_f.name]["Size"] == data_f.stat().st_size and remote[sec_f.name]["Size"] == sec_f.stat().st_size, list(remote))
@@ -130,7 +130,7 @@ S3_PREFIX=lmc
 
     # ---------- 2) tutto ciò che sta nel cloud è cifrato ----------
     dl = work / "scaricato"; dl.mkdir()
-    rc("copy", "t:lmc-backup/lmc", str(dl), "--include", "lmc-*20*_*")
+    rc("copy", "t:lmc-backup/lmc", str(dl), "--include", "lmc*20*_*")
     blob = b"".join(p.read_bytes() for p in dl.iterdir())
     check("cloud: nessun segreto in chiaro (token Twilio, .env, SQLite, nome dei file)", b"TOKEN-TWILIO" not in blob and b"env-token" not in blob and b"smtp-pass" not in blob and b"SQLite format" not in blob and b"hero/a.jpg" not in blob)
     dec = subprocess.run(f"openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:{work/'pass'} -in {dl/sec_f.name} | tar -xzO ./.env", shell=True, capture_output=True, text=True)
@@ -159,7 +159,7 @@ S3_PREFIX=lmc
 
     # ---------- 4) ripristino dal cloud ----------
     lst = sh(DEPLOY / "restore.sh", "--cloud-list")
-    check("restore.sh --cloud-list elenca i backup su IONOS", lst.returncode == 0 and "lmc-data-" in lst.stdout and "lmc-secrets-" in lst.stdout, lst.stdout + lst.stderr)
+    check("restore.sh --cloud-list elenca i backup su IONOS", lst.returncode == 0 and "lmc_2" in lst.stdout and "lmc_secrets_" in lst.stdout, lst.stdout + lst.stderr)
     shutil.rmtree(bdir)                                    # simulo la perdita del server: nessun backup locale
     (appdir / "data" / "lmc.db").write_bytes(b"ROTTO")
     shutil.rmtree(appdir / "foto"); (appdir / ".env").unlink()
@@ -181,7 +181,7 @@ S3_PREFIX=lmc
     alerts.write_text("")
     write_conf(endpoint="http://127.0.0.1:9")
     r = sh(DEPLOY / "backup.sh")
-    check("cloud irraggiungibile: exit 3, backup locale comunque fatto, avviso inviato", r.returncode == 3 and list(bdir.glob("lmc-data-*.enc")) and "NON riuscita" in alerts.read_text(), r.stdout + r.stderr)
+    check("cloud irraggiungibile: exit 3, backup locale comunque fatto, avviso inviato", r.returncode == 3 and list(bdir.glob("lmc_2*.enc")) and "NON riuscita" in alerts.read_text(), r.stdout + r.stderr)
     check("dopo un fallimento cloud LAST_OK non viene aggiornato", not (bdir / "LAST_OK").exists())
     write_conf(); (work / "pass").write_text("password-di-test-backup\n")
     (bdir / "LAST_OK").write_text("time=2020-01-01T00:00:00+00:00\ncloud=ok\n")
@@ -215,9 +215,59 @@ S3_PREFIX=lmc
     tracked = subprocess.run(["git", "ls-files", "deploy"], cwd=ROOT, capture_output=True, text=True).stdout.split()
     check("nessun file con chiavi nella cartella deploy versionata", "deploy/lmc-backup.conf" not in tracked and not any(t.endswith((".key", ".pem", ".enc")) for t in tracked), tracked)
     cron = (DEPLOY / "lmc-backup.cron").read_text()
-    check("cron: backup alle 03:30 e controllo alle 08:00", re.search(r"^30 3 \* \* \* root /srv/lmc/deploy/backup\.sh", cron, re.M) and re.search(r"^0 8 \* \* \* root /srv/lmc/deploy/backup-status\.sh --check --alert", cron, re.M))
+    check("cron: backup alle 03:20 (slot libero) e controllo alle 08:00", re.search(r"^20 3 \* \* \* root /srv/lmc/deploy/backup\.sh", cron, re.M) and re.search(r"^0 8 \* \* \* root /srv/lmc/deploy/backup-status\.sh --check --alert", cron, re.M))
 finally:
     moto.terminate()
     moto.wait(timeout=10)
+
+    # ---------- 6) integrazione col sistema di backup del server: remote rclone ESISTENTE (Google Drive) + guard ----------
+    # il Drive reale non è raggiungibile dai test: un remote rclone «local» con md5 si comporta allo stesso modo (config file, remote:cartella)
+    drive = work / "drive"; drive.mkdir()
+    rclone_conf = work / "fivetech-rclone.conf"
+    rclone_conf.write_text("[ftbos_gdrive_personal]\ntype = local\n"); rclone_conf.chmod(0o600)
+    bdir2 = work / "backups_lmc"
+    conf.write_text(f"""APP_DIR={appdir}
+BACKUP_DIR={bdir2}
+PASS_FILE={work/'pass'}
+KEEP_DAYS=14
+REMOTE_KEEP_DAYS=14
+RCLONE_REMOTE=ftbos_gdrive_personal:{drive}/lmc
+RCLONE_CONFIG={rclone_conf}
+VIA_GUARD=1
+""")
+    conf.chmod(0o600)
+    alerts.write_text("")
+    r = sh(DEPLOY / "backup.sh")
+    out = r.stdout + r.stderr
+    d_data = next(bdir2.glob("lmc_2*.tar.gz.enc"), None); d_sec = next(bdir2.glob("lmc_secrets_2*.tar.gz.enc"), None)
+    check("Drive: backup.sh esce 0 con il remote rclone esistente (RCLONE_REMOTE + RCLONE_CONFIG, nessuna chiave nel conf)", r.returncode == 0, out[-700:])
+    check("Drive: schema nomi lmc_AAAAMMGG_HHMMSS.tar.gz.enc in una cartella backups_lmc", d_data is not None and d_sec is not None and re.fullmatch(r"lmc_\d{8}_\d{6}\.tar\.gz\.enc", d_data.name) is not None)
+    check("Drive: copia su ftbos_gdrive_personal:…/lmc/ e verifica md5 riuscita", (drive / "lmc" / d_data.name).exists() and "controllo: md5" in out, out[-500:])
+    check("Drive: riga finale «Backup LMC OK: <percorso> (<dimensione>)»", re.search(r"Backup LMC OK: \S+lmc_\d{8}_\d{6}\.tar\.gz\.enc \(\S+\)", out) is not None, out[-300:])
+    check("Drive: segnalino LAST_OK e backup-status leggono la cartella nuova", "cloud=ok e verificata" in (bdir2 / "LAST_OK").read_text() and sh(DEPLOY / "backup-status.sh", "--check").returncode == 0)
+    st = sh(DEPLOY / "backup-status.sh")
+    check("Drive: backup-status.sh mostra file locali e copia cloud", "lmc_2" in st.stdout and str(drive) in st.stdout and "Copia cloud" in st.stdout, st.stdout[-600:])
+    # il guard del server esegue il comando e, se exit ≠ 0, manda l'avviso: qui un guard di prova identico nel comportamento
+    guard = work / "guard.sh"
+    guard.write_text(f'#!/bin/bash\nL="$1"; shift\n"$@"; rc=$?\nif [ $rc -ne 0 ]; then echo "$L | backup interrotto (exit $rc)" >> {alerts}; fi\nexit $rc\n')
+    guard.chmod(0o755)
+    g = sh(guard, "LMC Service (Flask + foto/video)", DEPLOY / "backup.sh")
+    check("guard: backup riuscito → nessun avviso, exit 0", g.returncode == 0 and alerts.read_text() == "", g.stdout[-300:] + alerts.read_text())
+    shutil.rmtree(drive)
+    (work / "drive_ro").write_text("x")                      # una FILE al posto della cartella: la copia non può riuscire
+    conf.write_text(conf.read_text().replace(f"{drive}/lmc", f"{work/'drive_ro'}/lmc"))
+    g = sh(guard, "LMC Service (Flask + foto/video)", DEPLOY / "backup.sh")
+    al = alerts.read_text()
+    check("guard: copia Drive non riuscita → exit 3 e UN solo avviso del guard (nessun doppione dagli avvisi propri)", g.returncode == 3 and al.count("LMC Service (Flask + foto/video)") == 1 and "exit 3" in al, g.stdout[-400:] + al)
+    check("guard: il backup locale è stato comunque fatto", len(list(bdir2.glob("lmc_2*.tar.gz.enc"))) >= 2)
+    # senza guard (VIA_GUARD=0) gli avvisi propri del sito restano attivi
+    conf.write_text(conf.read_text().replace("VIA_GUARD=1", "VIA_GUARD=0")); alerts.write_text("")
+    sh(DEPLOY / "backup.sh")
+    check("senza guard (VIA_GUARD=0) restano gli avvisi propri (email + WhatsApp)", "NON riuscita" in alerts.read_text() or "NON verificata" in alerts.read_text(), alerts.read_text())
+    # installer: con il guard presente la riga cron passa dal guard, 03:20, log /var/log/backup-lmc.log
+    sv = (DEPLOY / "setup-vps.sh").read_text()
+    check("setup-vps.sh: se c'è il guard condiviso, il cron di LMC lo usa (03:20, /var/log/backup-lmc.log) e imposta VIA_GUARD=1", "lexpro-backup-guard.sh" in sv and "20 3 * * * root $GUARD" in sv and "VIA_GUARD=1" in sv and "backup-lmc.log" in sv)
+    check("conf di esempio: opzione A (Drive con rclone esistente) documentata, nessuna chiave", "RCLONE_REMOTE=ftbos_gdrive_personal:lmc" in (DEPLOY / "lmc-backup.conf.example").read_text() and "RCLONE_CONFIG=/root/.config/fivetech-backup/rclone.conf" in (DEPLOY / "lmc-backup.conf.example").read_text())
+
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

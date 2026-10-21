@@ -8,7 +8,7 @@ LIB_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 umask 077
 
 # le variabili già presenti nell'ambiente (es. VERIFY_DOWNLOAD=1 backup-status.sh ...) hanno la precedenza sul file di configurazione
-_KEYS="APP_DIR BACKUP_DIR KEEP_DAYS REMOTE_KEEP_DAYS PASS_FILE ENCRYPT VERIFY_DOWNLOAD MAX_AGE_HOURS S3_ENDPOINT S3_ACCESS_KEY S3_SECRET_KEY S3_BUCKET S3_PREFIX S3_REGION RCLONE_REMOTE APP_USER"
+_KEYS="APP_DIR BACKUP_DIR KEEP_DAYS REMOTE_KEEP_DAYS PASS_FILE ENCRYPT VERIFY_DOWNLOAD MAX_AGE_HOURS S3_ENDPOINT S3_ACCESS_KEY S3_SECRET_KEY S3_BUCKET S3_PREFIX S3_REGION RCLONE_REMOTE RCLONE_CONFIG VIA_GUARD APP_USER"
 declare -A _ENVSAVE=()
 for _k in $_KEYS; do if [ -n "${!_k+x}" ]; then _ENVSAVE[$_k]="${!_k}"; fi; done
 CONF_USED=""
@@ -22,16 +22,22 @@ for _c in "${LMC_BACKUP_CONF:-}" "$LIB_DIR/lmc-backup.conf" /etc/lmc-backup.conf
 done
 for _k in "${!_ENVSAVE[@]}"; do printf -v "$_k" '%s' "${_ENVSAVE[$_k]}"; done
 : "${APP_DIR:=$(dirname "$LIB_DIR")}"
-: "${BACKUP_DIR:=/var/backups/lmc}"
-: "${KEEP_DAYS:=7}"                  # rotazione locale
+: "${BACKUP_DIR:=/root/backups_lmc}"   # stesso schema degli altri progetti del server: /root/backups_<nome>
+: "${KEEP_DAYS:=14}"                 # rotazione locale (come gli altri backup del server: 14 giorni)
 : "${REMOTE_KEEP_DAYS:=$KEEP_DAYS}"  # rotazione su IONOS
 : "${PASS_FILE:=/root/.lmc-backup-pass}"
 : "${ENCRYPT:=1}"                    # 1 = anche l'archivio dati è cifrato (consigliato: il database contiene le chiavi API)
 : "${VERIFY_DOWNLOAD:=0}"            # 1 = verifica la copia cloud scaricandola e confrontandola byte per byte
 : "${MAX_AGE_HOURS:=26}"
 : "${S3_ENDPOINT:=}" ; : "${S3_ACCESS_KEY:=}" ; : "${S3_SECRET_KEY:=}" ; : "${S3_BUCKET:=}" ; : "${S3_PREFIX:=lmc}" ; : "${S3_REGION:=}"
-: "${RCLONE_REMOTE:=}"               # alternativa: un remote già configurato a mano con "rclone config"
+: "${RCLONE_REMOTE:=}"               # alternativa: un remote già configurato a mano con "rclone config" (es. ftbos_gdrive_personal:lmc)
+: "${RCLONE_CONFIG:=}"               # file di configurazione rclone da usare con RCLONE_REMOTE (vuoto = quello predefinito di rclone)
+: "${VIA_GUARD:=0}"                  # 1 = gira sotto lexpro-backup-guard.sh: l'avviso di fallimento lo manda il guard (exit code ≠ 0)
 : "${APP_USER:=lmc}"
+
+# Nomi dei file di backup: schema degli altri progetti  lmc_AAAAMMGG_HHMMSS.tar.gz.enc  (dati)  e  lmc_secrets_AAAAMMGG_HHMMSS.tar.gz.enc  (.env + secret.key).
+# I vecchi nomi lmc-data-*/lmc-secrets-* restano riconosciuti (rotazione, stato, ripristino).
+BK_INCLUDE=(--include 'lmc_*' --include 'lmc-*')
 
 LOG() { echo "$(date -Is) $*"; }
 
@@ -52,6 +58,7 @@ conf_warn_permissions() {
 
 # ---------- copia cloud (IONOS Object Storage = S3 compatibile) ----------
 REMOTE=""
+CLOUD_LABEL="IONOS"
 cloud_setup() {
   REMOTE=""
   if [ -n "$S3_BUCKET" ] && [ -n "$S3_ENDPOINT" ] && [ -n "$S3_ACCESS_KEY" ] && [ -n "$S3_SECRET_KEY" ]; then
@@ -66,6 +73,9 @@ cloud_setup() {
     REMOTE="lmcs3:${S3_BUCKET}${S3_PREFIX:+/$S3_PREFIX}"
   elif [ -n "$RCLONE_REMOTE" ]; then
     REMOTE="$RCLONE_REMOTE"
+    case "$RCLONE_REMOTE" in *gdrive*|*drive*) CLOUD_LABEL="Drive" ;; *) CLOUD_LABEL="cloud" ;; esac
+    # config rclone già esistente sul server (es. /root/.config/fivetech-backup/rclone.conf): nessuna chiave duplicata nel progetto
+    [ -n "$RCLONE_CONFIG" ] && export RCLONE_CONFIG
   fi
   [ -n "$REMOTE" ]
 }

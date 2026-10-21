@@ -23,7 +23,7 @@ fi
 if [ "$VERIFY" = "1" ]; then
   cloud_setup || { LOG "copia cloud non configurata"; exit 1; }
   RES=0
-  for f in $(ls -1t "$BACKUP_DIR"/lmc-data-* "$BACKUP_DIR"/lmc-secrets-* 2>/dev/null | head -n 2); do verify_remote_file "$f" || RES=1; done
+  for f in $(ls -1t "$BACKUP_DIR"/lmc_2* "$BACKUP_DIR"/lmc_secrets_* "$BACKUP_DIR"/lmc-data-* "$BACKUP_DIR"/lmc-secrets-* 2>/dev/null | head -n 2); do verify_remote_file "$f" || RES=1; done
   [ "$RES" = "0" ] || { [ "$ALERT" = "1" ] && send_alert "Backup su IONOS non integro" "Il controllo manuale ha trovato file mancanti o diversi sul cloud IONOS."; exit 1; }
   exit 0
 fi
@@ -43,10 +43,10 @@ echo "Configurazione : ${CONF_USED:-nessun file (valori predefiniti)}"
 echo "Cartella locale: $BACKUP_DIR   (rotazione: $KEEP_DAYS giorni)"
 echo "Ultimo riuscito: $LASTTXT"
 echo "File locali:"
-ls -lh "$BACKUP_DIR" 2>/dev/null | awk '/lmc-/{printf "  %8s  %s %s %s  %s\n",$5,$6,$7,$8,$9}' || true
+ls -lh "$BACKUP_DIR" 2>/dev/null | awk '/lmc[-_]/{printf "  %8s  %s %s %s  %s\n",$5,$6,$7,$8,$9}' || true
 if cloud_setup; then
-  echo "Cloud IONOS    : $REMOTE   (rotazione: $REMOTE_KEEP_DAYS giorni)"
-  rclone lsl "$REMOTE" --include 'lmc-*' "${RC_OPTS[@]}" 2>&1 | sort -k4 | awk '{printf "  %8.1fM  %s %s  %s\n",$1/1048576,$2,substr($3,1,8),$4}' || echo "  (non raggiungibile)"
+  echo "Copia cloud     : $REMOTE   (rotazione: $REMOTE_KEEP_DAYS giorni)"
+  rclone lsl "$REMOTE" "${BK_INCLUDE[@]}" "${RC_OPTS[@]}" 2>&1 | sort -k4 | awk '{printf "  %8.1fM  %s %s  %s\n",$1/1048576,$2,substr($3,1,8),$4}' || echo "  (non raggiungibile)"
 else
-  echo "Cloud IONOS    : non configurato"
+  echo "Copia cloud     : non configurata"
 fi

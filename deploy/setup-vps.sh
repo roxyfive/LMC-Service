@@ -80,10 +80,19 @@ chmod +x "$APP"/deploy/*.sh
 [ -f "$APP/deploy/lmc-backup.conf" ] || cp "$APP/deploy/lmc-backup.conf.example" "$APP/deploy/lmc-backup.conf"
 chown root:root "$APP/deploy/lmc-backup.conf"; chmod 600 "$APP/deploy/lmc-backup.conf"
 cp "$APP/deploy/lmc-backup.cron" /etc/cron.d/lmc-backup
+GUARD=/usr/local/bin/lexpro-backup-guard.sh
+if [ -x "$GUARD" ]; then
+  # server con il sistema di backup condiviso: LMC passa dal guard come gli altri progetti (avviso email se esce con codice ≠ 0)
+  sed -i "s|^20 3 \* \* \* root /srv/lmc/deploy/backup.sh .*|20 3 * * * root $GUARD \"LMC Service (Flask + foto/video)\" $APP/deploy/backup.sh >> /var/log/backup-lmc.log 2>\&1|" /etc/cron.d/lmc-backup
+  grep -q '^VIA_GUARD=' "$APP/deploy/lmc-backup.conf" && sed -i 's/^VIA_GUARD=.*/VIA_GUARD=1/' "$APP/deploy/lmc-backup.conf"
+fi
+# se la riga di backup di LMC sta già nel crontab di root (come gli altri progetti) non si duplica qui
+if crontab -l 2>/dev/null | grep -qF 'LMC Service (Flask + foto/video)'; then sed -i '/deploy\/backup\.sh/d' /etc/cron.d/lmc-backup; fi
 chmod 644 /etc/cron.d/lmc-backup
-mkdir -p /var/backups/lmc && chmod 700 /var/backups/lmc
+BKDIR="$(grep -s '^BACKUP_DIR=' "$APP/deploy/lmc-backup.conf" | tail -1 | cut -d= -f2)"; BKDIR="${BKDIR:-/root/backups_lmc}"
+mkdir -p "$BKDIR" && chmod 700 "$BKDIR"
 cat > /etc/logrotate.d/lmc-backup <<'LR'
-/var/log/lmc-backup.log {
+/var/log/lmc-backup.log /var/log/backup-lmc.log {
     monthly
     rotate 6
     compress
@@ -107,6 +116,6 @@ if [ "${NEWPASS:-0}" = "1" ]; then
   echo "Password di cifratura dei backup (.env cifrato): $(cat /root/.lmc-backup-pass)"
   echo "  -> copiala in un posto sicuro FUORI dal VPS (gestore password): senza non si recupera il .env dai backup."
 fi
-echo "Backup notturno: ogni giorno alle 03:30 in /var/backups/lmc (7 giorni, tutto cifrato). Controllo alle 08:00: se manca un backup arriva un avviso."
+echo "Backup notturno: ogni giorno alle 03:20 in ${BKDIR} (14 giorni, tutto cifrato). Controllo alle 08:00: se manca un backup arriva un avviso."
 echo "Copia su IONOS Object Storage: NON ancora attiva. Compila le chiavi in $APP/deploy/lmc-backup.conf (guida: docs/DEPLOY.md, Parte 4.3)."
 echo "Stato dei backup in qualsiasi momento:  sudo $APP/deploy/backup-status.sh"
