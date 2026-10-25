@@ -573,7 +573,6 @@ html{overflow-x:clip;max-width:100%}body{overflow-x:clip;max-width:100%}
   .intro-ctrl{left:clamp(1.2rem,5vw,1.8rem);right:clamp(1.2rem,5vw,1.8rem);flex-direction:column;align-items:center;justify-content:center}
   .intro-ctrl>*{width:min(100%,20rem);justify-content:center;text-align:center}
 }
-}
 
 /* =====================================================================================================
    TEMA NERO (richiesta del cliente): sfondo nero, testi bianchi, contorni/bordi ROSSI, accento rosso al posto dell'oro.
