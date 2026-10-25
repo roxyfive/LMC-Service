@@ -8,7 +8,7 @@ La guida di tutto il pannello è in `docs/GUIDA-ADMIN.md`, il deploy in `docs/DE
 
 | # | Cosa manca | Dove si inserisce | Stato oggi | |
 |---|---|---|---|---|
-| 1 | **Foto e video reali** del cliente (25 foto + 6 video, credito Merette Uiterwaal): già in `foto/organizzate/` e pubblicate. Mancano foto di **videosorveglianza** e **ledwall** (le due card skill sono senza immagine finché non arrivano). Tieni `foto/organizzate/CREDITI.md` | Admin › Foto e video, oppure cartelle `foto/organizzate/{hero,galleria,installazioni,video}` + «Sincronizza» | Reali ✅ (chiedere al cliente le foto mancanti) | 🟠 |
+| 1 | **Foto e video reali** del cliente (25 foto + 6 video, credito Merette Uiterwaal): già in `foto/organizzate/` e pubblicate. Manca almeno una foto di **ledwall** (la card skill è senza immagine finché non arriva). Tieni `foto/organizzate/CREDITI.md` | Admin › Foto e video, oppure cartelle `foto/organizzate/{hero,galleria,installazioni,video}` + «Sincronizza» | Reali ✅ (chiedere al cliente le foto mancanti) | 🟠 |
 | 2 | **P.IVA e dati societari** (ragione sociale, P.IVA, sede legale): obbligatori per un sito commerciale | Admin › Testi › *Dati societari nel footer* (compare nel footer e sull'intestazione dei PDF) | Vuoto | 🔴 |
 | 3 | **Informativa privacy completa** (fornitori, sede dei dati, conservazione, basi giuridiche) con il consulente. Il testo base c'è, ma è provvisorio | Admin › Testi › *Informativa privacy – testo principale* e *– dettagli* (il segnaposto «[DA COMPLETARE]» non viene mai mostrato al pubblico) | Testo base | 🔴 |
 | 4 | **Email di contatto del sito** | Admin › Testi › *Email* | `lamusiccompany.24@gmail.com` già inserita (sito, Team, footer, assistente) ✅ | 🟢 |

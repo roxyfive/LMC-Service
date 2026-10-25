@@ -17,7 +17,7 @@ from . import notify, metrics
 bp = Blueprint("pub", __name__)
 FILE_RE = re.compile(r"^[0-9a-f]{32}(_\d+)?\.(webp|mp4|webm)$")
 EVENT_TYPES = ["Matrimonio", "Festa privata", "Evento aziendale / Meeting", "Concerto / Show", "Discoteca / Locale", "Altro"]
-SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Videosorveglianza", "Progettazione"]
+SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Progettazione"]
 
 
 def _clean(v, n=300):

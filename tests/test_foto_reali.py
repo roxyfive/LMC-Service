@@ -167,7 +167,7 @@ for seed in range(12):
     assert re.search(r"mixer|regia audio|fonico|microfon|cassa", vetrina._text(one[2])), (seed, vetrina._text(one[2]))
     assert re.search(r"palco|montaggio|struttur|allestit|rigging", vetrina._text(one[1])), (seed, vetrina._text(one[1]))
     assert re.search(r"barre led|riflettor|proiettor|mirror|giochi di luce|luci", vetrina._text(one[3])), (seed, vetrina._text(one[3]))
-    assert vetrina.folder_of(one[0]) == "hero" and vetrina.folder_of(one[6]) == "hero"
+    assert vetrina.folder_of(one[0]) == "hero" and vetrina.folder_of(one[5]) == "hero"
 check("intro: slide abbinate al tema (Audio→mixer/regia, Allestimenti→palco, Ledwall e luci→luci; prima e ultima da hero)", True)
 hh = c.get("/").get_data(as_text=True)
 srcs = re.findall(r'class="slide kb\d" alt="" (?:data-)?src="([^"]+)"', hh)

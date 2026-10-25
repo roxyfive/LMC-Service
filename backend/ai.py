@@ -117,7 +117,7 @@ def fallback(text):
         if orari:
             return (f"{orari}." + (f" Per parlarci: {tel}." if tel else ""), None)
         return ("Gli orari non sono ancora indicati: scrivici dal modulo preventivo e ti rispondiamo.", None)
-    if _has(t, "noleggi", "attrezzatur", "allestiment", "organizz", "eventi", "serviz", "audio", "luci", "luce", "video", "ledwall", "led", "videosorveglianza", "telecamer", "progett", "cosa fate", "fate", "offrite"):
+    if _has(t, "noleggi", "attrezzatur", "allestiment", "organizz", "eventi", "serviz", "audio", "luci", "luce", "video", "ledwall", "led", "progett", "cosa fate", "fate", "offrite"):
         return ("Ci occupiamo di: " + "; ".join(f"{x['nome']}" for x in _servizi(s)) + ". Lavoriamo anche con audio, luci, video e ledwall. "
                 f"Operiamo a {s.get('city')} e in tutta Italia. Vuoi un preventivo?", "preventivo")
     if _has(t, "dove", "zone", "italia", "napoli", "trasfert", "sede"):

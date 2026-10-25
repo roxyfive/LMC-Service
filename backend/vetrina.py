@@ -12,8 +12,6 @@ from .config import FOTO_DIR, ROOT
 
 # slug, nome, testo, parole chiave che nel nome file/didascalia indicano la foto giusta
 SKILLS = [
-    ("videosorveglianza", "Videosorveglianza", "Impianti di telecamere per tenere sotto controllo eventi, locali e spazi aziendali.",
-     r"telecamer|sorveglianz|cctv|dome|videocamer|security"),
     ("ledwall", "Ledwall", "Pareti LED per palchi, fondali e contenuti video che catturano il pubblico.",
      r"ledwall|led wall|videowall|maxischermo|schermo"),
     ("audio", "Audio", "Impianti audio per eventi, meeting e show, dimensionati sulla sala e sul pubblico.",
@@ -31,7 +29,6 @@ INTRO_STEPS = [
     ("allestimenti", "Il lato tecnico del tuo evento", "Progettazione e allestimenti"),
     ("audio", "Audio", "L'impianto giusto per ogni sala"),
     ("ledwall", "Ledwall e luci", "Il palco prende vita"),
-    ("videosorveglianza", "Videosorveglianza", "Telecamere per eventi, locali e aziende"),
     ("eventi", "Eventi in tutta Italia", "Matrimoni, eventi privati, live e congressi"),
     ("hero", "Il tuo evento, sotto i riflettori", "Prenota un appuntamento o chiedi un preventivo"),
 ]
@@ -43,7 +40,6 @@ INTRO_THEMES = [
     (r"palco allestito|montaggio|struttur|allestit|rigging", ("installazioni", "galleria")),
     (r"mixer|regia audio|fonico|microfon|cassa", ("installazioni", "galleria")),
     (r"barre led|riflettor|proiettor|mirror|giochi di luce|luci", ("installazioni", "galleria")),
-    (r"regia video|collegament|controlli|regia", ("galleria", "installazioni")),
     (r"teatro|prove|serata|pubblico|quinte", ("galleria", "hero")),
     (r"pomeriggio|riflettori d.atmosfera|facciata|prove luci|palco in cortile", ("hero",)),
 ]

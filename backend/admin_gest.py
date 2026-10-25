@@ -21,7 +21,7 @@ from .security import admin_required, current_user, check_csrf
 
 MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"]
 GIORNI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"]
-SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Videosorveglianza", "Progettazione"]
+SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Progettazione"]
 EVENT_TYPES = ["Matrimonio", "Festa privata", "Evento aziendale / Meeting", "Concerto / Show", "Discoteca / Locale", "Altro"]
 
 

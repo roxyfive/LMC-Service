@@ -299,13 +299,24 @@
     if (/[?&]sos=1/.test(location.search)) setTimeout(open, 400);   // scorciatoia dell'app installata
   })();
 
+  /* ---------- La nostra storia: play al click (il file di 15 MB si scarica solo allora), controlli nativi + schermo intero ---------- */
+  (function () {
+    const box = $('#storiaPlayer'), v = $('#storiaVideo'), b = $('#storiaPlay'); if (!box || !v || !b) return;
+    const on = () => { box.classList.add('playing'); v.controls = true; };
+    const off = () => { box.classList.remove('playing'); v.controls = false; };
+    b.addEventListener('click', () => { v.preload = 'auto'; on(); v.play().catch(off); });
+    v.addEventListener('play', on); v.addEventListener('pause', () => { if (v.ended || v.currentTime === 0) off(); });
+    v.addEventListener('ended', () => { off(); v.currentTime = 0; v.load(); });
+    document.querySelectorAll('a[href="#storia"]').forEach(a => a.addEventListener('click', () => { setTimeout(() => { try { b.focus({ preventScroll: true }); } catch (e) { } }, 700); }));
+  })();
+
   /* ---------- configuratore evento (nessun prezzo: prepara la richiesta di preventivo) ---------- */
   (function () {
     const root = $('#conf'); if (!root) return;
     const val = { tipo: '', ospiti: '', servizi: new Set() }, out = $('#confOut'), go = $('#confGo');
     const HINT = {
       Audio: 'impianto audio dimensionato su sala e pubblico, microfoni e regia', Luci: 'luci d\'atmosfera e scenografiche con programmazione',
-      Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico', Videosorveglianza: 'telecamere e controllo degli spazi',
+      Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico',
       Progettazione: 'progetto tecnico su misura con sopralluogo'
     };
     let PRICES = {};      // stima indicativa: solo se il titolare l'ha attivata in Admin › Tariffe
