@@ -52,6 +52,9 @@ Controllo doppioni/qualità: `python -m backend.controllo_foto` (vedi `docs/CONT
 ## Conformità (privacy, cookie, accessibilità)
 `docs/CONFORMITA.md` riassume la verifica; `python -m tests.test_conformita` la ripete (axe WCAG 2.2 AA, cookie, terze parti, conservazione dati, recensioni vere). `docs/CONFRONTO-CODEX.md` contiene il prompt per un secondo parere con Codex.
 
+## PDF per l'agenzia (2 file)
+`docs/Libretto-LMC.pdf` (libretto illustrativo: clienti, admin, collaboratori, specifiche) e `docs/Guida-Agenzia-LMC.pdf` (email SMTP e dominio .it). Si rigenerano con `python -m tools.libretto_shots CARTELLA` + `python -m tools.pdf_libretto CARTELLA docs/Libretto-LMC.pdf` e `python -m tools.pdf_agenzia`. Test: `python -m tests.test_pdf_consegna`.
+
 ## Rigenerare materiali
 `python -m backend.make_assets` (loghi/icone/musica) · `python video/make_video.py` · `python docs/make_pdf.py`
 
