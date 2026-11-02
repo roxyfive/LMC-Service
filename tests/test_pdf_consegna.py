@@ -32,11 +32,11 @@ for parola in ("Dashboard", "Agenda", "Fatture", "Acconti", "Recensioni", "Galle
     check(f"Libretto cita «{parola}»", parola in t)
 check("Libretto: nessun segnaposto o testo di prova rimasto", "DA COMPLETARE" not in t and "lorem" not in t.lower())
 ta = testo(ag)
-for parola in ("SMTP", "Dominio .it", "Pasquale Toppi", "SMTP_PASSWORD", "collega-dominio.sh", "SPF", "Checklist finale"):
+for parola in ("Email del sito", "Dominio .it", "Pasquale Toppi", "password per le app", "Checklist"):
     check(f"Guida agenzia cita «{parola}»", parola in ta)
-check("Guida agenzia: nessuna password scritta", "SMTP_PASSWORD=<" in ta and "password per le app, senza spazi>" in ta)
+check("Guida agenzia: niente dati tecnici (IP, server, comandi)", not any(w in ta for w in ("87.106", "sudo", ".env", "smtp.", "duckdns", "nginx", "DNS")))
 if PdfReader:
-    for nome, pdf, minp, minlink in (("Libretto", lib, 50, 45), ("Guida agenzia", ag, 7, 0)):
+    for nome, pdf, minp, minlink in (("Libretto", lib, 50, 45), ("Guida agenzia", ag, 4, 0)):
         rd = PdfReader(str(pdf))
         n = len(rd.pages)
         check(f"{nome}: pagine ({n})", n >= minp)
