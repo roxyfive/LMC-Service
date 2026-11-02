@@ -14,6 +14,10 @@ echo "== 2/5 git pull"
 git pull --ff-only || { echo "❌ git pull non riuscito (modifiche locali o conflitto): risolvi a mano, il sito è rimasto com'era"; exit 1; }
 echo "== 3/5 dipendenze"
 "$APP/.venv/bin/pip" install -q -r requirements.txt && echo "  ✅ dipendenze ok"
+# se il file del servizio nel repo è cambiato, lo installa (così le correzioni a gunicorn arrivano anche sul server)
+if ! cmp -s "$APP/deploy/lmc.service" /etc/systemd/system/lmc.service; then
+  cp "$APP/deploy/lmc.service" /etc/systemd/system/lmc.service && systemctl daemon-reload && echo "  ✅ servizio lmc aggiornato"
+fi
 echo "== 4/5 permessi (git pull da root crea file di root: il sito deve poterli leggere)"
 chown -R "$SVC_USER:$SVC_USER" "$APP/foto" "$APP/data" 2>/dev/null; echo "  ✅ foto/ e data/ di $SVC_USER"
 echo "== 5/5 riavvio + controllo"

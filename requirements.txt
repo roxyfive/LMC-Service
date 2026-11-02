@@ -3,5 +3,5 @@ pillow>=10
 reportlab>=4
 python-dotenv>=1
 numpy>=1.26
-gunicorn>=22; sys_platform != "win32"
+gunicorn>=25; sys_platform != "win32"
 qrcode[pil]>=7

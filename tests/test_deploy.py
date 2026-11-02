@@ -97,6 +97,7 @@ for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-b
     check(f"deploy/{sh}: sintassi bash valida", subprocess.run(["bash", "-n", str(ROOT / "deploy" / sh)]).returncode == 0)
 svc = (ROOT / "deploy" / "lmc.service").read_text()
 check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "gunicorn run:app" in svc and "127.0.0.1:8010" in svc and "EnvironmentFile=/srv/lmc/.env" in svc and "Restart=always" in svc)
+check("lmc.service: control socket di gunicorn disattivato (non scrivibile da lmc)", "--no-control-socket" in svc and "gunicorn>=25" in (ROOT / "requirements.txt").read_text())
 ng = (ROOT / "deploy" / "nginx-lmc.conf").read_text()
 check("nginx: gzip, cache statici, upload 200M, /health, rate limit webhook", all(x in ng for x in ("gzip on", "expires 7d", "client_max_body_size 200M", "location = /health", "zone=lmc_hooks")))
 check("manifest PWA con sfondo bianco", c.get("/manifest.webmanifest").get_json()["background_color"] == "#ffffff")
