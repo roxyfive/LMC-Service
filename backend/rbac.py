@@ -51,6 +51,7 @@ MENU = [
     ("Sistema", "Registro attività", "/admin/registro", "registro", "log"),
     ("Sistema", "Impostazioni", "/admin/impostazioni", "impostazioni", "gear"),
     ("Sistema", "Backup", "/admin/backup", "backup", "db"),
+    ("Sistema", "Guide e PDF", "/admin/guide", "guide", "file"),
 ]
 
 

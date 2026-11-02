@@ -87,7 +87,7 @@ with app.app_context():
 
 # ------------------------------------------------------------------ pagine admin (titolare)
 pages = ["/admin/", "/admin/agenda", "/admin/richieste", "/admin/documenti", "/admin/fatture", "/admin/fatture/nuova", "/admin/fatture/impostazioni", "/admin/acconti",
-         "/admin/tariffe", "/admin/statistiche", "/admin/whatsapp", "/admin/utenti", "/admin/registro", "/admin/backup", "/admin/recensioni", "/admin/foto",
+         "/admin/tariffe", "/admin/statistiche", "/admin/whatsapp", "/admin/utenti", "/admin/registro", "/admin/backup", "/admin/guide", "/admin/recensioni", "/admin/foto",
          "/admin/m/clienti", "/admin/m/eventi", "/admin/m/magazzino", "/admin/testi", "/admin/impostazioni", "/admin/report", "/admin/chiamate", "/admin/password"]
 bad = [(p, adm.get(p).status_code) for p in pages if adm.get(p).status_code != 200]
 check("titolare: tutte le pagine del gestionale si aprono", not bad, bad)
@@ -109,7 +109,7 @@ check("collaboratore sceglie la sua password", "Password cambiata" in text(r) an
 ok_pages = ["/admin/", "/admin/agenda", "/admin/richieste", "/admin/foto", "/admin/m/magazzino", "/admin/m/eventi", "/admin/chiamate", "/admin/password"]
 check("collaboratore: agenda, richieste, galleria, materiale, eventi, assistente OK", all(col.get(p).status_code == 200 for p in ok_pages), [(p, col.get(p).status_code) for p in ok_pages])
 no_pages = ["/admin/fatture", "/admin/fatture/nuova", "/admin/fatture/impostazioni", "/admin/fatture/1", "/admin/fatture/1.pdf", "/admin/acconti", "/admin/statistiche", "/admin/tariffe",
-            "/admin/impostazioni", "/admin/testi", "/admin/utenti", "/admin/registro", "/admin/documenti", "/admin/recensioni", "/admin/backup", "/admin/whatsapp",
+            "/admin/impostazioni", "/admin/testi", "/admin/utenti", "/admin/registro", "/admin/documenti", "/admin/recensioni", "/admin/backup", "/admin/guide", "/admin/whatsapp",
             "/admin/report", "/admin/m/clienti", "/admin/m/team", "/admin/m/prima-nota", "/admin/m/fornitori", "/admin/disponibilita", "/admin/documenti/1.pdf"]
 denied = [(p, col.get(p).status_code) for p in no_pages]
 check("collaboratore: NON accede a fatture, acconti, statistiche, tariffe, impostazioni, utenti (403)", all(s == 403 for _p, s in denied), denied)
@@ -356,6 +356,11 @@ notify.twilio_ready, notify.notify_duty = orig_ready, orig_duty
 check("pagina WhatsApp: stato integrazione", "integrazione Twilio" in text(adm.get("/admin/whatsapp")))
 (tmp / "data" / "backup-status.txt").write_text(f"time={date.today().isoformat()}T03:20:00+02:00\nstamp=x\ndata=lmc_20260101_032000.tar.gz.enc\ncloud=ok e verificata\n")
 check("pagina Backup: legge lo stato scritto da backup.sh", "ok e verificata" in text(adm.get("/admin/backup")))
+g = adm.get("/admin/guide")
+check("pagina Guide e PDF: elenca Libretto e Guida agenzia", "Libretto illustrativo" in text(g) and "Guida per l" in text(g) and "Guida-Agenzia-LMC.pdf" in text(g))
+r = adm.get("/admin/guide/Libretto-LMC.pdf")
+check("Guide: il PDF si apre (application/pdf)", r.status_code == 200 and r.mimetype == "application/pdf" and r.data[:4] == b"%PDF")
+check("Guide: nome non in elenco = 404", adm.get("/admin/guide/segreto.pdf").status_code == 404 and adm.get("/admin/guide/..%2Fapp.py").status_code == 404)
 
 # ------------------------------------------------------------------ vecchie sessioni e compatibilità
 c3 = app.test_client()

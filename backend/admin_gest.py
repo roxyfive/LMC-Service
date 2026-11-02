@@ -11,7 +11,7 @@ from werkzeug.security import generate_password_hash
 
 from . import billing, notify, rbac
 from .admin import bp
-from .config import DATA
+from .config import DATA, ROOT
 from .db import q, ex, get_setting, set_setting, all_settings
 from .mailer import send_cliente
 from .rbac import audit
@@ -729,3 +729,32 @@ def backup():
     except (OSError, KeyError, ValueError):
         pass
     return render_template("admin/backup.html", info=info, age=age, ok=(age is not None and age < 26))
+
+
+# ====================================================================== GUIDE E PDF (solo titolare)
+GUIDE = [
+    ("Libretto-LMC.pdf", "Libretto illustrativo", "Come funziona tutto: clienti, pannello admin, collaboratori, sicurezza e cosa resta da completare. Il documento di riferimento."),
+    ("Guida-Agenzia-LMC.pdf", "Guida per l'agenzia", "Breve e senza tecnicismi: email del sito e dominio .it (facoltativo, da decidere con Pasquale Toppi)."),
+]
+
+
+@bp.route("/guide")
+@admin_required
+def guide():
+    voci = []
+    for nome, titolo, desc in GUIDE:
+        f = ROOT / "docs" / nome
+        if f.exists():
+            voci.append({"nome": nome, "titolo": titolo, "desc": desc, "mb": round(f.stat().st_size / 1048576, 1), "agg": datetime.fromtimestamp(f.stat().st_mtime).strftime("%d/%m/%Y")})
+    return render_template("admin/guide.html", voci=voci)
+
+
+@bp.route("/guide/<nome>")
+@admin_required
+def guida_pdf(nome):
+    if nome not in {g[0] for g in GUIDE}:
+        abort(404)
+    f = ROOT / "docs" / nome
+    if not f.exists():
+        abort(404)
+    return send_file(f, mimetype="application/pdf", download_name=nome, as_attachment=request.args.get("scarica") == "1")
