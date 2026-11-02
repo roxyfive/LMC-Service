@@ -55,7 +55,7 @@ FLUSSO_GALLERIA = """\
 SPEC_TECNICHE = [
     ("Applicazione", "Flask (Python 3) + SQLite in modalità WAL; pagine HTML (Jinja) con JavaScript e CSS semplici, installabile come app (PWA)."),
     ("Server", "VPS IONOS, gunicorn dietro nginx con HTTPS; indirizzo https://lmcservice.duckdns.org"),
-    ("Database", "Un solo file SQLite nella cartella dati; backup automatico alle 03:20 (copia locale + Google Drive «lmc»)."),
+    ("Database", "Un solo file SQLite nella cartella dati; backup automatico alle 03:20, cifrato (copia locale + copia su cloud)."),
     ("Accessi", "Login con password; ruoli ADMIN e COLLABORATORE; ogni pagina controllata lato server (deny-by-default)."),
     ("Sicurezza", "Protezione CSRF su tutte le azioni, cookie HttpOnly, limite tentativi di accesso, password mai salvate in chiaro."),
     ("Registro attività", "Ogni azione sensibile (fatture, incassi, utenti, impostazioni, galleria) salva chi, cosa e quando."),
@@ -169,7 +169,7 @@ ADMIN = [
                 "Se Twilio non è configurato il pulsante lo segnala e puoi copiare il testo a mano.",
                 "Se Twilio non è configurato la pagina lo dice chiaramente: nulla si rompe."]),
     dict(id="backup", titolo="13. Backup e sicurezza dei dati", img="admin-backup-desktop",
-         intro="Il database viene copiato ogni notte alle 03:20 in locale e su Google Drive. Qui controlli che sia andato tutto bene.",
+         intro="Il database viene copiato ogni notte alle 03:20 in locale e su un cloud, sempre cifrato. Qui controlli che sia andato tutto bene.",
          passi=["Apri Backup: data e ora dell'ultima copia e dove è finita.",
                 "Se la data è vecchia di più di un giorno, avvisa chi gestisce il server.",
                 "Prima di ogni aggiornamento (aggiorna.sh) il server controlla anche il backup e si ferma se è mancante.",

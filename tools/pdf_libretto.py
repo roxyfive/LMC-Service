@@ -45,7 +45,7 @@ def d_mappa():
     L._arrow(d, 89 * mm, 36 * mm, 89 * mm, 32.8 * mm, GRIGIO)
     # servizi esterni
     ext = [("Email (SMTP)", ["conferme e avvisi", "da attivare"], AMBRA, 80), ("WhatsApp (Twilio)", ["avvisi al team", "opzionale"], colors.HexColor("#3a3a44"), 59),
-           ("Assistente vocale (Vapi)", ["voce naturale", "opzionale"], colors.HexColor("#3a3a44"), 38), ("Backup su Google Drive", ["copia cifrata", "ogni notte"], VERDE, 11)]
+           ("Assistente vocale (Vapi)", ["voce naturale", "opzionale"], colors.HexColor("#3a3a44"), 38), ("Backup su cloud", ["copia cifrata", "ogni notte"], VERDE, 11)]
     for t, r_, col, y in ext:
         L._box(d, 134 * mm, y * mm, 40 * mm, 21 * mm, t, r_, col, fs=8.6)
     L._arrow(d, 118.8 * mm, 85 * mm, 133.2 * mm, 90 * mm, AMBRA, dash=True)
@@ -167,7 +167,7 @@ def d_sicurezza():
 def d_backup():
     d = D(40 * mm)
     riga(d, 8 * mm, [("03:20", ["parte il", "backup"], colors.HexColor("#3a3a44")), ("Raccolta", ["database, foto,", "impostazioni"], BLU), ("Cifratura", ["con password", "del server"], AMBRA),
-                     ("Copie", ["sul server e su", "Google Drive"], VERDE), ("Verifica", ["la copia cloud", "viene riletta"], TEAL), ("Esito", ["visibile in", "Admin › Backup"], ROSSO)], h=26 * mm, gap=5.5 * mm, fs=8.6)
+                     ("Copie", ["sul server e su", "un cloud esterno"], VERDE), ("Verifica", ["la copia cloud", "viene riletta"], TEAL), ("Esito", ["visibile in", "Admin › Backup"], ROSSO)], h=26 * mm, gap=5.5 * mm, fs=8.6)
     return d
 
 
@@ -358,7 +358,7 @@ story += sez("Che cosa abbiamo costruito", ["ADMIN", "CLIENTE"], "Un sito vetrin
     tabella([["Il pezzo", "Cosa fa", "Chi lo usa"],
              ["Sito pubblico e app (PWA)", "Presenta La Music Company Service: video della storia, galleria, servizi, configuratore, prenotazioni e preventivi, assistente AI, emergenza 24 ore. Si installa sul telefono come un'app.", "Clienti"],
              ["Gestionale (area Admin)", "Dashboard, agenda, richieste, preventivi, fatture con PDF, acconti, recensioni, galleria eventi, tariffe, statistiche, utenti con ruoli, registro delle attività, backup.", "Titolare e collaboratori"],
-             ["Server e sicurezza", "VPS IONOS con HTTPS, accessi protetti, permessi per ruolo, conservazione dei dati a norma, backup cifrato su Google Drive.", "Tecnico / agenzia"],
+             ["Server e sicurezza", "VPS IONOS con HTTPS, accessi protetti, permessi per ruolo, conservazione dei dati a norma, backup cifrato su uno spazio cloud.", "Tecnico / agenzia"],
              ["Controlli automatici", "Oltre 640 verifiche automatiche su sito, permessi, fatture, accessibilità, privacy, grafica e backup: prima di ogni aggiornamento.", "Tecnico"]],
             [40 * mm, 100 * mm, 34 * mm])])
 story += [PageBreak()]
@@ -633,8 +633,8 @@ story += ad("Registro delle attività", "Chi ha fatto cosa e quando: la memoria 
             ["Apri Registro: vedi le ultime 300 azioni.", "Filtra per <b>utente</b> o scrivi una parola nell'azione (es. «fattura»).", "Controlla gli «Accesso negato»: indicano che qualcuno ha provato ad aprire una pagina non consentita."],
             [("sicurezza", "Le password e i token non vengono mai scritti nel registro."), ("info", "Il registro è una prova utile in caso di dubbi: chi ha emesso o annullato una fattura, chi ha cancellato una foto.")])
 story += [PageBreak()]
-story += ad("Backup e sicurezza dei dati", "Il database e i file vengono copiati ogni notte in modo cifrato, sul server e su Google Drive. Qui controlli che sia andato tutto bene.", "admin-backup",
-            ["<b>Stato</b>: esito dell'ultimo backup, data e ora, quante ore fa, esito della copia sul cloud e nome dell'archivio più recente.", "<b>Come funziona</b>: ogni notte alle 03:20 il server salva database, foto, video e impostazioni, cifrati; una seconda copia verificata va su Google Drive; se qualcosa non va arriva un'email."],
+story += ad("Backup e sicurezza dei dati", "Il database e i file vengono copiati ogni notte in modo cifrato, sul server e su uno spazio cloud esterno. Qui controlli che sia andato tutto bene.", "admin-backup",
+            ["<b>Stato</b>: esito dell'ultimo backup, data e ora, quante ore fa, esito della copia sul cloud e nome dell'archivio più recente.", "<b>Come funziona</b>: ogni notte alle 03:20 il server salva database, foto, video e impostazioni, cifrati; una seconda copia, cifrata e verificata, va su uno spazio cloud esterno al server; se qualcosa non va arriva un'email."],
             ["Apri Backup ogni tanto: deve dire <b>OK</b> con un orario recente (di stamattina).", "Se la data è più vecchia di un giorno, avvisa chi gestisce il server.",
              "Prima di ogni aggiornamento del sito lo script controlla il backup e fa una copia di sicurezza."],
             [("attenzione", "Il <b>ripristino</b> di un backup non si fa dal gestionale: serve un tecnico (script di ripristino sul server)."), ("sicurezza", "La password di cifratura dei backup è sul server: <b>salvane una copia fuori dal server</b> (altrimenti i backup non si possono riaprire).")],
@@ -782,7 +782,7 @@ story += te("Servizi esterni", "Il sito funziona da solo; questi servizi si aggi
     tabella([["Servizio", "A cosa serve", "Stato", "Dati che escono dal server"],
              ["IONOS (VPS)", "Ospita sito, dati e backup locali", "Attivo", "Nessuno (è il server)"],
              ["Let's Encrypt", "Certificato HTTPS, si rinnova da solo", "Attivo", "Solo il nome del sito"],
-             ["Google Drive", "Seconda copia cifrata dei backup", "Attivo", "Backup cifrati"],
+             ["Spazio cloud (Google Drive)", "Seconda copia dei backup, fuori dal server", "Attivo", "Solo file cifrati (AES-256): illeggibili senza la password di cifratura"],
              ["Server email (SMTP)", "Conferme, promemoria, avvisi, recensioni", "<b>Da attivare</b>", "Email del cliente, solo per le sue comunicazioni"],
              ["Twilio / WhatsApp", "Avvisi al team, report, riepiloghi", "Opzionale (non attivo)", "Nome, telefono e sintesi della richiesta, solo se invii tu"],
              ["Vapi", "Assistente vocale «Voce naturale»", "Opzionale (non attivo)", "Audio della conversazione, solo dopo conferma"],
@@ -799,7 +799,6 @@ story += te("Qualità e conformità", "Prima di ogni aggiornamento girano oltre 
              ["Messa online e backup", "Script, servizio, avvio reale con gunicorn, backup, rotazione e ripristino", "55 + 45"],
              ["WhatsApp", "Invio, errori, destinatari, report", "59"],
              ["Kit di consegna", "Guide PDF, QR leggibili, video", "75"]], [48 * mm, 100 * mm, 26 * mm]), Spacer(1, 3 * mm),
-    nota("Un secondo parere indipendente (Codex) è previsto: il prompt è in <font name='Mono'>docs/CONFRONTO-CODEX.md</font>, da lanciare dal computer del titolare.", "consiglio"), Spacer(1, 3 * mm),
     H2("Dove si trova cosa nel progetto"),
     tabella([["Cartella", "Contenuto"], ["app/", "Pagine HTML, stili, JavaScript, immagini del sito e dell'admin"], ["backend/", "Il programma: pubblico, admin, gestionale, fatture, permessi, recensioni, email, conservazione dati"],
              ["deploy/", "Script di installazione, aggiornamento, backup, verifica e servizio"], ["docs/", "Guide, checklist, proposte, schermate"], ["tests/ e tools/", "Controlli automatici e strumenti (screenshot, PDF)"],
@@ -818,8 +817,7 @@ story += sez("Cosa resta da completare", ["ADMIN", "TECNICO"], "Il sistema è on
              ["6", "Dominio .it", "Indirizzo professionale e email col dominio", "Pasquale decide; agenzia", "Se aderisce"],
              ["7", "Salvare la password di cifratura dei backup fuori dal server", "Senza, i backup non si riaprono", "Pasquale", "Subito"],
              ["8", "WhatsApp (Twilio) e assistente vocale (Vapi)", "Avvisi immediati e voce naturale", "Opzionale", "Più avanti"],
-             ["9", "Seconda revisione con Codex", "Parere indipendente sul progetto", "Titolare", "Quando vuole"],
-             ["10", "Rilettura dei sottotitoli del video", "Controllo umano di nomi e parole", "Titolare", "Prima di promuovere il video"]],
+             ["9", "Rilettura dei sottotitoli del video", "Controllo umano di nomi e parole", "Titolare", "Prima di promuovere il video"]],
             [7 * mm, 52 * mm, 49 * mm, 38 * mm, 28 * mm]), Spacer(1, 3 * mm),
     nota("Il punto 1 si spiega passo per passo nella <b>Guida per l'agenzia</b> (secondo PDF), insieme al dominio .it.", "info")])
 story += [PageBreak()]
