@@ -6,7 +6,7 @@ import sqlite3
 from datetime import date, timedelta
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from werkzeug.security import generate_password_hash
-from .config import ROOT, DB_PATH, UPLOADS, MODE, CATEGORIES
+from .config import ROOT, DB_PATH, UPLOADS, MODE
 from .media import save_image_obj
 
 PLACEHOLDERS = [("Palco rosso", "Eventi"), ("Fasci in movimento", "Luci"), ("Regia audio", "Audio"),

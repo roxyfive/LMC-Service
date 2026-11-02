@@ -6,7 +6,7 @@ from flask import Flask, jsonify, request, abort
 from . import config
 from .db import close_db, init_db, q, ex
 from .security import csrf_token
-from .mailer import send_mail
+from .mailer import send_mail, send_cliente
 
 
 def create_app():
@@ -42,6 +42,9 @@ def create_app():
         r.headers["X-Content-Type-Options"] = "nosniff"
         r.headers["X-Frame-Options"] = "SAMEORIGIN"
         r.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        r.headers["Permissions-Policy"] = "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)"   # il microfono serve solo all'assistente vocale
+        if app.config.get("SESSION_COOKIE_SECURE"):           # sito in HTTPS: il browser non tornerà mai su http
+            r.headers["Strict-Transport-Security"] = "max-age=31536000"
         return r
 
     @app.route("/webhook/telefono", methods=["POST"])
@@ -87,7 +90,7 @@ def reminders_once():
         db.commit()
         if cur.rowcount != 1:      # un altro worker se ne sta già occupando
             continue
-        ok = send_mail(a["email"], "Promemoria appuntamento – LMC Service",
+        ok = send_cliente(a["email"], "Promemoria appuntamento – LMC Service",
                        f"Ciao {a['name']}, ti ricordiamo l'appuntamento di domani {a['slot_date']} alle {a['slot_time']}.\nLMC Service")
         if ok is False:
             ex("UPDATE appointments SET reminded=0 WHERE id=?", (a["id"],))
@@ -110,6 +113,8 @@ def _background(app):
                     reminders_once()
                     from . import reviews
                     reviews.auto_requests()
+                    from . import retention
+                    retention.run()
         except Exception:
             pass
         time.sleep(60)

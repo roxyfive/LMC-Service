@@ -49,6 +49,9 @@ Controllo doppioni/qualità: `python -m backend.controllo_foto` (vedi `docs/CONT
 - `python -m backend.kit_consegna` → cartella `consegna/` (non versionata) con 2 guide PDF, 2 QR da stampare, 2 video tutorial (9:16 e 16:9) e `LEGGIMI.txt`. Screenshot su database di prova. Voci narranti in `backend/kit_assets/audio/` (con `ELEVENLABS_API_KEY` nel `.env` le mancanti si generano da sole). Test: `python -m tests.test_kit`.
 - Da compilare dopo il deploy: *Fatture > Dati fiscali* (P.IVA, IBAN), *Tariffe*, `PUBLIC_URL` nel `.env`, utenti collaboratori.
 
+## Conformità (privacy, cookie, accessibilità)
+`docs/CONFORMITA.md` riassume la verifica; `python -m tests.test_conformita` la ripete (axe WCAG 2.2 AA, cookie, terze parti, conservazione dati, recensioni vere). `docs/CONFRONTO-CODEX.md` contiene il prompt per un secondo parere con Codex.
+
 ## Rigenerare materiali
 `python -m backend.make_assets` (loghi/icone/musica) · `python video/make_video.py` · `python docs/make_pdf.py`
 

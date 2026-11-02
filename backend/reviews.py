@@ -7,13 +7,12 @@ import os
 import secrets
 from datetime import date, timedelta
 
-from flask import render_template, request, redirect, url_for, flash, abort, jsonify
+from flask import render_template, request, redirect, url_for, flash, abort
 
 from .admin import bp
 from .db import q, ex, get_setting, set_setting
-from .mailer import send_mail
+from .mailer import send_mail, send_cliente
 from .public import bp as pub
-from .rbac import audit
 from .security import admin_required, check_csrf, csrf_token
 
 STATI = ["richiesta", "in attesa", "approvata", "rifiutata"]
@@ -37,7 +36,7 @@ def create_request(author, email, event="", ref_type="", ref_id=None, send=True)
     sent = False
     if send and email:
         brand = get_setting("brand_short", "") or get_setting("brand", "LMC Service")
-        sent = bool(send_mail(email, f"Com'è andato il tuo evento? Lascia una recensione – {brand}",
+        sent = bool(send_cliente(email, f"Com'è andato il tuo evento? Lascia una recensione – {brand}",
                               f"Ciao {author or ''},\ngrazie per aver scelto {brand}{' per ' + event if event else ''}!\n"
                               f"Ci aiuta moltissimo sapere com'è andata: bastano 30 secondi.\n\nScrivi la tua recensione: {link}\n\n"
                               f"La leggeremo noi prima di pubblicarla. Grazie!\n{brand}"))
@@ -84,7 +83,7 @@ def recensione(token):
         elif not f.get("consent"):
             msg = "Serve il consenso alla pubblicazione della recensione con il tuo nome."
         else:
-            ex("UPDATE reviews SET text=?, author=?, stars=?, status='in attesa', hidden=1, source='dal sito' WHERE id=?", (text, author, stars, r["id"]))
+            ex("UPDATE reviews SET text=?, author=?, stars=?, status='in attesa', hidden=1, source='dal sito', email='' WHERE id=?", (text, author, stars, r["id"]))
             try:
                 send_mail(os.getenv("OWNER_EMAIL"), f"Nuova recensione da approvare: {author} ({stars}★)", f"{author} ha scritto:\n\n{text}\n\nApprovala da Admin › Recensioni.")
             except Exception:

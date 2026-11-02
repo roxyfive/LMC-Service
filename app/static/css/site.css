@@ -169,7 +169,7 @@ fieldset{border:1px solid #c3c9d4;display:flex;gap:1rem;flex-wrap:wrap;padding:.
 .contact{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(1.5rem,5vw,4.5rem);align-items:center}@media(max-width:900px){.contact{grid-template-columns:1fr}}
 .contact .big{margin-bottom:1.6rem}
 .contact-card{background:var(--paper);border:1px solid var(--gold);padding:clamp(1.3rem,3vw,2.2rem)}
-.contact-card dl{margin:0;display:grid;gap:1.1rem}.contact-card dt{font:600 .72rem/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:.35rem}.contact-card dd{margin:0}
+.contact-card dl,.contact-card .clist{margin:0;display:grid;gap:1.1rem}.contact-card dt,.contact-card .ct{font:600 .72rem/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold-ink);margin-bottom:.35rem}.contact-card dd{margin:0}
 .todo{color:var(--muted);font-style:italic}
 .team{list-style:none;margin:0;padding:0;display:grid;gap:1rem}.team li{line-height:1.5}.team .role{font:600 .7rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--gold-ink);margin-left:.4rem}
 .team a{font-weight:600;font-size:1.05rem}.note-s{color:var(--muted);font-size:.92rem}
@@ -309,11 +309,11 @@ fieldset{border:1px solid #c3c9d4;display:flex;gap:1rem;flex-wrap:wrap;padding:.
 .btn-gold{background:linear-gradient(135deg,#d9bc78,#c4a15a 55%,#a98640);color:#1d1708;border-color:transparent;box-shadow:0 8px 22px #c4a15a55}.btn-gold:hover{transform:translateY(-2px);box-shadow:0 14px 30px #c4a15a77;color:#000}
 .btn-gold-line{background:transparent;color:var(--gold-ink);border-color:#c4a15a}.btn-gold-line:hover{background:var(--gold);color:#1d1708;border-color:var(--gold);transform:translateY(-2px);box-shadow:0 10px 24px #c4a15a44}
 .contatti .contact-card{background:linear-gradient(160deg,#ffffff,#f2f4f8);border:0;border-radius:18px 4px 18px 4px;padding:clamp(1.6rem,3.5vw,2.8rem);box-shadow:0 30px 60px -22px #0e1a3040,0 2px 0 #fff inset,0 0 0 1px #c4a15a24}
-.contatti .contact-card dl{gap:0}
+.contatti .contact-card dl,.contact-card .clist{gap:0}
 .crow{display:flex;gap:1.1rem;align-items:flex-start;padding:1.15rem 0;border-bottom:1px solid #c4a15a2e}.crow:first-child{padding-top:0}.crow:last-child{border-bottom:0;padding-bottom:0}
 .ci{flex:none;width:2.6rem;height:2.6rem;display:grid;place-items:center;border-radius:50%;background:#c4a15a1c;color:var(--gold-ink)}.ci svg{width:1.2rem;height:1.2rem;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.contatti dt{font:600 .7rem/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;font-variant:small-caps;color:var(--gold-ink);margin-bottom:.5rem}
-.contatti dd{font-size:1.12rem;line-height:1.5;color:var(--ink)}
+.contatti dt,.contatti .ct{font:600 .7rem/1 var(--sans);letter-spacing:.24em;text-transform:uppercase;font-variant:small-caps;color:var(--gold-ink);margin-bottom:.5rem}
+.contatti dd,.contatti .cd{font-size:1.12rem;line-height:1.5;color:var(--ink)}
 .contatti .team a{font-size:1.18rem;font-weight:600;text-decoration:none;color:var(--ink);border-bottom:1px solid #c4a15a88}.contatti .team a:hover{color:var(--gold-ink)}
 .contatti .social{gap:.4rem 1.5rem}
 @media(max-width:560px){.contatti .cta .btn{flex:1 1 100%}.ci{width:2.3rem;height:2.3rem}}
@@ -558,7 +558,7 @@ h3{font-size:1.3rem;letter-spacing:-.015em}
 .storia-lab small{display:block;margin-top:.5rem;font:500 .8rem/1 var(--sans);letter-spacing:.08em;text-transform:none;color:#cfcfd8}
 @keyframes storiaPulse{70%{box-shadow:0 0 0 22px #d6282800}100%{box-shadow:0 0 0 0 #d6282800}}
 @media(prefers-reduced-motion:reduce){.storia-ico{animation:none}}
-.storia-link{display:inline-flex;align-items:center;gap:.55rem;margin:.4rem .6rem;color:#fff;font:600 .82rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--red);padding-bottom:.4rem}
+.storia-link{display:inline-flex;align-items:center;gap:.55rem;margin:.4rem .6rem;min-height:44px;color:#fff;font:600 .82rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--red);padding-bottom:.4rem}
 .storia-link:before{content:"";border-style:solid;border-width:.38rem 0 .38rem .65rem;border-color:transparent transparent transparent var(--red)}
 .storia-link:hover{border-color:#fff}
 @media(max-width:620px){.storia-player{aspect-ratio:16/10}}
@@ -574,6 +574,10 @@ html{overflow-x:clip;max-width:100%}body{overflow-x:clip;max-width:100%}
   .intro-ctrl>*{width:min(100%,20rem);justify-content:center;text-align:center}
 }
 
+.tbl-wrap{overflow-x:auto;margin:1rem 0}.tbl{width:100%;border-collapse:collapse;font-size:.95rem}.tbl th,.tbl td{border:1px solid var(--line);padding:.6rem .7rem;text-align:left;vertical-align:top}.tbl thead th{background:var(--sand)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.page h2{font-size:clamp(1.25rem,2.6vw,1.6rem);letter-spacing:-.01em;line-height:1.25;margin:2.2rem 0 .7rem}.page ul{padding-left:1.2rem}.page li{margin:.4rem 0}
+
 /* =====================================================================================================
    TEMA NERO (richiesta del cliente): sfondo nero, testi bianchi, contorni/bordi ROSSI, accento rosso al posto dell'oro.
    Il tasto Emergenza resta rosso vivo. Font invariati (Montserrat / Space Grotesk / Inter). Contrasti AA.
@@ -585,7 +589,7 @@ html,body{background:#16161c;color:#fff}
 a{color:#ff6b63}a:hover{color:#fff}
 .skip-link{background:var(--red);color:#fff}
 h1,h2,h3,.big,.stat .num,.trust-in b,.faq summary,.contact-intro h2,.forms-head h2,.quote,.sec-head h2{color:#fff}
-.kicker,.eyebrow,.facts b,.stat span:not(.demo-tag),.conf legend,.form label,.form legend,.contatti dt,.contact-card dt,.team .role,.foot-h{color:var(--red-lt)}
+.kicker,.eyebrow,.facts b,.stat span:not(.demo-tag),.conf legend,.form label,.form legend,.contatti dt,.contact-card dt,.contatti .ct,.contact-card .ct,.team .role,.foot-h{color:var(--red-lt)}
 .kicker:before{background:var(--red)}
 :focus-visible{outline-color:#fff}
 /* bottoni: primario rosso pieno, secondario con bordo rosso */
@@ -675,7 +679,7 @@ h1,h2,h3,.big,.stat .num,.trust-in b,.faq summary,.contact-intro h2,.forms-head 
 .contact-intro h2 em,.forms-head h2 em{color:var(--red-lt)}
 .contatti .contact-card,.contact-card{background:#1f1f26;border:1px solid var(--red);box-shadow:0 30px 60px -30px #e11d1433}
 .crow{border-bottom-color:#4a1f21}.ci{background:#e11d1426;color:var(--red-lt);border:1px solid var(--red)}
-.contatti dd{color:#fff}
+.contatti dd,.contatti .cd{color:#fff}
 .contatti .team a,.team a{color:#fff;border-bottom-color:var(--red)}.contatti .team a:hover{color:var(--red-lt)}
 .social a{color:#fff;border-bottom-color:var(--red)}.social a:hover{color:var(--red-lt)}
 .orn-line i{background:linear-gradient(90deg,transparent,var(--red))}.orn-line i:last-child{background:linear-gradient(90deg,var(--red),transparent)}.orn-line b{border-color:var(--red)}

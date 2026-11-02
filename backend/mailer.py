@@ -32,3 +32,16 @@ def send_mail(to, subject, body):
     except Exception as e:
         _log(f"ERRORE invio a {to}: {e}\n")
         return False
+
+
+def _footer():
+    from .db import get_setting
+    base = (os.getenv("PUBLIC_URL", "") or get_setting("sito_url", "") or "").strip().rstrip("/")
+    link = f"{base}/privacy" if base else "la pagina «Informativa privacy» del nostro sito"
+    return ("\n\n--\nTrattiamo i tuoi dati solo per gestire questa richiesta; non li cediamo a terzi per pubblicità. "
+            f"Informativa e diritti: {link}. Se non vuoi ricevere altre email da noi, rispondi a questo messaggio.")
+
+
+def send_cliente(to, subject, body):
+    """Email al cliente: come send_mail, con in fondo la nota privacy e come chiedere di non riceverne altre."""
+    return send_mail(to, subject, body + _footer())

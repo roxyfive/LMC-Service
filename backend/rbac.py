@@ -9,8 +9,8 @@ Sicurezza «di default negata»: ogni pagina dell'admin è riservata all'amminis
 Una pagina nuova, dimenticata nell'elenco, resta quindi chiusa al collaboratore (e il test dei permessi la controlla).
 """
 import re
-from flask import request, session, g, redirect, url_for, render_template
-from .db import ex, q
+from flask import request, redirect, url_for, render_template
+from .db import ex
 from .security import current_user
 
 ADMIN, COLLAB = "admin", "collaboratore"

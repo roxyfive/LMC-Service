@@ -1,19 +1,56 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Informativa privacy | LMC Service</title>
+<title>Informativa privacy e cookie | {{ s.brand_short or s.brand }}</title>
 <link rel="stylesheet" href="/static/css/site.css"></head>
-<body><main class="page">
-<h1>Informativa privacy</h1>
-<p>{{ s.privacy }}</p>
-{% if s.email and '[DA' not in s.email %}<p>Per esercitare i tuoi diritti o chiedere informazioni scrivi a <a href="mailto:{{ s.email }}">{{ s.email }}</a>.</p>{% endif %}
-<h2>Assistente virtuale, voce, WhatsApp e statistiche</h2>
+<body><a class="skip-link" href="#main">Vai al contenuto</a><main class="page" id="main">
+<p><a href="/">← Torna al sito</a></p>
+<h1>Informativa privacy e cookie</h1>
+<p class="mut">Informativa ai sensi degli artt. 13 e 14 del Regolamento UE 2016/679 (GDPR). Ultimo aggiornamento: {{ aggiornata }}.</p>
+{% if s.privacy %}<p>{{ s.privacy }}</p>{% endif %}
+
+<h2>1. Chi tratta i tuoi dati</h2>
+<p>Titolare del trattamento è <b>{{ s.brand }}</b>{% if s.owner %} (titolare {{ s.owner }}){% endif %}{% if s.city %}, {{ s.city }}{% endif %}{% if s.dati_societari %} · {{ s.dati_societari }}{% endif %}.
+{% if s.email and '[DA' not in s.email %}Per qualsiasi richiesta sui tuoi dati scrivi a <a href="mailto:{{ s.email }}">{{ s.email }}</a>.{% else %}Per qualsiasi richiesta sui tuoi dati usa i contatti in fondo al sito.{% endif %}</p>
+
+<h2>2. Quali dati raccogliamo, perché e per quanto tempo</h2>
+<div class="tbl-wrap" role="region" aria-label="Tabella: dati, finalità e conservazione" tabindex="0"><table class="tbl">
+<caption class="sr-only">Dati, finalità, base giuridica e conservazione</caption>
+<thead><tr><th scope="col">Quando</th><th scope="col">Dati</th><th scope="col">Finalità e base giuridica</th><th scope="col">Conservazione</th></tr></thead>
+<tbody>
+<tr><th scope="row">Richiesta di preventivo</th><td>nome, telefono, email, tipo, data e luogo dell'evento, numero di ospiti, servizi, note</td><td>Rispondere e preparare il preventivo (misure precontrattuali su tua richiesta, art. 6.1.b)</td><td>{{ mesi }} mesi dall'ultimo contatto, poi i dati personali sono resi anonimi</td></tr>
+<tr><th scope="row">Prenotazione di un appuntamento</th><td>nome, telefono, email, tipo e data dell'evento, orario scelto, note</td><td>Fissare e gestire l'appuntamento, inviarti conferma e promemoria (art. 6.1.b)</td><td>{{ mesi }} mesi, poi anonimizzati</td></tr>
+<tr><th scope="row">Contratto e fattura</th><td>dati di fatturazione che ci fornisci</td><td>Eseguire il contratto e obblighi fiscali (art. 6.1.b e 6.1.c)</td><td>10 anni (obbligo di legge)</td></tr>
+<tr><th scope="row">Richiamo urgente (Emergenza 24h)</th><td>nome, telefono, descrizione del problema</td><td>Richiamarti, solo se lo chiedi e dai il consenso (art. 6.1.a)</td><td>{{ mesi_log }} mesi</td></tr>
+<tr><th scope="row">Assistente automatico (chat e voce)</th><td>i messaggi che scrivi o dici; se scegli «Invia riepilogo su WhatsApp»: nome, telefono e sintesi</td><td>Rispondere alle tue domande; inoltrare la richiesta al team solo se lo chiedi (art. 6.1.a e 6.1.b)</td><td>I messaggi della chat scritta non sono archiviati. Le richieste inoltrate al team e i riepiloghi delle chiamate con «Voce naturale» restano {{ mesi_log }} mesi</td></tr>
+<tr><th scope="row">Recensione</th><td>nome, voto e testo; l'email serve solo a inviarti il link e viene cancellata appena invii la recensione</td><td>Pubblicare la tua recensione dopo la tua approvazione (consenso, art. 6.1.a)</td><td>Finché la recensione resta pubblicata; puoi chiederne la rimozione in ogni momento</td></tr>
+<tr><th scope="row">Visite al sito</th><td>conteggi anonimi e aggregati (nessun IP conservato, nessun cookie di tracciamento)</td><td>Capire quante persone visitano il sito (interesse legittimo, art. 6.1.f)</td><td>{{ mesi_stat }} mesi</td></tr>
+</tbody></table></div>
+<p>I dati sono quelli strettamente necessari: i campi facoltativi sono segnalati. Non ti chiediamo dati particolari (salute, convinzioni, ecc.): non scriverli nelle note. Il conferimento dei dati dei moduli è facoltativo, ma senza di essi non possiamo risponderti.</p>
+
+<h2>3. Cookie e strumenti sul tuo dispositivo</h2>
 <ul>
-<li><b>Assistente automatico.</b> La chat risponde in automatico (non è una persona). I messaggi servono a rispondere; se scegli «Invia riepilogo su WhatsApp» (casella di consenso) nome, telefono e sintesi della richiesta vengono inviati al team di LMC Service.</li>
-<li><b>Voce.</b> Nella conversazione vocale standard l'audio è trasformato in testo dal tuo browser. Con «Voce naturale» l'audio passa dal servizio Vapi.</li>
-<li><b>WhatsApp.</b> I messaggi al team sono inviati tramite Twilio e WhatsApp (Meta). Il pulsante Emergenza 24h invia nome, telefono e descrizione al team solo se lo compili.</li>
-<li><b>Statistiche.</b> Contiamo le visite in forma anonima e aggregata (nessun cookie di tracciamento, nessun IP conservato). Il sito usa solo un cookie tecnico di sessione.</li>
+<li><b>Cookie tecnico «session»</b>: serve a proteggere i moduli da invii non voluti e a far funzionare l'area riservata. Non traccia, non profila, scade con la sessione (al massimo 8 ore). Essendo tecnico non richiede consenso.</li>
+<li><b>Memoria della sessione «introSeen»</b>: ricorda, finché la scheda resta aperta, che hai già visto l'introduzione. Si cancella da sola.</li>
+<li><b>Nessun cookie di marketing o di analisi</b>, nessun pixel pubblicitario, nessun contenuto incorporato da altri siti (mappe, video, social): per questo non compare un banner di scelta. Se in futuro verranno aggiunti, ti chiederemo prima il consenso.</li>
+<li>Il carattere tipografico e tutte le immagini sono serviti dal nostro stesso sito, senza chiamare servizi esterni.</li>
 </ul>
-{% if s.privacy_extra %}<div style="white-space:pre-line">{{ s.privacy_extra }}</div>
-{% elif demo %}<p class="mut">[DA COMPLETARE con il consulente privacy: elenco fornitori, sede dei dati, tempi di conservazione, basi giuridiche. Si inserisce da Admin › Testi.]</p>{% endif %}
+
+<h2 id="s4">4. Assistente virtuale, voce e WhatsApp</h2>
+<ul>
+<li><b>Assistente automatico.</b> La chat risponde in automatico (non è una persona).</li>
+<li><b>Voce standard.</b> Il riconoscimento vocale è del tuo browser: in alcuni browser (ad esempio Chrome) l'audio può essere elaborato dai server del produttore del browser, secondo la sua informativa.</li>
+<li><b>«Voce naturale».</b> Se la tocchi, l'audio passa dal servizio Vapi (USA). Usala solo se sei d'accordo: la chat e la voce standard funzionano senza.</li>
+<li><b>WhatsApp.</b> I messaggi al nostro team sono inviati tramite Twilio e WhatsApp (Meta), solo se invii tu un riepilogo o una richiesta di richiamo.</li>
+</ul>
+
+<h2>5. Chi può vedere i dati</h2>
+<p>Solo il titolare e i collaboratori autorizzati, ciascuno con un accesso personale e limitato al proprio ruolo. Ci appoggiamo a fornitori che trattano i dati per nostro conto (nominati responsabili): hosting e server (IONOS, in UE), copie di sicurezza cifrate (Google Drive), invio email (il nostro provider di posta), messaggistica (Twilio/Meta) e, solo per la «Voce naturale», Vapi. Alcuni fornitori sono fuori dallo Spazio economico europeo: il trasferimento avviene con le garanzie previste dal GDPR (decisione di adeguatezza o clausole contrattuali tipo). Non vendiamo i tuoi dati e non li usiamo per pubblicità.</p>
+<p>Le copie di sicurezza vengono ruotate: le più vecchie sono eliminate automaticamente.</p>
+
+<h2>6. I tuoi diritti</h2>
+<p>Puoi chiedere in ogni momento accesso, rettifica, cancellazione, limitazione, portabilità e opposizione al trattamento, e revocare un consenso (la revoca non rende illecito il trattamento già fatto). Scrivici ai contatti sopra: rispondiamo entro 30 giorni. Se ritieni che i tuoi dati siano trattati in modo non corretto puoi fare reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" rel="noopener">garanteprivacy.it</a>).</p>
+
+{% if s.privacy_extra %}<h2>7. Altre informazioni</h2><div style="white-space:pre-line">{{ s.privacy_extra }}</div>{% endif %}
+<p class="mut">Riferimenti: <a href="/accessibilita">Dichiarazione di accessibilità</a></p>
 <p><a href="/">← Torna al sito</a></p>
 </main></body></html>

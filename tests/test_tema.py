@@ -60,7 +60,7 @@ with sync_playwright() as p:
             check(f"{w}px: {name}: bordo rosso", RED in r["all"], r["all"])
         # pulsante secondario: all'hover si riempie di rosso
         pg.hover(".hero .btn-line")
-        pg.wait_for_timeout(500)
+        pg.wait_for_timeout(1200)    # la transizione del colore può rallentare se il computer è sotto carico
         check(f"{w}px: pulsante secondario: riempimento rosso all'hover", pg.evaluate("getComputedStyle(document.querySelector('.hero .btn-line')).backgroundColor") == RED)
         # footer
         f = pg.evaluate("(()=>{const e=document.querySelector('footer,.foot');const cs=getComputedStyle(e);return [cs.borderTopColor,cs.boxShadow,cs.borderTopWidth]})()")

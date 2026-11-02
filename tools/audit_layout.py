@@ -3,7 +3,6 @@
     python -m tools.audit_layout [CARTELLA_SCREENSHOT]      # stampa le anomalie, esce con 1 se ce ne sono
 Per ogni schermo: sbordamento orizzontale della pagina, elementi che escono dallo schermo, contenuti dei blocchi centrati
 con margini sinistro/destro diversi, e la sezione «La nostra storia» (titolo, riga, player) rispetto al centro."""
-import json
 import os
 import sys
 import tempfile

@@ -4,13 +4,11 @@ Uso:  python -m backend.controllo_foto            (stampa il rapporto; esce con 
 """
 import hashlib
 import json
-import subprocess
 import sys
-from io import BytesIO
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageOps
 
 IMG = {".jpg", ".jpeg", ".png", ".webp"}
 VID = {".mp4", ".mov", ".m4v"}

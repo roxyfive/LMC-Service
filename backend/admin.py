@@ -1,16 +1,14 @@
 import os
 import json
 import time
-from datetime import date
 from flask import (Blueprint, render_template, request, redirect, url_for, session, jsonify, abort,
-                   flash, send_file)
+                   flash)
 from werkzeug.security import check_password_hash, generate_password_hash
 from .db import q, ex, get_setting, set_setting, all_settings
 from .security import admin_required, csrf_token, check_csrf, current_user
 from . import rbac
 from .config import CATEGORIES, MODE
 from .media import save_upload, delete_files
-from .mailer import send_mail
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 _attempts = {}

@@ -2,22 +2,20 @@
 utenti e permessi, registro attività, stato backup. Registrato sullo stesso blueprint `admin` (vedi admin.py)."""
 import calendar
 import json
-import os
 import re
 import secrets
 from datetime import date, datetime, timedelta
-from pathlib import Path
 
-from flask import render_template, request, redirect, url_for, flash, session, send_file, abort, jsonify
+from flask import render_template, request, redirect, url_for, flash, session, send_file, abort
 from werkzeug.security import generate_password_hash
 
 from . import billing, notify, rbac
-from .admin import bp, MODULES
+from .admin import bp
 from .config import DATA
 from .db import q, ex, get_setting, set_setting, all_settings
-from .mailer import send_mail
+from .mailer import send_cliente
 from .rbac import audit
-from .security import admin_required, current_user, check_csrf
+from .security import admin_required, current_user
 
 MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"]
 GIORNI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"]
@@ -102,7 +100,7 @@ def set_appointment_status(i, st):
     ex("UPDATE appointments SET status=? WHERE id=?", (st, i))
     a = q("SELECT * FROM appointments WHERE id=?", (i,), one=True)
     if a and st in ("confermato", "annullato"):
-        send_mail(a["email"], f"Appuntamento {st} – LMC Service",
+        send_cliente(a["email"], f"Appuntamento {st} – LMC Service",
                   f"Ciao {a['name']}, il tuo appuntamento del {a['slot_date']} alle {a['slot_time']} è {st}.\nLMC Service")
     if a and st == "confermato" and rbac.is_admin():       # FASE 3: suggerisce i passi successivi (fattura, acconto)
         session["suggest"] = {"kind": "appuntamento", "id": i, "name": a["name"], "when": f"{_dmy(a['slot_date'])} {a['slot_time']}"}

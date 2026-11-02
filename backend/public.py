@@ -5,11 +5,11 @@ import secrets
 import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import (Blueprint, render_template, request, jsonify, send_from_directory, abort,
-                   Response, url_for, session)
+                   Response, url_for)
 from .db import q, ex, get_setting, all_settings
 from .config import UPLOADS, CATEGORIES
 from .security import check_csrf, csrf_token, current_user
-from .mailer import send_mail
+from .mailer import send_mail, send_cliente
 from . import ai
 from . import vetrina
 from . import notify, metrics
@@ -17,6 +17,7 @@ from . import notify, metrics
 bp = Blueprint("pub", __name__)
 FILE_RE = re.compile(r"^[0-9a-f]{32}(_\d+)?\.(webp|mp4|webm)$")
 EVENT_TYPES = ["Matrimonio", "Festa privata", "Evento aziendale / Meeting", "Concerto / Show", "Discoteca / Locale", "Altro"]
+PRIVACY_AGGIORNATA = "2 novembre 2026"   # da aggiornare a ogni modifica sostanziale di informativa privacy/accessibilità
 SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Progettazione"]
 
 
@@ -96,7 +97,7 @@ def index():
     return render_template("index.html", emg=emg, s=s, gallery=gallery, home=home, intro=intro, videos=videos, v=v,
                            hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
                            has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
-                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"))
+                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"), mesi=__import__("backend.retention", fromlist=["mesi"]).mesi())
 
 
 @bp.route("/media/<name>")
@@ -135,7 +136,7 @@ def api_appuntamento():
        (token, name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
         _clean(d.get("notes"), 800), day, hh))
     link = request.host_url.rstrip("/") + url_for("pub.manage", token=token)
-    send_mail(email, "Appuntamento ricevuto – LMC Service",
+    send_cliente(email, "Appuntamento ricevuto – LMC Service",
               f"Ciao {name},\nabbiamo ricevuto la tua richiesta per il {day} alle {hh}.\n"
               f"Il titolare la confermerà a breve.\nModifica o annulla qui: {link}\n\nLMC Service")
     _notify_request(f"📅 Nuova richiesta di appuntamento dal sito\n{name} – {phone}\n{day} alle {hh}\nEvento: {d.get('event_type')} il {d.get('event_date')}")
@@ -185,7 +186,7 @@ def api_preventivo():
           VALUES(?,?,?,?,?,?,?,?,?,1)""",
        (name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
         _clean(d.get("place"), 120), _clean(d.get("guests"), 10), services, _clean(d.get("notes"), 800)))
-    send_mail(email, "Richiesta preventivo ricevuta – LMC Service",
+    send_cliente(email, "Richiesta preventivo ricevuta – LMC Service",
               f"Ciao {name},\nabbiamo ricevuto la tua richiesta di preventivo. Ti risponderemo al più presto.\n\nLMC Service")
     _notify_request(f"🆕 Nuovo preventivo dal sito\n{name} – {phone}\n{d.get('event_type')} il {d.get('event_date')} a {d.get('place')}, {d.get('guests')} ospiti\nServizi: {services}")
     send_mail(os.getenv("OWNER_EMAIL"), f"Nuovo preventivo: {name}",
@@ -377,7 +378,14 @@ def privacy():
     s = dict(ctx())
     # i segnaposto "[DA COMPLETARE ...]" non devono mai comparire al pubblico: si completano da Admin > Testi
     s["privacy"] = re.sub(r"\s*\[DA COMPLETARE[^\]]*\]", "", s.get("privacy", "") or "")
-    return render_template("privacy.html", s=s, demo=(os.getenv("APP_MODE", "demo") == "demo"))
+    from . import retention
+    return render_template("privacy.html", s=s, demo=(os.getenv("APP_MODE", "demo") == "demo"), aggiornata=PRIVACY_AGGIORNATA,
+                           mesi=retention.mesi(), mesi_log=retention.MESI_LOG, mesi_stat=retention.MESI_STAT)
+
+
+@bp.route("/accessibilita")
+def accessibilita():
+    return render_template("accessibilita.html", s=dict(ctx()), aggiornata=PRIVACY_AGGIORNATA)
 
 
 @bp.route("/robots.txt")
@@ -389,7 +397,7 @@ def robots():
 def sitemap():
     base = request.host_url.rstrip("/")
     xml = ('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-           f'<url><loc>{base}/</loc></url><url><loc>{base}/privacy</loc></url></urlset>')
+           f'<url><loc>{base}/</loc></url><url><loc>{base}/privacy</loc></url><url><loc>{base}/accessibilita</loc></url></urlset>')
     return Response(xml, mimetype="application/xml")
 
 

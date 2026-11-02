@@ -223,6 +223,9 @@
   }));
   async function startVapi(emergency) {
     const c = await cfgReady; if (!c.vapi.enabled) return false;
+    /* privacy: la voce naturale manda l'audio a Vapi (USA): serve il OK esplicito, una volta per sessione; se rifiuta si usa la voce standard */
+    let ok = false; try { ok = sessionStorage.getItem('vapiOk') === '1'; } catch (e) { }
+    if (!ok) { if (!window.confirm('Per la voce naturale l\'audio viene elaborato dal servizio Vapi (USA). Vuoi continuare?\n\nSe annulli useremo la voce standard del tuo browser.')) return false; try { sessionStorage.setItem('vapiOk', '1'); } catch (e) { } }
     try {
       const bad = await ensureMic(); if (bad) { add('bot', bad); return true; }
       const Vapi = await loadVapi(); const v = new Vapi(c.vapi.public_key); vapiCall = v;
@@ -250,7 +253,7 @@
   async function initTools() {
     if (summaryShown) return; summaryShown = true;
     const c = await cfgReady;
-    renderSug(c.suggestions); vapiBtn.hidden = !c.vapi.enabled;
+    renderSug(c.suggestions); vapiBtn.hidden = !c.vapi.enabled; const vn = $('#vapiNote'); if (vn) vn.hidden = !c.vapi.enabled;
     if (!c.wa_ready && c.admin) {          // chi gestisce il sito vede come attivarlo
       waBtn.textContent = 'Configura WhatsApp'; waBtn.dataset.admin = '1';
     }

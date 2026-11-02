@@ -31,6 +31,11 @@ check("player: poster, preload none (15 MB solo al click), sorgente mp4", 'poste
 check("pulsante play grande accessibile", 'id="storiaPlay"' in home and "Guarda la nostra storia" in home)
 check("la sezione sta subito dopo l'hero/trust e prima di «Chi siamo»", home.index('id="storia"') < home.index('id="chi-siamo"') and home.index('class="trust"') < home.index('id="storia"'))
 check("link «Guarda la nostra storia» nell'hero verso #storia", re.search(r'<section class="hero".*?href="#storia".*?</section>', home, re.S) is not None)
+vtt = (media / "storia_lmc.it.vtt").read_text(encoding="utf-8")
+tempi = [(int(a[0]) * 3600 + int(a[1]) * 60 + float(a[2]), int(b[0]) * 3600 + int(b[1]) * 60 + float(b[2])) for a, b in re.findall(r"(\d+):(\d+):([\d.]+) --> (\d+):(\d+):([\d.]+)", vtt) and [((m[0], m[1], m[2]), (m[3], m[4], m[5])) for m in re.findall(r"(\d+):(\d+):([\d.]+) --> (\d+):(\d+):([\d.]+)", vtt)]]
+check("sottotitoli WebVTT in italiano collegati al player (WCAG 1.2.2)", vtt.startswith("WEBVTT") and '<track kind="captions" srclang="it"' in home and len(tempi) > 30)
+check("sottotitoli: tempi crescenti e fino alla fine del video", all(a < b for a, b in tempi) and all(tempi[i][1] <= tempi[i + 1][0] + 0.001 for i in range(len(tempi) - 1)) and tempi[-1][1] > 185, tempi[-1])
+check("sottotitoli serviti come text/vtt", c.get("/static/media/storia_lmc.it.vtt").mimetype == "text/vtt")
 check("il video è servito (200, video/mp4, range)", c.get("/static/media/storia_lmc.mp4", headers={"Range": "bytes=0-99"}).status_code in (200, 206))
 check("4 card skill", home.count('class="skill reveal') == 4)
 for p in ("/static/media/storia_lmc.mp4", "/static/media/storia_lmc_poster.jpg"):

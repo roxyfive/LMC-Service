@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Accessibilità | {{ s.brand_short or s.brand }}</title>
+<link rel="stylesheet" href="/static/css/site.css"></head>
+<body><a class="skip-link" href="#main">Vai al contenuto</a><main class="page" id="main">
+<p><a href="/">← Torna al sito</a></p>
+<h1>Dichiarazione di accessibilità</h1>
+<p class="mut">Ultimo aggiornamento: {{ aggiornata }}.</p>
+<p>{{ s.brand }} vuole che il sito sia utilizzabile da tutte le persone, anche con disabilità, tecnologie assistive o dispositivi diversi. Il riferimento è lo standard WCAG 2.1 livello AA.</p>
+<h2>Cosa abbiamo fatto</h2>
+<ul>
+<li>Navigazione completa da tastiera, con indicatore di focus visibile e link «Vai al contenuto».</li>
+<li>Testi con contrasto adeguato su sfondo scuro; nessuna informazione affidata al solo colore.</li>
+<li>Video con sottotitoli in italiano.</li>
+<li>Immagini con testo alternativo, moduli con etichette e messaggi di errore leggibili dagli screen reader.</li>
+<li>Sito adattabile a telefono, tablet e computer; rispetto dell'impostazione «riduci animazioni» del dispositivo.</li>
+<li>L'introduzione animata si può saltare in qualsiasi momento.</li>
+<li>Controlli automatici e manuali ad ogni aggiornamento del sito.</li>
+</ul>
+<h2>Limiti noti</h2>
+<ul>
+<li>Il video «La nostra storia» ha i sottotitoli in italiano (attivabili dai controlli del player).</li>
+<li>Alcune foto della galleria hanno descrizioni sintetiche.</li>
+<li>La conversazione vocale con l'assistente dipende dal riconoscimento vocale del browser; la chat scritta funziona sempre.</li>
+</ul>
+<h2>Segnalaci un problema</h2>
+<p>Se trovi una barriera o hai bisogno di un contenuto in un formato diverso, scrivi a {% if s.email and '[DA' not in s.email %}<a href="mailto:{{ s.email }}">{{ s.email }}</a>{% else %}uno dei contatti in fondo al sito{% endif %}: rispondiamo entro 15 giorni lavorativi.
+Se la risposta non è soddisfacente puoi rivolgerti all'Agenzia per l'Italia Digitale (<a href="https://www.agid.gov.it" rel="noopener">agid.gov.it</a>).</p>
+<p><a href="/">← Torna al sito</a></p>
+</main></body></html>

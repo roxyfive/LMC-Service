@@ -11,7 +11,6 @@ import re
 import shutil as _shutil
 import subprocess
 from pathlib import Path
-import shutil
 from io import BytesIO
 from PIL import Image, ImageOps
 from .config import FOTO_DIR, UPLOADS, MAX_VID, DATA
