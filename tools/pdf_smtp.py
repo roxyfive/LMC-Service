@@ -10,7 +10,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, PageBreak, PageTemplate, Paragraph, Preformatted, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Frame, KeepTogether, NextPageTemplate, PageBreak, PageTemplate, Paragraph, Preformatted, Spacer, Table, TableStyle
 
 ROOT = Path(__file__).resolve().parent.parent
 F = ROOT / "backend" / "kit_assets" / "fonts"
@@ -35,25 +35,107 @@ cellb = ParagraphStyle("cb", parent=cell, fontName="Inter-Bold")
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs" / "Guida-SMTP-LMC.pdf"
 
 
+LOGO_FT = ROOT / "logo" / "fivetech-trasparente.png"      # logo FiveTech ritagliato (sfondo trasparente)
+LOGO_LMC = ROOT / "logo" / "logo.png"
+VERSIONE = "1.0"
+
+
+def _logo_ft(c, x, y, h):
+    from reportlab.lib.utils import ImageReader
+    ir = ImageReader(str(LOGO_FT))
+    w0, h0 = ir.getSize()
+    c.drawImage(ir, x, y, width=h * w0 / h0, height=h, mask="auto")
+    return h * w0 / h0
+
+
 def deco(c, doc):
+    """Pagine interne: intestazione bianca con logo FiveTech, filo rosso, piè di pagina con numerazione (n / totale) in NumberedCanvas."""
     c.saveState()
+    _logo_ft(c, M, H - 19 * mm, 11 * mm)
     c.setFillColor(SCURO)
-    c.rect(0, H - 20 * mm, W, 20 * mm, stroke=0, fill=1)
-    c.setFillColor(ROSSO)
-    c.rect(0, H - 20.8 * mm, W, 0.8 * mm, stroke=0, fill=1)
-    c.setFillColor(colors.white)
-    c.setFont("Mont", 11)
-    c.drawString(M, H - 12.5 * mm, "LMC SERVICE")
+    c.setFont("Mont", 10.5)
+    c.drawRightString(W - M, H - 12.5 * mm, "LMC SERVICE")
     c.setFont("Inter", 8.5)
-    c.setFillColor(colors.HexColor("#c5c5cf"))
-    c.drawRightString(W - M, H - 12.5 * mm, "Guida: attivare le email del sito (SMTP)")
+    c.setFillColor(GRIGIO)
+    c.drawRightString(W - M, H - 17 * mm, "Guida: attivare le email del sito (SMTP)")
+    c.setFillColor(ROSSO)
+    c.rect(0, H - 22 * mm, W, 1.1 * mm, stroke=0, fill=1)
     c.setStrokeColor(BORDO)
     c.line(M, 14 * mm, W - M, 14 * mm)
     c.setFont("Inter", 8)
     c.setFillColor(GRIGIO)
-    c.drawString(M, 9 * mm, f"La Music Company Service · guida del {date.today().strftime('%d/%m/%Y')}")
-    c.drawRightString(W - M, 9 * mm, f"Pagina {doc.page}")
+    c.drawString(M, 9 * mm, f"Preparato da FiveTech per La Music Company Service · versione {VERSIONE} · {date.today().strftime('%d/%m/%Y')}")
     c.restoreState()
+
+
+def copertina(c, doc):
+    from reportlab.lib.utils import ImageReader
+    c.saveState()
+    ir = ImageReader(str(LOGO_LMC))
+    ih = W * ir.getSize()[1] / ir.getSize()[0]
+    c.drawImage(ir, 0, H - ih, width=W, height=ih)
+    c.setFillColor(ROSSO)
+    c.rect(0, H - ih - 1.6 * mm, W, 1.6 * mm, stroke=0, fill=1)
+    y = H - ih - 24 * mm
+    c.setFillColor(ROSSO)
+    c.setFont("Inter-Bold", 10)
+    c.drawString(M, y, "GUIDA OPERATIVA · EMAIL DEL SITO")
+    c.setFillColor(SCURO)
+    c.setFont("Mont", 30)
+    c.drawString(M, y - 14 * mm, "Attivare le email")
+    c.drawString(M, y - 26 * mm, "del sito LMC")
+    c.setFillColor(GRIGIO)
+    c.setFont("Inter", 12)
+    c.drawString(M, y - 37 * mm, "Come configurare l'invio di conferme, promemoria e avvisi (SMTP)")
+    # scheda dati
+    c.setStrokeColor(BORDO)
+    c.setFillColor(CHIARO)
+    c.roundRect(M, y - 76 * mm, W - 2 * M, 28 * mm, 3 * mm, stroke=1, fill=1)
+    righe = [("Destinatario", "Agenzia pubblicitaria / chi gestisce il server di La Music Company Service"), ("Tempo stimato", "circa 15 minuti"),
+             ("Versione", f"{VERSIONE} · {date.today().strftime('%d/%m/%Y')}")]
+    for i, (k, v) in enumerate(righe):
+        c.setFont("Inter-Bold", 9)
+        c.setFillColor(SCURO)
+        c.drawString(M + 6 * mm, y - 55 * mm - i * 7 * mm, k)
+        c.setFont("Inter", 9)
+        c.setFillColor(GRIGIO)
+        c.drawString(M + 38 * mm, y - 55 * mm - i * 7 * mm, v)
+    # firma
+    c.setStrokeColor(BORDO)
+    c.line(M, 36 * mm, W - M, 36 * mm)
+    c.setFont("Inter", 8.5)
+    c.setFillColor(GRIGIO)
+    c.drawString(M, 28 * mm, "Preparato da")
+    _logo_ft(c, M, 12 * mm, 14 * mm)
+    c.setFont("Inter", 8.5)
+    c.drawRightString(W - M, 28 * mm, "Documento riservato: non contiene password.")
+    c.restoreState()
+
+
+from reportlab.pdfgen import canvas as _canvas
+
+
+class NumberedCanvas(_canvas.Canvas):
+    """Numera le pagine interne come «Pagina n di N» (la copertina non è numerata)."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self._salvate = []
+
+    def showPage(self):
+        self._salvate.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        n = len(self._salvate)
+        for i, st in enumerate(self._salvate):
+            self.__dict__.update(st)
+            if i > 0:
+                self.setFont("Inter", 8)
+                self.setFillColor(GRIGIO)
+                self.drawRightString(W - M, 9 * mm, f"Pagina {i} di {n - 1}")
+            super().showPage()
+        super().save()
 
 
 def box(d, x, y, w, h, titolo, sotto, col, txt=colors.white):
@@ -123,7 +205,7 @@ def avviso(testo, col=ROSSO, fondo="#fdf0f0"):
     return t
 
 
-el = []
+el = [Spacer(1, 1), NextPageTemplate("p"), PageBreak()]      # la copertina è disegnata da copertina()
 # ---------------- pagina 1
 el += [Paragraph("Attivare le email del sito LMC", h1), Paragraph("Guida semplice per l'agenzia (o per chi gestisce il server)", ParagraphStyle("sub", parent=body, fontSize=12, textColor=GRIGIO)), Spacer(1, 6 * mm),
        Paragraph("<b>In una frase.</b> Il sito di La Music Company Service è online e funziona, ma <b>non riesce a spedire email</b>: manca l'accesso a un servizio di posta (si chiama <b>SMTP</b>). "
@@ -133,7 +215,12 @@ el += [Paragraph("Attivare le email del sito LMC", h1), Paragraph("Guida semplic
        Paragraph("1. <b>Scegliere</b> da quale casella di posta il sito deve spedire (consigliata: quella già usata da Pasquale, <b>lamusiccompany.24@gmail.com</b>).<br/>"
                  "2. <b>Procurare i dati di accesso</b> di quella casella (la tabella a pagina 3 dice esattamente quali).<br/>"
                  "3. <b>Inserirli sul server</b> (6 righe in un file) oppure passarli a chi ha accesso al server, in modo sicuro.<br/>"
-                 "4. <b>Fare la prova</b>: una prenotazione di test deve generare una email di conferma.", body),
+                 "4. <b>Fare la prova</b>: una prenotazione di test deve generare una email di conferma.", body), Spacer(1, 3 * mm),
+       tabella([["Chi", "Cosa fa", "Tempo"],
+                ["Pasquale", "Crea la «password per le app» dal suo account Google (pagina 3) e la consegna in modo sicuro", "5 minuti"],
+                ["Agenzia / tecnico", "Inserisce le 6 impostazioni sul server e riavvia il sito (pagina 4)", "5 minuti"],
+                ["Insieme", "Prenotazione di prova e controllo che arrivino le email", "5 minuti"]],
+               [34 * mm, 114 * mm, 26 * mm]),
        PageBreak()]
 # ---------------- pagina 2
 el += [Paragraph("Che cos'è SMTP, in parole semplici", h1),
@@ -202,6 +289,7 @@ el += [Paragraph("Per chi ha accesso al server: passi tecnici", h1),
 
 OUT.parent.mkdir(parents=True, exist_ok=True)
 doc = BaseDocTemplate(str(OUT), pagesize=(W, H), leftMargin=M, rightMargin=M, topMargin=28 * mm, bottomMargin=20 * mm, title="Attivare le email del sito LMC (SMTP)", author="FiveTech", subject="Guida SMTP")
-doc.addPageTemplates([PageTemplate(id="p", frames=[Frame(M, 20 * mm, W - 2 * M, H - 48 * mm, id="f", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)], onPage=deco)])
-doc.build(el)
+fr = Frame(M, 20 * mm, W - 2 * M, H - 48 * mm, id="f", leftPadding=0, rightPadding=0, topPadding=0, bottomPadding=0)
+doc.addPageTemplates([PageTemplate(id="cover", frames=[Frame(M, 20 * mm, W - 2 * M, H - 40 * mm, id="c")], onPage=copertina), PageTemplate(id="p", frames=[fr], onPage=deco)])
+doc.build(el, canvasmaker=NumberedCanvas)
 print(OUT)
