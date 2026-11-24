@@ -2,7 +2,7 @@ import os
 import threading
 import time
 from datetime import date, timedelta
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, session
 from . import config
 from .db import close_db, init_db, q, ex
 from .security import csrf_token
@@ -55,7 +55,8 @@ def create_app():
     @app.before_request
     def limit_public_body():
         # le richieste pubbliche sono piccole (JSON/form): solo l'admin può caricare foto e video grandi
-        if not request.path.startswith("/admin") and (request.content_length or 0) > 1024 * 1024:
+        # (anche /admin/login e simili: i caricamenti grandi sono ammessi solo a chi ha già fatto l'accesso)
+        if (request.content_length or 0) > 1024 * 1024 and not (request.path.startswith("/admin") and session.get("admin")):
             abort(413)
 
     @app.route("/webhook/telefono", methods=["POST"])

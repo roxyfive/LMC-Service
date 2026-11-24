@@ -351,6 +351,8 @@ def api_csrf():
 @bp.route("/api/chat", methods=["POST"])
 def api_chat():
     check_csrf()
+    if not notify.rate_ok(f"chat:{request.remote_addr or '?'}", 40, 600):      # l'assistente può costare (AI esterna): niente raffiche
+        return jsonify(reply="Stai scrivendo molto velocemente: aspetta qualche minuto, oppure chiamaci o scrivici su WhatsApp.", action=None), 429
     d = request.get_json(silent=True) or {}
     msgs = [{"role": "assistant" if m.get("role") == "assistant" else "user", "content": _clean(m.get("content"), 500)}
             for m in (d.get("messages") or [])[-10:] if m.get("content")]

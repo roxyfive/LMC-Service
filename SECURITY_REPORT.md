@@ -69,3 +69,18 @@ set PYTHONUTF8=1 && .venv\Scripts\python.exe -m tests.test_e2e      (anche test_
 git log --all -p | findstr /i "api_key secret token password"       (ricerca segreti nella storia)
 ```
 Strumenti consigliati da aggiungere: `gitleaks detect` e `semgrep --config auto backend`.
+
+---
+
+## Seconda revisione (24/11/2026)
+Ripetuti pip-audit (nessuna vulnerabilità), bandit (solo falsi positivi: SQL con nomi di tabella/colonna fissi, `urlopen` verso URL https fissi o configurati dall'admin, SHA1 per nomi file), ricerca segreti su tutta la cronologia (nessuno) e lettura di login, CSRF, upload, `/media`, service worker, webhook. Le correzioni del primo report sono presenti e funzionanti.
+
+**Corretto ora (medio, a basso rischio)**
+- `/admin/login` (e ogni `/admin/*`) accettava richieste fino a 200 MB anche senza accesso: ora il limite di 1 MB vale per tutti, tranne l'admin già autenticato (foto/video).
+- `/api/chat` non aveva un limite per IP (costi con AI esterna, spam): ora 40 messaggi ogni 10 minuti per IP (in produzione c'è anche il limite di nginx).
+- Aggiunto `tests/test_sicurezza.py` (21 controlli): header, cookie, limiti di dimensione e frequenza, CSRF, oggetto email, segreti non tracciati, service worker, logo (nessun riferimento al vecchio, nessun file mancante, manifest).
+
+**Ancora aperto**
+- Video `loop1-3.mp4` (galleria della home) e `video/*.mp4` contengono ancora il vecchio logo nei fotogrammi: vanno rigenerati.
+- Host header: con `TRUST_PROXY=1` i link nelle email usano l'host ricevuto; conviene un `server` predefinito in nginx che scarta host sconosciuti (o `TRUSTED_HOSTS` in Flask).
+- Punti VPS del primo report (firewall, fail2ban, SSH solo con chiave) e informativa privacy con segnaposto: da fare.
