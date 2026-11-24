@@ -9,12 +9,18 @@
 <meta name="csrf" content="{{ csrf_token() }}">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/static/img/favicon.ico" sizes="any">
+<link rel="icon" href="/static/img/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="/static/img/favicon-64.png" type="image/png" sizes="64x64">
-<link rel="apple-touch-icon" href="/static/img/icon-192.png">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="LMC Service – Audio · Video · Luci | Napoli">
 <meta property="og:description" content="Service per eventi in tutta Italia: audio, luci, ledwall, videosorveglianza, allestimenti.">
 <meta property="og:image" content="{{ request.host_url }}static/img/logo-1200.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La Music Company Service – Audio · Video · Luci">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ request.host_url }}static/img/logo-1200.jpg">
 <meta property="og:locale" content="it_IT">
 <link rel="canonical" href="{{ request.base_url }}">
 <link rel="preload" href="/static/fonts/montserrat-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -63,7 +69,7 @@
   <div class="intro-vig"></div>
   <div class="beams"></div>
   <div class="intro-frame"></div>
-  <img class="intro-logo" src="/static/img/logo-3d-256.webp" srcset="/static/img/logo-3d-256.webp 1x, /static/img/logo-3d-512.webp 2x" width="110" height="110" alt="La Music Company Service">
+  <img class="intro-logo" src="/static/img/logo-emblema-256.webp" srcset="/static/img/logo-emblema-256.webp 1x, /static/img/logo-emblema-512.webp 2x" width="110" height="110" alt="La Music Company Service">
   <div class="intro-copy">
     <div id="introCap" class="intro-cap" aria-live="polite"></div>
     <p id="introSub" class="intro-sub"></p>
@@ -80,7 +86,7 @@
 </div>
 
 <header class="nav" id="top">
-  <a class="brand" href="#top" aria-label="LMC Service – torna in alto"><img class="logo-mark" src="/static/img/logo-3d-128.webp" srcset="/static/img/logo-3d-128.webp 1x, /static/img/logo-3d-256.webp 2x" width="46" height="46" alt=""><span>LMC <b>Service</b></span></a>
+  <a class="brand" href="#top" aria-label="LMC Service – torna in alto"><img class="logo-mark" src="/static/img/logo-emblema-128.webp" srcset="/static/img/logo-emblema-128.webp 1x, /static/img/logo-emblema-256.webp 2x" width="46" height="46" alt=""><span>LMC <b>Service</b></span></a>
   <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="menu">☰</button>
   <nav id="menu" aria-label="Principale">
     <a href="#chi-siamo">Chi siamo</a><a href="#skill">Skill</a><a href="#eventi">Eventi</a>
@@ -340,7 +346,7 @@
 <footer class="foot">
   <div class="foot-in">
     <div>
-      <img class="fl" src="/static/img/logo-mono-white.svg" width="110" height="110" alt="La Music Company Service" loading="lazy">
+      <img class="fl" src="/static/img/logo-emblema-256.webp" width="110" height="110" alt="La Music Company Service" loading="lazy">
       <p>{{ s.brand }}<br>Service per eventi · {{ s.city }} · dal {{ s.founded }}</p>
     </div>
     <nav aria-label="Esplora"><p class="foot-h">Esplora</p>
@@ -388,9 +394,9 @@
 {% endif %}
 
 <!-- CHAT + assistente vocale -->
-<button id="chatBtn" class="chat-btn" aria-label="Apri Assistente LMC AI" aria-expanded="false" data-tip="Assistente LMC AI"><img src="/static/img/logo-3d-128.webp" srcset="/static/img/logo-3d-256.webp 2x" width="56" height="56" alt=""><span class="ai-badge" aria-hidden="true">AI</span></button>
+<button id="chatBtn" class="chat-btn" aria-label="Apri Assistente LMC AI" aria-expanded="false" data-tip="Assistente LMC AI"><img src="/static/img/logo-emblema-128.webp" srcset="/static/img/logo-emblema-256.webp 2x" width="56" height="56" alt=""><span class="ai-badge" aria-hidden="true">AI</span></button>
 <div id="chat" class="chat" hidden role="dialog" aria-label="Assistente LMC AI">
-  <div class="chat-h"><span class="chat-id"><img src="/static/img/logo-3d-128.webp" width="34" height="34" alt=""><b>Assistente LMC AI</b></span><button id="chatX" aria-label="Chiudi">✕</button></div>
+  <div class="chat-h"><span class="chat-id"><img src="/static/img/logo-emblema-128.webp" width="34" height="34" alt=""><b>Assistente LMC AI</b></span><button id="chatX" aria-label="Chiudi">✕</button></div>
   <p class="chat-note">Assistente automatico (non una persona). I messaggi servono a rispondere e, se lo chiedi, vengono inoltrati al team. <a href="/privacy" target="_blank" rel="noopener">Privacy</a></p>
   <div id="chatLog" class="chat-log" aria-live="polite"><p class="bot">Ciao! Sono l'assistente di LMC Service. Chiedimi di servizi, preventivi, appuntamenti o contatti: puoi scrivere oppure parlare.</p></div>
   <div id="chatSug" class="chat-sug" role="group" aria-label="Domande suggerite" hidden></div>

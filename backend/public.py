@@ -2,6 +2,7 @@ import os
 import re
 import json
 import secrets
+import sqlite3
 import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import (Blueprint, render_template, request, jsonify, send_from_directory, abort,
@@ -116,6 +117,8 @@ def api_slots():
 @bp.route("/api/appuntamento", methods=["POST"])
 def api_appuntamento():
     check_csrf()
+    if not notify.rate_ok(f"app:{request.remote_addr or '?'}", 8, 600):     # anti-spam: non riempire l'agenda di richieste finte
+        return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
     if not name or not _valid_phone(phone) or not _valid_email(email):
@@ -126,10 +129,13 @@ def api_appuntamento():
     if hh not in free_slots(day):
         return jsonify(error="Questo orario non è più disponibile. Scegline un altro."), 409
     token = secrets.token_urlsafe(16)
-    ex("""INSERT INTO appointments(token,name,phone,email,event_type,event_date,notes,slot_date,slot_time,consent)
-          VALUES(?,?,?,?,?,?,?,?,?,1)""",
-       (token, name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
-        _clean(d.get("notes"), 800), day, hh))
+    try:
+        ex("""INSERT INTO appointments(token,name,phone,email,event_type,event_date,notes,slot_date,slot_time,consent)
+              VALUES(?,?,?,?,?,?,?,?,?,1)""",
+           (token, name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
+            _clean(d.get("notes"), 800), day, hh))
+    except sqlite3.IntegrityError:      # due clienti hanno scelto lo stesso orario nello stesso istante
+        return jsonify(error="Questo orario non è più disponibile. Scegline un altro."), 409
     link = request.host_url.rstrip("/") + url_for("pub.manage", token=token)
     send_mail(email, "Appuntamento ricevuto – LMC Service",
               f"Ciao {name},\nabbiamo ricevuto la tua richiesta per il {day} alle {hh}.\n"
@@ -170,6 +176,8 @@ def manage(token):
 @bp.route("/api/preventivo", methods=["POST"])
 def api_preventivo():
     check_csrf()
+    if not notify.rate_ok(f"prev:{request.remote_addr or '?'}", 8, 600):
+        return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
     if not name or not _valid_phone(phone) or not _valid_email(email):
@@ -387,8 +395,10 @@ def manifest():
             {"name": "Richiedi un preventivo", "short_name": "Preventivo", "url": "/#preventivo", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},
             {"name": "Emergenza 24h", "short_name": "Emergenza", "url": "/?sos=1", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},
             {"name": "Prenota un appuntamento", "short_name": "Prenota", "url": "/#prenota", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]}],
-        "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-                  {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]})
+        "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                  {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+                  {"src": "/static/img/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+                  {"src": "/static/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]})
 
 
 @bp.route("/sw.js")

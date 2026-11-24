@@ -110,6 +110,6 @@ L'URL del webhook Vapi da incollare nel pannello Vapi è `https://TUO-DOMINIO/we
 | Modalità `demo` / `production`, `SECRET_KEY`, HTTPS | file `.env` |
 | Testi di «Come lavoriamo» e delle FAQ, elenco tipi di evento e servizi dei form | `app/templates/index.html`, `backend/public.py` |
 | Musica e voce dell'intro | `app/static/media/music.mp3`, `voce.mp3`, `voce.json` |
-| Logo | `python -m backend.make_logo3d` e `app/static/img/` |
+| Logo | sostituisci `logo/lmcs-logo.png` e lancia `python -m backend.make_logo_assets` (rigenera icone, favicon, anteprime in `app/static/img/`) |
 | Assistente AI esterno (facoltativo) | `.env` (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) |
 | Foto importate in blocco | cartella `foto/organizzate/` o `python importa_social.py` |

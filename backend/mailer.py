@@ -22,7 +22,7 @@ def send_mail(to, subject, body):
         m = EmailMessage()
         m["From"] = os.getenv("MAIL_FROM") or os.getenv("SMTP_USER", "")
         m["To"] = to
-        m["Subject"] = subject
+        m["Subject"] = " ".join(str(subject).split())   # una sola riga: niente a-capo iniettati dai dati del cliente
         m.set_content(body)
         with smtplib.SMTP(host, int(os.getenv("SMTP_PORT", "587")), timeout=15) as s:
             s.starttls()

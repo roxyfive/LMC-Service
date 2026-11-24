@@ -42,7 +42,21 @@ def create_app():
         r.headers["X-Content-Type-Options"] = "nosniff"
         r.headers["X-Frame-Options"] = "SAMEORIGIN"
         r.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        r.headers["Permissions-Policy"] = "camera=(), geolocation=(), payment=(), microphone=(self)"   # il microfono serve all'assistente vocale
+        r.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        # CSP prudente: blocca plugin, <base> truccati, form verso altri siti e incorniciamento. Non limita gli script (assistente vocale Vapi).
+        r.headers["Content-Security-Policy"] = "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+        if os.getenv("COOKIE_SECURE") == "1":     # sito servito in HTTPS
+            r.headers["Strict-Transport-Security"] = "max-age=31536000"
+        if request.path.startswith("/admin"):     # niente copie dell'area admin nella cache del browser
+            r.headers["Cache-Control"] = "no-store"
         return r
+
+    @app.before_request
+    def limit_public_body():
+        # le richieste pubbliche sono piccole (JSON/form): solo l'admin può caricare foto e video grandi
+        if not request.path.startswith("/admin") and (request.content_length or 0) > 1024 * 1024:
+            abort(413)
 
     @app.route("/webhook/telefono", methods=["POST"])
     def webhook_telefono():
