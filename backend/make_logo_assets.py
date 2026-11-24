@@ -83,6 +83,28 @@ def square(src, size, frac, flat=True, ref=None):
     return cv
 
 
+def icona_con_scritte(size, w_testo, h_max, flat=True):
+    """Quadrato con disco sopra e scritte «LA MUSIC COMPANY SERVICE · AUDIO · VIDEO · LUCI» sotto (icona dell'app).
+    w_testo = larghezza delle scritte in quota di `size`; h_max = altezza massima del gruppo in quota di `size`."""
+    full = Image.open(SRC).convert("RGBA")
+    emb = _crop_alpha(full, (0, 0, full.width, EMBLEM_BOTTOM))
+    txt = _crop_alpha(full, (0, EMBLEM_BOTTOM, full.width, full.height))
+    tw = size * w_testo
+    th = txt.height * tw / txt.width
+    gap = size * 0.06
+    eh = size * h_max - th - gap                      # altezza che resta al disco
+    ew = min(eh * emb.width / emb.height, size * 0.5)
+    eh = ew * emb.height / emb.width
+    tot = eh + gap + th
+    cv = Image.new("RGB", (size, size), NERO) if flat else Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    y = (size - tot) / 2
+    e = emb.resize((round(ew), round(eh)), Image.Resampling.LANCZOS)
+    t = txt.resize((round(tw), round(th)), Image.Resampling.LANCZOS)
+    cv.paste(e, (round((size - e.width) / 2), round(y)), e)
+    cv.paste(t, (round((size - t.width) / 2), round(y + eh + gap)), t)
+    return cv
+
+
 def scena_video():
     """Tavola 1672x941 per gli script video (sostituisce la vecchia foto del logo)."""
     lockup, _ = load()
@@ -102,12 +124,14 @@ def generate():
     for s in (128, 256, 512):
         square(emblem, s, 0.92, flat=False).save(IMG / f"logo-emblema-{s}.webp", "WEBP", quality=92, method=6)
     square(emblem, 1024, 0.92, flat=False).save(IMG / "logo-emblema-1024.png", optimize=True)
-    # icone PWA: "any" (disco grande) e "maskable" (disco dentro la zona sicura del 80%)
-    for s in (192, 512):
-        square(emblem, s, 0.66).save(IMG / f"icon-{s}.png", optimize=True)
-        square(emblem, s, 0.50).save(IMG / f"icon-maskable-{s}.png", optimize=True)
-    square(emblem, 180, 0.66).save(IMG / "apple-touch-icon.png", optimize=True)
-    # favicon
+    # icona dell'app (PWA, Android, iPhone): disco + scritte. "maskable" tiene tutto dentro la zona sicura (80%)
+    for sz in (192, 512):
+        icona_con_scritte(sz, 0.84, 0.80).save(IMG / f"icon-{sz}.png", optimize=True)
+        icona_con_scritte(sz, 0.58, 0.56).save(IMG / f"icon-maskable-{sz}.png", optimize=True)
+    icona_con_scritte(180, 0.84, 0.80).save(IMG / "apple-touch-icon.png", optimize=True)
+    # logo completo per l'intro (a sinistra, come prima): larghezza nativa del file sorgente
+    render(lockup, 420).save(IMG / "logo-completo-420.webp", "WEBP", quality=92, method=6)
+    # favicon (solo disco: a 16-64 px le scritte non si leggerebbero)
     for s in (32, 64):
         square(emblem, s, 0.88, ref=int(s * 0.88)).save(IMG / f"favicon-{s}.png", optimize=True)
     square(emblem, 64, 0.90, ref=24).save(IMG / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])

@@ -92,5 +92,8 @@ check("logo: ogni /static/img/ citato esiste", not mancanti, mancanti)
 check("logo: nessun riferimento al vecchio logo (logo-3d, logo-mono-white, logo-lmc.svg, logo/logo.png)", not re.search(r"logo-3d|logo-mono-white|logo-lmc\.svg|logo/logo\.png", codice))
 man = c.get("/manifest.webmanifest").get_json()
 check("manifest: icone any e maskable presenti", {i["purpose"] for i in man["icons"]} == {"any", "maskable"} and all((ROOT / "app" / i["src"].lstrip("/")).exists() for i in man["icons"]))
+check("intro: logo completo (con scritte) in alto a sinistra", 'class="intro-logo" src="/static/img/logo-completo-420.webp"' in home.get_data(as_text=True))
+from PIL import Image
+check("icone app: 192, 512, maskable e apple-touch con le scritte (non solo il disco)", all(Image.open(ROOT / "app/static/img" / f).size == sz for f, sz in (("icon-192.png", (192, 192)), ("icon-512.png", (512, 512)), ("icon-maskable-512.png", (512, 512)), ("apple-touch-icon.png", (180, 180)))))
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)

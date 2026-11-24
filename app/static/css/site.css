@@ -578,6 +578,12 @@ html{overflow-x:clip;max-width:100%}body{overflow-x:clip;max-width:100%}
 
 .page h2{font-size:clamp(1.25rem,2.6vw,1.6rem);letter-spacing:-.01em;line-height:1.25;margin:2.2rem 0 .7rem}.page ul{padding-left:1.2rem}.page li{margin:.4rem 0}
 
+/* ---------- intro: logo completo (disco + scritte) in alto a sinistra, come prima ---------- */
+.intro-logo{width:clamp(150px,16vw,210px);height:auto;aspect-ratio:758/420;object-fit:contain}
+@media(max-width:600px){.intro-logo{width:150px}}
+@media(max-height:520px){.intro-logo{width:112px;top:.9rem;left:1.4rem}}
+@media(max-width:600px) and (orientation:portrait){.intro-logo{left:clamp(1.2rem,5vw,1.8rem);right:auto;margin:0}}
+
 /* =====================================================================================================
    TEMA NERO (richiesta del cliente): sfondo nero, testi bianchi, contorni/bordi ROSSI, accento rosso al posto dell'oro.
    Il tasto Emergenza resta rosso vivo. Font invariati (Montserrat / Space Grotesk / Inter). Contrasti AA.

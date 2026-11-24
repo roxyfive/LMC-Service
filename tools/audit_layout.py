@@ -35,8 +35,9 @@ MEASURE = """() => {
 
 INTRO = """() => {
   const vw = document.documentElement.clientWidth, o = [];
+  // il logo dell'intro sta volutamente a sinistra (come prima): non è nell'elenco degli elementi centrati
   const c = (s) => { const e = document.querySelector(s); if (!e) return; const r = e.getBoundingClientRect(); if (r.width < 2) return; o.push([s, Math.round(r.left), Math.round(vw - r.right), Math.round(r.width)]); };
-  ['.intro-logo', '#introCap', '#introSub', '.intro-bars', '.intro-count', '.intro-ctrl', '#introAudio', '#introSkip'].forEach(c);
+  ['#introCap', '#introSub', '.intro-bars', '.intro-count', '.intro-ctrl', '#introAudio', '#introSkip'].forEach(c);
   const txt = (s) => { const e = document.querySelector(s); if (!e || !e.textContent.trim()) return; const rg = document.createRange(); rg.selectNodeContents(e); const rs = [...rg.getClientRects()].filter(x => x.width > 1); if (!rs.length) return; const l = Math.min(...rs.map(x => x.left)), r = Math.max(...rs.map(x => x.right)); o.push(['testo ' + s, Math.round(l), Math.round(vw - r), Math.round(r - l)]); };
   ['#introCap', '#introSub', '.intro-count'].forEach(txt);
   return {vw, sw: document.documentElement.scrollWidth, items: o};
