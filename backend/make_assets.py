@@ -11,21 +11,8 @@ MED = ROOT / "app" / "static" / "media"
 
 def logos():
     IMG.mkdir(parents=True, exist_ok=True)
-    im = Image.open(ROOT / "logo" / "logo.png").convert("RGB")
-    for w in (480, 1600):
-        c = im.copy()
-        c.thumbnail((w, w))
-        c.save(IMG / f"logo-{w}.webp", "WEBP", quality=85)
-    og = im.resize((1200, 630), Image.LANCZOS)
-    og.save(IMG / "logo-1200.jpg", quality=85)
-    # icona: disco audio a sinistra del logo, su fondo nero quadrato
-    ic = im.crop((310, 400, 460, 560))
-    for s in (192, 512):
-        base = Image.new("RGB", (s, s), (10, 10, 10))
-        t = ic.copy()
-        t.thumbnail((int(s * 0.7), int(s * 0.7)), Image.LANCZOS)
-        base.paste(t, ((s - t.width) // 2, (s - t.height) // 2))
-        base.save(IMG / f"icon-{s}.png")
+    from .make_logo_assets import generate   # loghi, icone, favicon: tutto da logo/lmcs-logo.png
+    generate()
     ft = Image.open(ROOT / "logo" / "fivetech.png").convert("RGB")
     ft.thumbnail((160, 160))
     ft.save(IMG / "fivetech-160.webp", "WEBP", quality=85)

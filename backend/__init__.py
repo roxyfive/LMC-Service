@@ -2,7 +2,7 @@ import os
 import threading
 import time
 from datetime import date, timedelta
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, session
 from . import config
 from .db import close_db, init_db, q, ex
 from .security import csrf_token
@@ -43,9 +43,21 @@ def create_app():
         r.headers["X-Frame-Options"] = "SAMEORIGIN"
         r.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         r.headers["Permissions-Policy"] = "camera=(), geolocation=(), payment=(), usb=(), microphone=(self)"   # il microfono serve solo all'assistente vocale
+        r.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        # CSP prudente: blocca plugin, <base> truccati, form verso altri siti e incorniciamento. Non limita gli script (assistente vocale Vapi).
+        r.headers["Content-Security-Policy"] = "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
         if app.config.get("SESSION_COOKIE_SECURE"):           # sito in HTTPS: il browser non tornerà mai su http
             r.headers["Strict-Transport-Security"] = "max-age=31536000"
+        if request.path.startswith("/admin"):     # niente copie dell'area admin nella cache del browser
+            r.headers["Cache-Control"] = "no-store"
         return r
+
+    @app.before_request
+    def limit_public_body():
+        # le richieste pubbliche sono piccole (JSON/form): solo l'admin può caricare foto e video grandi
+        # (anche /admin/login e simili: i caricamenti grandi sono ammessi solo a chi ha già fatto l'accesso)
+        if (request.content_length or 0) > 1024 * 1024 and not (request.path.startswith("/admin") and session.get("admin")):
+            abort(413)
 
     @app.route("/webhook/telefono", methods=["POST"])
     def webhook_telefono():

@@ -36,7 +36,7 @@ OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "docs" / "Guida-Agenzia
 
 
 LOGO_FT = ROOT / "logo" / "fivetech-trasparente.png"      # logo FiveTech ritagliato (sfondo trasparente)
-LOGO_LMC = ROOT / "logo" / "logo.png"
+LOGO_LMC = ROOT / "app" / "static" / "img" / "logo-1600.webp"   # nuovo logo su sfondo nero (16:9)
 VERSIONE = "1.0"
 
 

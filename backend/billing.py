@@ -259,7 +259,7 @@ def invoice_pdf(inv, out=None):
         c.rect(0, h - 40 * mm, w, 40 * mm, fill=1, stroke=0)
         c.setFillColor(RED)
         c.rect(0, h - 41.6 * mm, w, 1.6 * mm, fill=1, stroke=0)
-        logo = ROOT / "logo" / "logo.png"
+        logo = ROOT / "logo" / "lmcs-logo-documenti.png"   # logo bianco ritagliato: sta sulla fascia scura
         if logo.exists():
             c.drawImage(str(logo), M, h - 37 * mm, width=58 * mm, height=33 * mm, preserveAspectRatio=True, mask="auto")
         c.setFillColor(colors.white)

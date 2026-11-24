@@ -22,7 +22,7 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 ## WhatsApp, voce, report ed emergenza
 Assistente vocale (voce del browser o Vapi), riepilogo chat su WhatsApp (Twilio), report giornaliero/settimanale/mensile, pulsante Emergenza 24h.
 Tutto si configura da **Admin › Impostazioni** (o `.env`): vedi `docs/CONFIGURAZIONE-API.md`. Pagina **Admin › Report** per i numeri. Proposte future: `docs/PROPOSTE.md`.
-Logo 3D: `python -m backend.make_logo3d` (richiede scipy e fonttools; non serve per far girare il sito).
+Logo: sorgente unica `logo/lmcs-logo.png`; `python -m backend.make_logo_assets` rigenera icone PWA, favicon e anteprime social. I vecchi loghi sono in `_vecchi_loghi/`.
 
 ## Team e Contatti (da admin)
 Admin › **Team e Contatti**: nome, ruolo, telefono, email, nota, visibilità e ordine di ogni collaboratore. Si salva nel database: compare

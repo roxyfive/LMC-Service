@@ -28,7 +28,7 @@ GRIGIO, CHIARO, BORDO, TESTO = colors.HexColor("#5a5a66"), colors.HexColor("#f4f
 TEAL, AMBRA, BLU, VERDE = colors.HexColor("#14917a"), colors.HexColor("#d98a00"), colors.HexColor("#3b6fd8"), colors.HexColor("#1f8a4c")
 RUOLO = {"ADMIN": ROSSO, "COLLABORATORE": AMBRA, "CLIENTE": TEAL, "TECNICO": BLU}
 LOGO_FT = ROOT / "logo" / "fivetech-trasparente.png"
-LOGO_LMC = ROOT / "logo" / "logo.png"
+LOGO_LMC = ROOT / "app" / "static" / "img" / "logo-1600.webp"   # nuovo logo su sfondo nero (16:9)
 
 for nome, f in (("Inter", "Inter-Regular.ttf"), ("Inter-Bold", "Inter-Bold.ttf"), ("Mont", "Montserrat-ExtraBold.ttf"), ("Grot", "SpaceGrotesk-SemiBold.ttf"), ("Mono", "DejaVuSansMono.ttf")):
     pdfmetrics.registerFont(TTFont(nome, str(F / f)))

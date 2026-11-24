@@ -109,7 +109,8 @@ Il menu a sinistra (su telefono: pulsante in alto) mostra **solo le voci consent
 | **Utenti e permessi** | Crea utenti, assegna il ruolo, disattiva, reimposta la password | admin |
 | **Registro attività** | Chi ha fatto cosa e quando (azioni sensibili) | admin |
 | **Impostazioni** | Dati societari, cifre del sito, SMTP, ecc. | admin |
-| **Backup** | Stato dell'ultimo backup (locale + Google Drive) | admin |
+| **Backup** | Stato dell'ultimo backup (locale + copia cloud cifrata) | admin |
+| **Guide e PDF** | Libretto illustrativo e Guida per l'agenzia, da aprire o scaricare | admin |
 
 **Prima del primo uso compila:** *Fatture > Dati fiscali* (P.IVA, sede, IBAN, numerazione), *Tariffe* (i prezzi), `PUBLIC_URL` nel `.env` (link delle email di recensione) e crea gli utenti collaboratori.
 
@@ -134,6 +135,6 @@ Il menu a sinistra (su telefono: pulsante in alto) mostra **solo le voci consent
 | Modalità `demo` / `production`, `SECRET_KEY`, HTTPS | file `.env` |
 | Testi di «Come lavoriamo» e delle FAQ, elenco tipi di evento e servizi dei form | `app/templates/index.html`, `backend/public.py` |
 | Musica e voce dell'intro | `app/static/media/music.mp3`, `voce.mp3`, `voce.json` |
-| Logo | `python -m backend.make_logo3d` e `app/static/img/` |
+| Logo | sostituisci `logo/lmcs-logo.png` e lancia `python -m backend.make_logo_assets` (rigenera icone, favicon, anteprime in `app/static/img/`) |
 | Assistente AI esterno (facoltativo) | `.env` (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) |
 | Foto importate in blocco | cartella `foto/organizzate/` o `python importa_social.py` |

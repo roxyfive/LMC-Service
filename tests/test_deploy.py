@@ -100,7 +100,7 @@ check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "g
 check("lmc.service: control socket di gunicorn disattivato (non scrivibile da lmc)", "--no-control-socket" in svc and "gunicorn>=25" in (ROOT / "requirements.txt").read_text())
 ng = (ROOT / "deploy" / "nginx-lmc.conf").read_text()
 check("nginx: gzip, cache statici, upload 200M, /health, rate limit webhook", all(x in ng for x in ("gzip on", "expires 7d", "client_max_body_size 200M", "location = /health", "zone=lmc_hooks")))
-check("manifest PWA con sfondo bianco", c.get("/manifest.webmanifest").get_json()["background_color"] == "#ffffff")
+check("manifest PWA con sfondo nero (tema del sito)", c.get("/manifest.webmanifest").get_json()["background_color"] == "#16161c")
 
 # ---------- backup, rotazione e ripristino reali (locale: la copia cloud è provata in test_backup_cloud) ----------
 work = Path(tempfile.mkdtemp(prefix="lmc_bk_"))

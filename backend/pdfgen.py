@@ -17,7 +17,7 @@ def document_pdf(d, client, s):
     w, h = A4
     c.setFillColor(colors.HexColor("#0a0a0a"))
     c.rect(0, h - 45 * mm, w, 45 * mm, fill=1, stroke=0)
-    logo = ROOT / "logo" / "logo.png"
+    logo = ROOT / "logo" / "lmcs-logo-documenti.png"   # bianco, ritagliato: sta sulla fascia nera
     if logo.exists():
         c.drawImage(str(logo), 15 * mm, h - 42 * mm, width=70 * mm, height=39 * mm, preserveAspectRatio=True, mask="auto")
     c.setFillColor(colors.white)
