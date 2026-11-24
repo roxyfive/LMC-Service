@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}{% block title %}Agenda{% endblock %}{% block body %}
+<h1>Agenda</h1>
+<div class="agenda-grid">
+<section class="panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.6rem">
+    <a class="btn s g" href="/admin/agenda?m={{ prev_m }}" aria-label="Mese precedente">‹</a>
+    <h2 style="margin:0;text-transform:capitalize">{{ mese }} {{ y }}</h2>
+    <a class="btn s g" href="/admin/agenda?m={{ next_m }}" aria-label="Mese successivo">›</a></div>
+  <div class="cal" role="grid" aria-label="Calendario di {{ mese }} {{ y }}">
+    {% for g in giorni %}<div class="dow">{{ g }}</div>{% endfor %}
+    {% for row in cells %}{% for c in row %}<a class="d {{ c.state }}{{ ' out' if not c.in_month }}{{ ' past' if c.past }}{{ ' today' if c.today }}{{ ' sel' if c.date == sel }}" href="/admin/agenda?m={{ c.date[:7] }}&d={{ c.date }}"
+      aria-label="{{ c.date|dmy }}: {{ {'libero':'libero','impegnato':'impegnato','attesa':'da confermare','chiuso':'bloccato','off':'non lavorativo'}[c.state] }}"><b>{{ c.day }}</b>{% if c.n or c.note %}<small>{% if c.n %}{{ c.n }} impegn{{ 'o' if c.n==1 else 'i' }}{% endif %}{% if c.note %} 📝{% endif %}</small>{% endif %}</a>{% endfor %}{% endfor %}
+  </div>
+  <div class="legend"><span><i style="background:#102a1b;border:1px solid #1e6b42"></i>Libero</span><span><i style="background:#3a1214;border:1px solid #e11d14"></i>Impegnato</span><span><i style="background:#3a2a0b;border:1px solid #a8760f"></i>Da confermare</span><span><i style="background:#2a2a31;border:1px solid #4a4a55"></i>Bloccato</span><span><i style="background:#16161c;border:1px solid #2e2e37"></i>Non lavorativo</span></div>
+</section>
+
+<section class="panel" id="giorno">
+  <h2 style="margin-top:0">{{ day.date|dmy }}</h2>
+  {% if day.closure %}<div class="flash warn">Giorno <b>bloccato</b>{% if day.closure.note %}: {{ day.closure.note }}{% endif %} — i clienti non possono prenotare.</div>{% endif %}
+  {% for a in day.apps %}<div class="item"><div class="row"><b class="num">{{ a.slot_time }}</b> <b>{{ a.name }}</b> <span class="badge {{ 'ok' if a.status in ('confermato','completato') else 'w' }}">{{ a.status }}</span></div>
+    <div class="mut">{{ a.phone }} · {{ a.event_type }} {{ a.event_date|dmy }}{% if a.notes %}<br>{{ a.notes }}{% endif %}</div>
+    <form method="post" action="/admin/agenda/azione" class="row" style="margin-top:.45rem"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="date" value="{{ day.date }}"><input type="hidden" name="id" value="{{ a.id }}">
+      {% if a.status != 'confermato' %}<button class="btn s" name="act" value="conferma">Conferma</button>{% endif %}<button class="btn s d" name="act" value="annulla" data-confirm="Annullare l'appuntamento? Il cliente riceve un'email.">Annulla</button>
+      <button class="btn s g" formaction="/admin/richieste/appuntamento/{{ a.id }}/whatsapp" formmethod="post">WhatsApp</button>
+      {% if is_admin %}<a class="btn s o" href="/admin/fatture/nuova?da=appt:{{ a.id }}">Fattura</a>{% endif %}</form></div>
+  {% endfor %}
+  {% for e in day.evs %}<div class="item"><div class="row"><b>{{ e.title }}</b> <span class="badge b">evento</span> <span class="badge">{{ e.status }}</span></div>
+    <div class="mut">{{ e.place }} {% if e.client %}· {{ e.client }}{% endif %}</div><a class="btn s g" href="/admin/m/eventi/{{ e.id }}">Apri scheda</a></div>{% endfor %}
+  {% for r in day.quotes %}<div class="item"><div class="row"><b>{{ r.name }}</b> <span class="badge w">richiesta preventivo</span></div><div class="mut">{{ r.event_type }} · {{ r.place }} · {{ r.services }}</div></div>{% endfor %}
+  {% if not (day.apps or day.evs or day.quotes) %}<p class="mut">Nessun impegno.{% if day.free %} Orari liberi per i clienti: <b class="num">{{ day.free|join(', ') }}</b>.{% endif %}</p>{% endif %}
+
+  <h3>Azioni rapide</h3>
+  <form method="post" action="/admin/agenda/azione" class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="date" value="{{ day.date }}">
+    {% if day.closure %}<button class="btn s g" name="act" value="sblocca">Sblocca il giorno</button>
+    {% else %}<input name="note" placeholder="Motivo (es. ferie, evento privato)" style="flex:1;min-width:160px"><button class="btn s" name="act" value="blocca">Blocca il giorno</button>{% endif %}</form>
+  <form method="post" action="/admin/agenda/nota"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="date" value="{{ day.date }}">
+    <label>Note del giorno<textarea name="note" rows="3" placeholder="Promemoria interni: carico furgone, referente in sala…">{{ day.note.note if day.note else '' }}</textarea></label>
+    <button class="btn s g" style="margin-top:.5rem">Salva nota</button>{% if day.note and day.note.user %}<small class="mut">ultima modifica di {{ day.note.user }}</small>{% endif %}</form>
+  {% if is_admin %}<p><a class="btn s o" href="/admin/disponibilita">Orari e giorni di chiusura ricorrenti →</a></p>{% endif %}
+</section>
+</div>
+{% endblock %}

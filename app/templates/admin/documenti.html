@@ -1,15 +1,23 @@
-{% extends "admin/base.html" %}{% block body %}
-<h1>Preventivi e fatture</h1>
-<form method="post" class="form" style="grid-template-columns:1fr 1fr"><input type="hidden" name="csrf" value="{{ csrf }}">
-<label>Tipo<select name="kind"><option value="preventivo">Preventivo</option><option value="fattura">Fattura</option></select></label>
-<label>Cliente<select name="client_id"><option value="">—</option>{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
-<label style="grid-column:1/-1">Voci (una per riga: descrizione;quantità;prezzo)<textarea name="items" rows="5" placeholder="Impianto audio 2 casse;1;350&#10;Luci scenografiche;1;200"></textarea></label>
-<label style="grid-column:1/-1">Note<input name="notes"></label>
-<button class="btn">Crea documento</button></form>
-<div class="scroll"><table><tr><th>N.</th><th>Tipo</th><th>Cliente</th><th>Data</th><th>Totale</th><th>Stato</th><th></th></tr>
-{% for d in docs %}<tr><td>{{ d.number }}</td><td>{{ d.kind }}</td><td>{{ d.client or '—' }}</td><td>{{ d.date }}</td><td>€ {{ '%.2f'|format(d.total) }}</td>
-<td><form method="post" action="/admin/documenti/{{ d.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}"><select name="stato">{% for s in ['bozza','inviato','pagato','annullato'] %}<option {{ 'selected' if s==d.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s g">OK</button></form></td>
-<td><a class="btn s" href="/admin/documenti/{{ d.id }}.pdf" target="_blank">PDF</a>
-<form method="post" action="/admin/documenti/{{ d.id }}/elimina" style="display:inline" onsubmit="return confirm('Eliminare?')"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d">✕</button></form></td></tr>
-{% else %}<tr><td colspan="7" class="mut">Nessun documento.</td></tr>{% endfor %}</table></div>
+{% extends "admin/base.html" %}{% from "admin/_macros.html" import righe, stato_badge %}{% block title %}Preventivi{% endblock %}{% block body %}
+<h1>Preventivi</h1>
+<section class="panel" id="nuovo"><h2 style="margin-top:0">Nuovo preventivo{% if prefill %} per {{ prefill.quote.name }}{% endif %}</h2>
+<form method="post">
+<input type="hidden" name="csrf" value="{{ csrf }}">
+<div class="form" style="margin:0 0 .8rem"><label>Cliente<select name="client_id"><option value="">—</option>{% for c in clients %}<option value="{{ c.id }}" {{ 'selected' if prefill and prefill.client_id==c.id }}>{{ c.name }}</option>{% endfor %}</select></label>
+<label class="full">Note per il cliente<input name="notes" value="{{ (prefill.quote.event_type ~ ' del ' ~ (prefill.quote.event_date|dmy) ~ ' – ' ~ prefill.quote.place) if prefill else '' }}"></label></div>
+{{ righe(prefill.lines if prefill else [{'desc':'','qty':1,'price':0}], tariffe) }}
+<div class="totbox"><div><span>Totale (IVA esclusa)</span><b class="num">€ <span id="t_imp">0,00</span></b></div></div>
+<p><button class="btn">Crea preventivo</button></p></form></section>
+
+<h2>Elenco</h2>
+<div class="scroll"><table><tr><th>N.</th><th>Cliente</th><th>Data</th><th class="r">Totale</th><th>Acconti</th><th>Stato</th><th>Azioni</th></tr>
+{% for d in docs %}<tr id="d{{ d.id }}"><td class="nw"><b>{{ d.number }}</b></td><td>{{ d.client or '—' }}</td><td class="nw num">{{ d.date|dmy }}</td><td class="r nw num">€ {{ d.total|eur }}</td>
+<td>{% if d.paid %}<span class="num">€ {{ d.paid|eur }}</span> {{ stato_badge(d.acc) }}{% else %}<span class="mut">nessuno</span>{% endif %}</td>
+<td><form method="post" action="/admin/documenti/{{ d.id }}/stato" style="display:flex;gap:.3rem"><input type="hidden" name="csrf" value="{{ csrf }}"><select name="stato" aria-label="Stato">{% for s in stati %}<option {{ 'selected' if s==d.status }}>{{ s }}</option>{% endfor %}</select><button class="btn s">OK</button></form></td>
+<td class="nw"><a class="btn s" href="/admin/documenti/{{ d.id }}.pdf" target="_blank">PDF</a>
+<a class="btn s o" href="/admin/acconti?doc={{ d.id }}#nuovo">+ Acconto</a>
+{% if d.invoiced %}<a class="btn s g" href="/admin/fatture?q={{ d.invoiced.number }}">{{ d.invoiced.number }}</a>{% else %}<a class="btn s g" href="/admin/fatture/nuova?da=doc:{{ d.id }}">→ Fattura</a>{% endif %}
+<form method="post" action="/admin/documenti/{{ d.id }}/elimina" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d" data-confirm="Eliminare il preventivo?">✕</button></form></td></tr>
+{% else %}<tr><td colspan="7" class="mut">Nessun preventivo.</td></tr>{% endfor %}</table></div>
+<p class="mut">Flusso: richiesta → <b>preventivo</b> → conferma → <b>fattura</b> → <b>acconti</b> → saldato. Dal preventivo accettato crei la fattura con un clic.</p>
 {% endblock %}

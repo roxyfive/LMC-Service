@@ -2,14 +2,15 @@ import os
 import re
 import json
 import secrets
+import sqlite3
 import urllib.parse
 from datetime import date, datetime, timedelta
 from flask import (Blueprint, render_template, request, jsonify, send_from_directory, abort,
-                   Response, url_for, session)
+                   Response, url_for)
 from .db import q, ex, get_setting, all_settings
 from .config import UPLOADS, CATEGORIES
-from .security import check_csrf, csrf_token
-from .mailer import send_mail
+from .security import check_csrf, csrf_token, current_user
+from .mailer import send_mail, send_cliente
 from . import ai
 from . import vetrina
 from . import notify, metrics
@@ -17,7 +18,8 @@ from . import notify, metrics
 bp = Blueprint("pub", __name__)
 FILE_RE = re.compile(r"^[0-9a-f]{32}(_\d+)?\.(webp|mp4|webm)$")
 EVENT_TYPES = ["Matrimonio", "Festa privata", "Evento aziendale / Meeting", "Concerto / Show", "Discoteca / Locale", "Altro"]
-SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Videosorveglianza", "Progettazione"]
+PRIVACY_AGGIORNATA = "2 novembre 2026"   # da aggiornare a ogni modifica sostanziale di informativa privacy/accessibilità
+SERVICES = ["Audio", "Luci", "Video", "Allestimenti", "Progettazione"]
 
 
 def _clean(v, n=300):
@@ -82,17 +84,21 @@ def index():
     intro = [m for m in media if m["show_intro"] and m["kind"] == "image"] or home[:6]
     videos = [m for m in media if m["kind"] == "video"]
     hero = next((m for m in media if m["featured"] and m["kind"] == "image"), None)
-    reviews = q("SELECT * FROM reviews WHERE hidden=0 ORDER BY id DESC")
+    reviews = q("SELECT * FROM reviews WHERE hidden=0 AND status='approvata' ORDER BY id DESC")
     s["team"] = q("SELECT * FROM team WHERE visible='si' ORDER BY sort, id")
-    used = {m["category"] for m in gallery}
     v = vetrina.build(media)
+    # una foto compare UNA sola volta nella home: quelle già usate come immagine di una card «skill» non si ripetono in galleria
+    taken = v["skill_ids"] | {m["id"] for m in v["hero_slides"]}
+    rest = [m for m in gallery if m["id"] not in taken]
+    gallery = rest if len(rest) >= 4 else gallery          # con pochissime foto la galleria non si svuota
+    used = {m["category"] for m in gallery}
     v["stats"] = vetrina.stats(s, os.getenv("APP_MODE", "demo") == "demo")
     on, number, hours = _emergency_cfg()
     emg = dict(on=bool(on and notify.normalize_number(number)), number=notify.normalize_number(number), open_now=_open_now(hours), hours=hours)
     return render_template("index.html", emg=emg, s=s, gallery=gallery, home=home, intro=intro, videos=videos, v=v,
                            hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
                            has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
-                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"))
+                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"), mesi=__import__("backend.retention", fromlist=["mesi"]).mesi())
 
 
 @bp.route("/media/<name>")
@@ -101,7 +107,7 @@ def media_file(name):
         abort(404)
     base = name.split(".")[0].split("_")[0]
     row = q("SELECT hidden FROM media WHERE filename=?", (base,), one=True)
-    if not row or (row["hidden"] and not session.get("admin")):
+    if not row or (row["hidden"] and not bool(current_user())):
         abort(404)
     resp = send_from_directory(UPLOADS, name)
     resp.headers["Cache-Control"] = "public, max-age=604800"
@@ -116,6 +122,8 @@ def api_slots():
 @bp.route("/api/appuntamento", methods=["POST"])
 def api_appuntamento():
     check_csrf()
+    if not notify.rate_ok(f"app:{request.remote_addr or '?'}", 8, 600):     # anti-spam: non riempire l'agenda di richieste finte
+        return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
     if not name or not _valid_phone(phone) or not _valid_email(email):
@@ -126,12 +134,15 @@ def api_appuntamento():
     if hh not in free_slots(day):
         return jsonify(error="Questo orario non è più disponibile. Scegline un altro."), 409
     token = secrets.token_urlsafe(16)
-    ex("""INSERT INTO appointments(token,name,phone,email,event_type,event_date,notes,slot_date,slot_time,consent)
-          VALUES(?,?,?,?,?,?,?,?,?,1)""",
-       (token, name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
-        _clean(d.get("notes"), 800), day, hh))
+    try:
+        ex("""INSERT INTO appointments(token,name,phone,email,event_type,event_date,notes,slot_date,slot_time,consent)
+              VALUES(?,?,?,?,?,?,?,?,?,1)""",
+           (token, name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
+            _clean(d.get("notes"), 800), day, hh))
+    except sqlite3.IntegrityError:      # due clienti hanno scelto lo stesso orario nello stesso istante
+        return jsonify(error="Questo orario non è più disponibile. Scegline un altro."), 409
     link = request.host_url.rstrip("/") + url_for("pub.manage", token=token)
-    send_mail(email, "Appuntamento ricevuto – LMC Service",
+    send_cliente(email, "Appuntamento ricevuto – LMC Service",
               f"Ciao {name},\nabbiamo ricevuto la tua richiesta per il {day} alle {hh}.\n"
               f"Il titolare la confermerà a breve.\nModifica o annulla qui: {link}\n\nLMC Service")
     _notify_request(f"📅 Nuova richiesta di appuntamento dal sito\n{name} – {phone}\n{day} alle {hh}\nEvento: {d.get('event_type')} il {d.get('event_date')}")
@@ -170,6 +181,8 @@ def manage(token):
 @bp.route("/api/preventivo", methods=["POST"])
 def api_preventivo():
     check_csrf()
+    if not notify.rate_ok(f"prev:{request.remote_addr or '?'}", 8, 600):
+        return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
     if not name or not _valid_phone(phone) or not _valid_email(email):
@@ -181,7 +194,7 @@ def api_preventivo():
           VALUES(?,?,?,?,?,?,?,?,?,1)""",
        (name, phone, email, _clean(d.get("event_type"), 60), _clean(d.get("event_date"), 10),
         _clean(d.get("place"), 120), _clean(d.get("guests"), 10), services, _clean(d.get("notes"), 800)))
-    send_mail(email, "Richiesta preventivo ricevuta – LMC Service",
+    send_cliente(email, "Richiesta preventivo ricevuta – LMC Service",
               f"Ciao {name},\nabbiamo ricevuto la tua richiesta di preventivo. Ti risponderemo al più presto.\n\nLMC Service")
     _notify_request(f"🆕 Nuovo preventivo dal sito\n{name} – {phone}\n{d.get('event_type')} il {d.get('event_date')} a {d.get('place')}, {d.get('guests')} ospiti\nServizi: {services}")
     send_mail(os.getenv("OWNER_EMAIL"), f"Nuovo preventivo: {name}",
@@ -227,7 +240,7 @@ def api_config():
     on, number, hours = _emergency_cfg()
     num = notify.normalize_number(number)
     r = jsonify(
-        wa_ready=notify.twilio_ready(), admin=bool(session.get("admin")),
+        wa_ready=notify.twilio_ready(), admin=bool(current_user()),
         vapi=dict(enabled=notify.vapi_ready(), public_key=notify.cfg("vapi_public_key"), assistant_id=notify.cfg("vapi_assistant_id"),
                   emergency_assistant_id=notify.cfg("vapi_emergency_assistant_id")),
         suggestions=ai.suggestions(),
@@ -332,6 +345,18 @@ def webhook_vapi():
     return jsonify(ok=True)
 
 
+@bp.route("/api/tariffe")
+def api_tariffe():
+    """Stima indicativa per il configuratore: solo se il titolare l'ha attivata e solo voci marcate «sul sito» con un prezzo > 0 (nessun segreto)."""
+    out = {}
+    if get_setting("tariffe_pubbliche", "0") == "1":
+        for t in q("SELECT service, MIN(price) p FROM tariffe WHERE active=1 AND public=1 AND price>0 AND service!='' AND unit!='al mq' GROUP BY service"):
+            out[t["service"]] = round(t["p"])
+    r = jsonify(enabled=bool(out), prices=out)
+    r.headers["Cache-Control"] = "no-store"
+    return r
+
+
 @bp.route("/api/csrf")
 def api_csrf():
     """Token fresco: serve alle pagine rimaste aperte o in cache oltre la durata della sessione."""
@@ -343,6 +368,8 @@ def api_csrf():
 @bp.route("/api/chat", methods=["POST"])
 def api_chat():
     check_csrf()
+    if not notify.rate_ok(f"chat:{request.remote_addr or '?'}", 40, 600):      # l'assistente può costare (AI esterna): niente raffiche
+        return jsonify(reply="Stai scrivendo molto velocemente: aspetta qualche minuto, oppure chiamaci o scrivici su WhatsApp.", action=None), 429
     d = request.get_json(silent=True) or {}
     msgs = [{"role": "assistant" if m.get("role") == "assistant" else "user", "content": _clean(m.get("content"), 500)}
             for m in (d.get("messages") or [])[-10:] if m.get("content")]
@@ -361,7 +388,14 @@ def privacy():
     s = dict(ctx())
     # i segnaposto "[DA COMPLETARE ...]" non devono mai comparire al pubblico: si completano da Admin > Testi
     s["privacy"] = re.sub(r"\s*\[DA COMPLETARE[^\]]*\]", "", s.get("privacy", "") or "")
-    return render_template("privacy.html", s=s, demo=(os.getenv("APP_MODE", "demo") == "demo"))
+    from . import retention
+    return render_template("privacy.html", s=s, demo=(os.getenv("APP_MODE", "demo") == "demo"), aggiornata=PRIVACY_AGGIORNATA,
+                           mesi=retention.mesi(), mesi_log=retention.MESI_LOG, mesi_stat=retention.MESI_STAT)
+
+
+@bp.route("/accessibilita")
+def accessibilita():
+    return render_template("accessibilita.html", s=dict(ctx()), aggiornata=PRIVACY_AGGIORNATA)
 
 
 @bp.route("/robots.txt")
@@ -373,7 +407,7 @@ def robots():
 def sitemap():
     base = request.host_url.rstrip("/")
     xml = ('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-           f'<url><loc>{base}/</loc></url><url><loc>{base}/privacy</loc></url></urlset>')
+           f'<url><loc>{base}/</loc></url><url><loc>{base}/privacy</loc></url><url><loc>{base}/accessibilita</loc></url></urlset>')
     return Response(xml, mimetype="application/xml")
 
 
@@ -382,13 +416,15 @@ def manifest():
     return jsonify({
         "name": "La Music Company Service", "short_name": "LMC Service", "lang": "it",
         "start_url": "/", "scope": "/", "display": "standalone",
-        "background_color": "#ffffff", "theme_color": "#0e1a30",
+        "background_color": "#16161c", "theme_color": "#16161c",
         "shortcuts": [
             {"name": "Richiedi un preventivo", "short_name": "Preventivo", "url": "/#preventivo", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},
             {"name": "Emergenza 24h", "short_name": "Emergenza", "url": "/?sos=1", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]},
             {"name": "Prenota un appuntamento", "short_name": "Prenota", "url": "/#prenota", "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192"}]}],
-        "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-                  {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]})
+        "icons": [{"src": "/static/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                  {"src": "/static/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+                  {"src": "/static/img/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
+                  {"src": "/static/img/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}]})
 
 
 @bp.route("/sw.js")

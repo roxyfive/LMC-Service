@@ -4,7 +4,7 @@ Idempotenza: ogni invio "prenota" una riga in report_log (chiave UNIQUE, es. dai
 gunicorn, o con cron + thread, vince il primo: nessun doppio invio. Se l'invio fallisce si ritenta (max 3 volte, ogni 30 minuti).
 """
 import sqlite3
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from .db import q, ex, get_db, get_setting
 from . import notify, metrics

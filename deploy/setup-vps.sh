@@ -8,7 +8,10 @@
 set -Eeuo pipefail
 DOMAIN="${1:-}"; EMAIL="${2:-}"
 [ "$(id -u)" = "0" ] || { echo "Lancialo come root (sudo -i)."; exit 1; }
-[ -n "$DOMAIN" ] && [ -n "$EMAIL" ] || { echo "Uso: bash $0 DOMINIO EMAIL   (es. bash $0 www.lmcservice.it pasquale@email.it)"; exit 1; }
+[ -n "$DOMAIN" ] || { echo "Uso: bash $0 DOMINIO EMAIL   (es. bash $0 www.lmcservice.it pasquale@email.it)"; echo "     oppure, senza dominio ancora:  bash $0 IP_DELLA_VPS   (sito in HTTP; il dominio si collega dopo con deploy/collega-dominio.sh)"; exit 1; }
+# se al posto del dominio c'è un indirizzo IP: installazione senza HTTPS (Let's Encrypt non emette certificati per un IP)
+IPMODE=0; echo "$DOMAIN" | grep -Eq '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' && IPMODE=1
+[ "$IPMODE" = "1" ] || [ -n "$EMAIL" ] || { echo "Per il dominio serve anche l'email per il certificato HTTPS:  bash $0 $DOMAIN tua@email.it"; exit 1; }
 APP=/srv/lmc
 [ -f "$APP/run.py" ] || { echo "Non trovo $APP/run.py: copia prima il progetto in $APP."; exit 1; }
 
@@ -34,7 +37,8 @@ if [ ! -f "$APP/.env" ]; then
   SK="$(python3 -c 'import secrets;print(secrets.token_hex(32))')"
   FIRST_PASS="$(python3 -c 'import secrets;print(secrets.token_urlsafe(12))')"
   sed -i "s|^SECRET_KEY=.*|SECRET_KEY=$SK|; s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=$FIRST_PASS|; s|^PORT=.*|PORT=8010|" "$APP/.env"
-  grep -q '^OWNER_EMAIL=' "$APP/.env" && sed -i "s|^OWNER_EMAIL=.*|OWNER_EMAIL=$EMAIL|" "$APP/.env"
+  [ -n "$EMAIL" ] && sed -i "s|^OWNER_EMAIL=.*|OWNER_EMAIL=$EMAIL|" "$APP/.env"
+  [ "$IPMODE" = "1" ] && sed -i "s|^COOKIE_SECURE=.*|COOKIE_SECURE=0|" "$APP/.env"
 else
   echo "   .env già presente: non lo tocco."
 fi
@@ -53,14 +57,16 @@ chown lmc:lmc "$APP/.env"; chmod 600 "$APP/.env"
 
 echo "== 6/8 Nginx"
 cp "$APP/deploy/lmc-proxy.conf" /etc/nginx/lmc-proxy.conf
-sed "s/DOMINIO/$DOMAIN/g" "$APP/deploy/nginx-lmc.conf" > /etc/nginx/sites-available/lmc
+if [ "$IPMODE" = "1" ]; then sed "s/DOMINIO/_/g" "$APP/deploy/nginx-lmc.conf" > /etc/nginx/sites-available/lmc; else sed "s/DOMINIO/$DOMAIN/g" "$APP/deploy/nginx-lmc.conf" > /etc/nginx/sites-available/lmc; fi
 ln -sf /etc/nginx/sites-available/lmc /etc/nginx/sites-enabled/lmc
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
 
 echo "== 7/8 Certificato HTTPS (Let's Encrypt)"
-if certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$EMAIL" --redirect; then
+if [ "$IPMODE" = "1" ]; then
+  echo "   Installazione con IP: HTTPS saltato. Quando hai il dominio:  bash $APP/deploy/collega-dominio.sh DOMINIO EMAIL"
+elif certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$EMAIL" --redirect; then
   echo "   HTTPS attivo."
 else
   echo "   ATTENZIONE: certbot non è riuscito (il DNS del dominio punta già a questa VPS? porte 80/443 aperte nel firewall IONOS?)."
@@ -74,10 +80,19 @@ chmod +x "$APP"/deploy/*.sh
 [ -f "$APP/deploy/lmc-backup.conf" ] || cp "$APP/deploy/lmc-backup.conf.example" "$APP/deploy/lmc-backup.conf"
 chown root:root "$APP/deploy/lmc-backup.conf"; chmod 600 "$APP/deploy/lmc-backup.conf"
 cp "$APP/deploy/lmc-backup.cron" /etc/cron.d/lmc-backup
+GUARD=/usr/local/bin/lexpro-backup-guard.sh
+if [ -x "$GUARD" ]; then
+  # server con il sistema di backup condiviso: LMC passa dal guard come gli altri progetti (avviso email se esce con codice ≠ 0)
+  sed -i "s|^20 3 \* \* \* root /srv/lmc/deploy/backup.sh .*|20 3 * * * root $GUARD \"LMC Service (Flask + foto/video)\" $APP/deploy/backup.sh >> /var/log/backup-lmc.log 2>\&1|" /etc/cron.d/lmc-backup
+  grep -q '^VIA_GUARD=' "$APP/deploy/lmc-backup.conf" && sed -i 's/^VIA_GUARD=.*/VIA_GUARD=1/' "$APP/deploy/lmc-backup.conf"
+fi
+# se la riga di backup di LMC sta già nel crontab di root (come gli altri progetti) non si duplica qui
+if crontab -l 2>/dev/null | grep -qF 'LMC Service (Flask + foto/video)'; then sed -i '/deploy\/backup\.sh/d' /etc/cron.d/lmc-backup; fi
 chmod 644 /etc/cron.d/lmc-backup
-mkdir -p /var/backups/lmc && chmod 700 /var/backups/lmc
+BKDIR="$(grep -s '^BACKUP_DIR=' "$APP/deploy/lmc-backup.conf" | tail -1 | cut -d= -f2)"; BKDIR="${BKDIR:-/root/backups_lmc}"
+mkdir -p "$BKDIR" && chmod 700 "$BKDIR"
 cat > /etc/logrotate.d/lmc-backup <<'LR'
-/var/log/lmc-backup.log {
+/var/log/lmc-backup.log /var/log/backup-lmc.log {
     monthly
     rotate 6
     compress
@@ -90,7 +105,10 @@ systemctl restart lmc
 
 echo
 echo "=========================== FATTO ==========================="
-echo "Sito:   https://$DOMAIN        Admin: https://$DOMAIN/admin        Controllo: https://$DOMAIN/health"
+if [ "$IPMODE" = "1" ]; then SCHEMA=http; else SCHEMA=https; fi
+echo "Sito:   $SCHEMA://$DOMAIN        Admin: $SCHEMA://$DOMAIN/admin        Controllo: $SCHEMA://$DOMAIN/health"
+[ "$IPMODE" = "1" ] && echo "(in HTTP microfono e installazione come app non funzionano: collega il dominio appena possibile)"
+echo "Controllo completo:  bash $APP/deploy/verifica-online.sh $SCHEMA://$DOMAIN"
 if [ -n "$FIRST_PASS" ]; then
   echo "Utente admin: admin    Password INIZIALE: $FIRST_PASS   (annotala ORA; cambiala subito da Admin > Cambia password)"
 fi
@@ -98,6 +116,6 @@ if [ "${NEWPASS:-0}" = "1" ]; then
   echo "Password di cifratura dei backup (.env cifrato): $(cat /root/.lmc-backup-pass)"
   echo "  -> copiala in un posto sicuro FUORI dal VPS (gestore password): senza non si recupera il .env dai backup."
 fi
-echo "Backup notturno: ogni giorno alle 03:30 in /var/backups/lmc (7 giorni, tutto cifrato). Controllo alle 08:00: se manca un backup arriva un avviso."
+echo "Backup notturno: ogni giorno alle 03:20 in ${BKDIR} (14 giorni, tutto cifrato). Controllo alle 08:00: se manca un backup arriva un avviso."
 echo "Copia su IONOS Object Storage: NON ancora attiva. Compila le chiavi in $APP/deploy/lmc-backup.conf (guida: docs/DEPLOY.md, Parte 4.3)."
 echo "Stato dei backup in qualsiasi momento:  sudo $APP/deploy/backup-status.sh"

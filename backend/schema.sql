@@ -29,3 +29,16 @@ CREATE INDEX IF NOT EXISTS ev_day_kind ON stats_events(day, kind);
 CREATE TABLE IF NOT EXISTS report_log(id INTEGER PRIMARY KEY, key TEXT UNIQUE, kind TEXT, sent_at TEXT DEFAULT CURRENT_TIMESTAMP, ok INTEGER DEFAULT 0, tries INTEGER DEFAULT 0, detail TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS wa_log(id INTEGER PRIMARY KEY, ts TEXT DEFAULT CURRENT_TIMESTAMP, to_num TEXT, kind TEXT, ok INTEGER, detail TEXT);
 CREATE TABLE IF NOT EXISTS secrets(key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS audit_log(id INTEGER PRIMARY KEY, ts TEXT DEFAULT CURRENT_TIMESTAMP, user_id INTEGER, username TEXT DEFAULT '', role TEXT DEFAULT '', action TEXT, detail TEXT DEFAULT '', ip TEXT DEFAULT '');
+CREATE INDEX IF NOT EXISTS audit_ts ON audit_log(ts);
+CREATE TABLE IF NOT EXISTS invoices(id INTEGER PRIMARY KEY, number TEXT, year INTEGER, seq INTEGER, client_id INTEGER, client_name TEXT DEFAULT '', client_addr TEXT DEFAULT '',
+ client_piva TEXT DEFAULT '', client_cf TEXT DEFAULT '', client_sdi TEXT DEFAULT '', client_pec TEXT DEFAULT '', issue_date TEXT, due_date TEXT, status TEXT DEFAULT 'bozza',
+ items TEXT DEFAULT '[]', imponibile REAL DEFAULT 0, iva_pct REAL DEFAULT 22, iva REAL DEFAULT 0, total REAL DEFAULT 0, notes TEXT DEFAULT '',
+ source_type TEXT DEFAULT '', source_id INTEGER, event_id INTEGER, sdi_status TEXT DEFAULT 'non inviata', sdi_note TEXT DEFAULT '', created TEXT DEFAULT CURRENT_TIMESTAMP, created_by TEXT DEFAULT '');
+CREATE UNIQUE INDEX IF NOT EXISTS ux_invoice_number ON invoices(number) WHERE number IS NOT NULL AND number != '';
+CREATE TABLE IF NOT EXISTS payments(id INTEGER PRIMARY KEY, date TEXT, amount REAL DEFAULT 0, method TEXT DEFAULT 'bonifico', note TEXT DEFAULT '',
+ invoice_id INTEGER, document_id INTEGER, event_id INTEGER, created TEXT DEFAULT CURRENT_TIMESTAMP, created_by TEXT DEFAULT '');
+CREATE INDEX IF NOT EXISTS pay_date ON payments(date);
+CREATE TABLE IF NOT EXISTS tariffe(id INTEGER PRIMARY KEY, name TEXT, category TEXT DEFAULT 'Altro', service TEXT DEFAULT '', unit TEXT DEFAULT 'a evento',
+ price REAL DEFAULT 0, note TEXT DEFAULT '', active INTEGER DEFAULT 1, public INTEGER DEFAULT 0, sort INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS day_notes(date TEXT PRIMARY KEY, note TEXT DEFAULT '', updated TEXT DEFAULT CURRENT_TIMESTAMP, user TEXT DEFAULT '');

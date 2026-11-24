@@ -7,7 +7,7 @@ import urllib.request
 from flask import render_template, request, redirect, url_for, flash
 
 from .admin import bp
-from .db import q, ex, get_setting, set_setting, set_secret
+from .db import q, get_setting, set_setting, set_secret
 from .security import admin_required
 from . import notify, reports, metrics
 

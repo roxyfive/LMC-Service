@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La tua recensione | {{ s.brand_short or s.brand }}</title><meta name="robots" content="noindex">
+<link rel="stylesheet" href="/static/css/site.css">
+<style>.starpick{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:.2rem}.starpick input{position:absolute;opacity:0}
+.starpick label{font-size:2.4rem;line-height:1;color:#ffffff33;cursor:pointer;padding:.1rem}.starpick input:checked~label,.starpick label:hover,.starpick label:hover~label{color:#ffb020}
+.starpick input:focus-visible+label{outline:2px solid #fff;outline-offset:2px}</style></head>
+<body><main class="page">
+<h1>Com'è andato il tuo evento?</h1>
+{% if done %}
+  <div class="card"><p><b>Grazie{% if r.author %}, {{ r.author }}{% endif %}!</b></p>
+  <p>{% if r.status == 'approvata' %}La tua recensione è pubblicata sul sito.{% elif r.status == 'rifiutata' %}Abbiamo ricevuto il tuo messaggio. Grazie per il tempo dedicato.{% else %}Abbiamo ricevuto la tua recensione: la leggeremo e la pubblicheremo a breve.{% endif %}</p></div>
+{% else %}
+  <p>{% if r.event %}Per <b>{{ r.event }}</b>: {% endif %}bastano 30 secondi. La leggiamo noi prima di pubblicarla.</p>
+  {% if msg %}<p class="msg err" role="alert">{{ msg }}</p>{% endif %}
+  <form method="post" class="form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <fieldset style="border:0;padding:0;margin:0"><legend>Il tuo voto</legend>
+      <div class="starpick">{% for n in [5,4,3,2,1] %}<input type="radio" id="s{{ n }}" name="stars" value="{{ n }}" {{ 'checked' if n==5 }}><label for="s{{ n }}" title="{{ n }} stelle">★<span class="sr" style="position:absolute;left:-999px">{{ n }} stelle</span></label>{% endfor %}</div></fieldset>
+    <label>Il tuo nome (come comparirà sul sito)<input name="author" value="{{ r.author or '' }}" maxlength="80" required></label>
+    <label>La tua recensione<textarea name="text" rows="5" maxlength="800" required placeholder="Com'è andato l'evento? Audio, luci, puntualità, professionalità…"></textarea></label>
+    <label class="chk"><input type="checkbox" name="consent" required> <span>Acconsento alla pubblicazione di questa recensione con il mio nome sul sito.</span></label>
+    <button class="btn btn-gold btn-lg" type="submit">Invia la recensione</button>
+  </form>
+{% endif %}
+<p><a href="/">← Torna al sito</a></p>
+</main></body></html>

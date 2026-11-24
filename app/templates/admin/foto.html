@@ -1,61 +1,76 @@
-{% extends "admin/base.html" %}{% block body %}
-<h1>Foto e video</h1>
+{% extends "admin/base.html" %}{% block title %}Galleria{% endblock %}{% block body %}
+<h1>Galleria eventi</h1>
+<p class="tabs"><a class="{{ 'on' if not flt }}" href="/admin/foto">Tutte ({{ cnt.tutte }})</a><a class="{{ 'on' if flt=='bozze' }}" href="/admin/foto?v=bozze">Nascoste ({{ cnt.bozze }})</a><a class="{{ 'on' if flt=='pubblicate' }}" href="/admin/foto?v=pubblicate">Pubblicate ({{ cnt.pubblicate }})</a></p>
 <div class="drop" id="drop">
-  <p><b>Trascina qui foto e video</b> oppure scegli dal telefono/computer (anche più file insieme).<br>
-  <span class="mut">Immagini jpg/png/webp max 12 MB · Video mp4/webm max 60 MB · ottimizzazione automatica</span></p>
-  <form id="upForm" method="post" action="/admin/foto/upload" enctype="multipart/form-data">
+  <p><b>Carica foto e video di un evento</b> — partono <b>nascosti</b>: li pubblichi quando vuoi.<br>
+  <span class="mut">Immagini jpg/png/webp max 12 MB · Video mp4/webm max 60 MB · ottimizzazione automatica · puoi trascinare i file qui</span></p>
+  <form id="upForm" method="post" action="/admin/foto/upload" enctype="multipart/form-data" class="upform">
     <input type="hidden" name="csrf" value="{{ csrf }}">
-    <select name="category">{% for c in cats %}<option>{{ c }}</option>{% endfor %}</select>
-    <input id="files" type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm">
-    <button class="btn">Carica</button>
+    <label class="full">Didascalia (obbligatoria)<input name="caption" required maxlength="300" placeholder="es. Matrimonio al Castello: palco e luci scenografiche"></label>
+    <label>Tipo di evento<select name="event_type"><option value="">—</option>{% for t in event_types %}<option>{{ t }}</option>{% endfor %}</select></label>
+    <label>Data dell'evento<input type="date" name="event_date"></label>
+    <label>Categoria sul sito<select name="category">{% for c in cats %}<option>{{ c }}</option>{% endfor %}</select></label>
+    {% if is_admin %}<label>Evento collegato<select name="event_id"><option value="">—</option>{% for e in events %}<option value="{{ e.id }}">{{ e.date|dmy }} · {{ e.title }}</option>{% endfor %}</select></label>
+    <label>Fattura collegata<select name="invoice_id"><option value="">—</option>{% for i in invoices %}<option value="{{ i.id }}">{{ i.number }} · {{ i.client_name }}</option>{% endfor %}</select></label>{% else %}
+    <label>Evento collegato<select name="event_id"><option value="">—</option>{% for e in events %}<option value="{{ e.id }}">{{ e.date|dmy }} · {{ e.title }}</option>{% endfor %}</select></label>{% endif %}
+    <label class="full"><input id="files" type="file" name="files" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm" required></label>
+    <button class="btn">Carica (nascoste)</button>
   </form>
   <p id="upMsg"></p>
 </div>
-<form method="post" action="/admin/foto/sincronizza"><input type="hidden" name="csrf" value="{{ csrf }}">
-  <button class="btn s">Sincronizza cartella foto/organizzate</button>
-  <span class="mut">importa le foto/video messi in hero, galleria, installazioni, video</span></form>
-<p class="mut">Trascina le card per riordinare. Il badge <b>SEGNAPOSTO</b> indica immagini generate: sostituiscile con foto vere.</p>
+{% if is_admin %}<form method="post" action="/admin/foto/sincronizza"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s g">Sincronizza cartella foto/organizzate</button> <span class="mut">importa le foto/video messi in hero, galleria, installazioni, video</span></form>{% endif %}
+<p class="mut">{% if is_admin %}Trascina le card per riordinare.{% else %}Le foto che carichi restano nascoste finché il titolare non le pubblica.{% endif %}</p>
 <div class="photos" id="photos">
 {% for m in items %}
-<form class="ph" id="m{{ m.id }}" data-id="{{ m.id }}" draggable="true" method="post" action="/admin/foto/{{ m.id }}">
+<form class="ph {{ 'draft' if m.hidden }}" id="m{{ m.id }}" data-id="{{ m.id }}" {% if is_admin %}draggable="true"{% endif %} method="post" action="/admin/foto/{{ m.id }}?v={{ flt }}">
   <input type="hidden" name="csrf" value="{{ csrf }}">
   {% if m.kind == 'image' %}<img loading="lazy" src="/media/{{ m.filename }}_480.webp" alt="{{ m.title }}">
   {% else %}<video src="/media/{{ m.filename }}.mp4" muted preload="metadata" controls></video>{% endif %}
-  {% if m.placeholder %}<span class="badge w">SEGNAPOSTO</span>{% endif %}{% if m.hidden %}<span class="badge no">nascosta</span>{% endif %}
+  <div>{% if m.hidden %}<span class="badge w">NASCOSTA</span>{% else %}<span class="badge ok">pubblicata</span>{% endif %}{% if m.uploaded_by %} <small class="mut">di {{ m.uploaded_by }}</small>{% endif %}</div>
   <input name="title" value="{{ m.title }}" placeholder="Titolo">
-  <input name="caption" value="{{ m.caption }}" placeholder="Didascalia">
-  <select name="category">{% for c in cats %}<option {{ 'selected' if c==m.category }}>{{ c }}</option>{% endfor %}</select>
+  <input name="caption" value="{{ m.caption }}" placeholder="Didascalia (obbligatoria)" required>
+  <select name="category" aria-label="Categoria">{% for c in cats %}<option {{ 'selected' if c==m.category }}>{{ c }}</option>{% endfor %}</select>
+  <select name="event_type" aria-label="Tipo di evento"><option value="">Tipo di evento…</option>{% for t in event_types %}<option {{ 'selected' if t==m.event_type }}>{{ t }}</option>{% endfor %}</select>
+  <input type="date" name="event_date" value="{{ m.event_date }}" aria-label="Data evento">
+  <select name="event_id" aria-label="Evento"><option value="">Evento collegato…</option>{% for e in events %}<option value="{{ e.id }}" {{ 'selected' if e.id==m.event_id }}>{{ e.date|dmy }} · {{ e.title }}</option>{% endfor %}</select>
+  {% if is_admin %}<select name="invoice_id" aria-label="Fattura"><option value="">Fattura collegata…</option>{% for i in invoices %}<option value="{{ i.id }}" {{ 'selected' if i.id==m.invoice_id }}>{{ i.number }} · {{ i.client_name }}</option>{% endfor %}</select>
   <div>
     <label class="chk"><input type="checkbox" name="show_home" {{ 'checked' if m.show_home }}> Home</label>
     <label class="chk"><input type="checkbox" name="show_gallery" {{ 'checked' if m.show_gallery }}> Galleria</label>
     <label class="chk"><input type="checkbox" name="show_intro" {{ 'checked' if m.show_intro }}> Intro</label>
     <label class="chk"><input type="checkbox" name="featured" {{ 'checked' if m.featured }}> Hero ★</label>
     <label class="chk"><input type="checkbox" name="hidden" {{ 'checked' if m.hidden }}> Nascondi</label>
-  </div>
-  <div><button class="btn s">Salva</button>
-  <button class="btn s d" formaction="/admin/foto/{{ m.id }}/elimina" onclick="return confirm('Eliminare definitivamente?')">Elimina</button></div>
+  </div>{% endif %}
+  <div style="display:flex;gap:.4rem;flex-wrap:wrap"><button class="btn s">Salva</button>
+  {% if is_admin %}<button class="btn s {{ 'o' if m.hidden else 'g' }}" formaction="/admin/foto/{{ m.id }}/pubblica">{{ 'Pubblica' if m.hidden else 'Nascondi' }}</button>
+  <button class="btn s d" formaction="/admin/foto/{{ m.id }}/elimina" data-confirm="Eliminare definitivamente?">Elimina</button>{% endif %}</div>
 </form>
-{% endfor %}
+{% else %}<p class="mut">Nessuna foto in questa vista.</p>{% endfor %}
 </div>
 <script>
 const CSRF=document.querySelector('meta[name=csrf]').content;
 const drop=document.getElementById('drop'),files=document.getElementById('files'),msg=document.getElementById('upMsg');
 ['dragover','dragenter'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add('over')}));
 ['dragleave','drop'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove('over')}));
+let dropped=null;
 async function send(fl){
-  const fd=new FormData(document.getElementById('upForm'));fd.delete('files');for(const f of fl)fd.append('files',f);
+  const form=document.getElementById('upForm');
+  if(!form.caption.value.trim()){msg.textContent='Scrivi prima la didascalia (obbligatoria).';form.caption.focus();return;}
+  const fd=new FormData(form);fd.delete('files');for(const f of fl)fd.append('files',f);
   msg.textContent='Caricamento in corso…';
   try{const r=await fetch('/admin/foto/upload',{method:'POST',body:fd,headers:{'X-CSRF-Token':CSRF,'X-Requested-With':'fetch'}});
-  const d=await r.json();msg.textContent=`Caricati: ${d.ok.length}. ${d.errors.join(' | ')}`;if(d.ok.length)setTimeout(()=>location.reload(),900);}
+  const d=await r.json();msg.textContent=`Caricati: ${d.ok.length}. ${d.errors.join(' | ')}`;if(d.ok.length)setTimeout(()=>location.href='/admin/foto?v=bozze',900);}
   catch(e){msg.textContent='Errore di rete';}
 }
 drop.addEventListener('drop',e=>{if(e.dataTransfer.files.length)send(e.dataTransfer.files)});
 document.getElementById('upForm').addEventListener('submit',e=>{e.preventDefault();if(files.files.length)send(files.files)});
+{% if is_admin %}
 let dragEl=null;const box=document.getElementById('photos');
 box.addEventListener('dragstart',e=>{dragEl=e.target.closest('.ph');dragEl&&dragEl.classList.add('drag')});
 box.addEventListener('dragend',async()=>{if(!dragEl)return;dragEl.classList.remove('drag');dragEl=null;
   const ids=[...box.querySelectorAll('.ph')].map(x=>x.dataset.id);
   await fetch('/admin/foto/riordina',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':CSRF},body:JSON.stringify({ids})});});
 box.addEventListener('dragover',e=>{e.preventDefault();const t=e.target.closest('.ph');if(t&&dragEl&&t!==dragEl){const r=t.getBoundingClientRect();box.insertBefore(dragEl,(e.clientY-r.top>r.height/2||e.clientX-r.left>r.width/2)?t.nextSibling:t);}});
+{% endif %}
 </script>
 {% endblock %}

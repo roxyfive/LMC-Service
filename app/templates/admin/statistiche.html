@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}{% block title %}Statistiche{% endblock %}{% block body %}
+<h1>Statistiche {{ y }}</h1>
+<p class="tabs">{% for yy in range(y|int, y|int - 4, -1) %}<a class="{{ 'on' if yy|string==y }}" href="/admin/statistiche?anno={{ yy }}">{{ yy }}</a>{% endfor %}<a href="/admin/statistiche?anno={{ y|int + 1 }}">{{ y|int + 1 }} →</a></p>
+<div class="cards"><div><b>€ {{ tot_anno|eur }}</b><span>incassato nel {{ y }}</span></div>
+<div><b>{{ funnel.totale }}</b><span>richieste ricevute ({{ funnel.preventivi }} preventivi + {{ funnel.appuntamenti }} appuntamenti)</span></div>
+<div><b>{{ funnel.confermati }}</b><span>confermate</span></div><div><b>{{ funnel.perc }}%</b><span>conversione richieste → confermate</span></div></div>
+<section class="panel"><h2 style="margin-top:0">Incassi per mese</h2>
+<div class="chart" role="img" aria-label="Incassi mensili del {{ y }}">{% for v in months %}<div><b>{{ '%d'|format(v) if v else '' }}</b><span class="bw"><i style="height:{{ (100 * v / mx)|round|int }}%"></i></span>{{ mesi[loop.index0] }}</div>{% endfor %}</div></section>
+<div class="grid2">
+<section class="panel"><h2 style="margin-top:0">Eventi per tipo</h2>
+{% for t, n in types %}<div class="hbar"><span>{{ t }}</span><i style="width:{{ (100 * n / types[0][1])|round|int }}%"></i><b class="num">{{ n }}</b></div>{% else %}<p class="mut">Nessun dato per il {{ y }}.</p>{% endfor %}
+<p class="mut">Eventi in calendario + appuntamenti confermati o completati.</p></section>
+<section class="panel"><h2 style="margin-top:0">Servizi più richiesti</h2>
+{% for s, n in svc %}<div class="hbar"><span>{{ s }}</span><i style="width:{{ (100 * n / svc[0][1])|round|int }}%"></i><b class="num">{{ n }}</b></div>{% else %}<p class="mut">Nessuna richiesta di preventivo nel {{ y }}.</p>{% endfor %}</section>
+<section class="panel"><h2 style="margin-top:0">Incassi per anno</h2>
+<div class="scroll"><table><tr><th>Anno</th><th class="r">Incassato</th></tr>{% for yy, s in years %}<tr><td>{{ yy }}</td><td class="r num">€ {{ s|eur }}</td></tr>{% else %}<tr><td colspan="2" class="mut">Nessun incasso registrato.</td></tr>{% endfor %}</table></div></section>
+<section class="panel"><h2 style="margin-top:0">Come hai incassato ({{ y }})</h2>
+{% for m in by_method %}<div class="hbar"><span>{{ m.method }}</span><i style="width:{{ (100 * m.s / by_method[0].s)|round|int }}%"></i><b class="num">€{{ '%d'|format(m.s) }}</b></div>{% else %}<p class="mut">Nessun incasso.</p>{% endfor %}</section>
+</div>
+<p class="mut">Conversione = (appuntamenti confermati/completati + preventivi con stato «confermata») ÷ tutte le richieste dell'anno. Imposta lo stato «confermata» sulla richiesta quando il cliente accetta.</p>
+{% endblock %}

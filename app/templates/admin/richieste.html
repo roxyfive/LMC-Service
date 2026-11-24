@@ -1,19 +1,23 @@
-{% extends "admin/base.html" %}{% block body %}
+{% extends "admin/base.html" %}{% block title %}Richieste{% endblock %}{% block body %}
 <h1>Richieste</h1>
 <h2>Appuntamenti</h2>
-<div class="scroll"><table><tr><th>Quando</th><th>Cliente</th><th>Evento</th><th>Stato</th><th></th></tr>
-{% for a in apps %}<tr><td>{{ a.slot_date }} {{ a.slot_time }}</td><td>{{ a.name }}<br>{{ a.phone }} {{ a.email }}</td>
-<td>{{ a.event_type }} {{ a.event_date }}<br><span class="mut">{{ a.notes }}</span></td><td><span class="badge">{{ a.status }}</span></td>
-<td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
-<select name="stato">{% for s in ['in attesa','confermato','annullato','completato'] %}<option {{ 'selected' if s==a.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">OK</button></form></td></tr>
+<div class="scroll"><table><tr><th>Quando</th><th>Cliente</th><th>Evento</th><th>Stato</th><th>Azioni</th></tr>
+{% for a in apps %}<tr id="a{{ a.id }}"><td class="nw num">{{ a.slot_date|dmy }} {{ a.slot_time }}</td><td><b>{{ a.name }}</b><br><span class="mut">{{ a.phone }} {{ a.email }}</span></td>
+<td>{{ a.event_type }} {{ a.event_date|dmy }}<br><span class="mut">{{ a.notes }}</span></td><td><span class="badge {{ 'ok' if a.status in ('confermato','completato') else ('no' if a.status=='annullato' else 'w') }}">{{ a.status }}</span></td>
+<td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato" class="row" style="display:flex;gap:.4rem;flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ csrf }}">
+<select name="stato" aria-label="Stato">{% for s in ['in attesa','confermato','annullato','completato'] %}<option {{ 'selected' if s==a.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">Salva</button>
+<button class="btn s g" formaction="/admin/richieste/appuntamento/{{ a.id }}/whatsapp" title="Invia il riepilogo su WhatsApp al team di turno" data-confirm="Inviare il riepilogo su WhatsApp a chi è di turno?">📲 Riepilogo</button>
+{% if is_admin %}<a class="btn s o" href="/admin/fatture/nuova?da=appt:{{ a.id }}">Fattura</a>{% endif %}</form></td></tr>
 {% else %}<tr><td colspan="5" class="mut">Nessuna richiesta.</td></tr>{% endfor %}</table></div>
 <h2>Preventivi</h2>
-<div class="scroll"><table><tr><th>Ricevuta</th><th>Cliente</th><th>Evento</th><th>Servizi</th><th>Stato</th><th></th></tr>
-{% for r in quotes %}<tr><td>{{ r.created[:16] }}</td><td>{{ r.name }}<br>{{ r.phone }} {{ r.email }}</td>
-<td>{{ r.event_type }} {{ r.event_date }}<br>{{ r.place }} – {{ r.guests }} ospiti<br><span class="mut">{{ r.notes }}</span></td><td>{{ r.services }}</td>
-<td><span class="badge">{{ r.status }}</span></td>
-<td><form method="post" action="/admin/preventivo/{{ r.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
-<select name="stato">{% for s in ['nuova','in lavorazione','inviata','chiusa'] %}<option {{ 'selected' if s==r.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">OK</button></form>
-<form method="post" action="/admin/preventivo/{{ r.id }}/cliente"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s g">+ Cliente</button></form></td></tr>
+<div class="scroll"><table><tr><th>Ricevuta</th><th>Cliente</th><th>Evento</th><th>Servizi</th><th>Stato</th><th>Azioni</th></tr>
+{% for r in quotes %}<tr id="q{{ r.id }}"><td class="nw num">{{ r.created[:10]|dmy }}</td><td><b>{{ r.name }}</b><br><span class="mut">{{ r.phone }} {{ r.email }}</span></td>
+<td>{{ r.event_type }} {{ r.event_date|dmy }}<br>{{ r.place }} – {{ r.guests }} ospiti<br><span class="mut">{{ r.notes }}</span></td><td>{{ r.services }}</td>
+<td><span class="badge {{ 'red' if r.status=='nuova' else ('ok' if r.status=='confermata' else '') }}">{{ r.status }}</span></td>
+<td><form method="post" action="/admin/preventivo/{{ r.id }}/stato" style="display:flex;gap:.4rem;flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ csrf }}">
+<select name="stato" aria-label="Stato">{% for s in ['nuova','in lavorazione','inviata','confermata','chiusa'] %}<option {{ 'selected' if s==r.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">Salva</button>
+<button class="btn s g" formaction="/admin/richieste/preventivo/{{ r.id }}/whatsapp" data-confirm="Inviare il riepilogo su WhatsApp a chi è di turno?">📲 Riepilogo</button>
+{% if is_admin %}<a class="btn s o" href="/admin/preventivo/{{ r.id }}/crea-preventivo">Fai il preventivo</a>
+<button class="btn s g" formaction="/admin/preventivo/{{ r.id }}/cliente">+ Cliente</button>{% endif %}</form></td></tr>
 {% else %}<tr><td colspan="6" class="mut">Nessun preventivo.</td></tr>{% endfor %}</table></div>
 {% endblock %}

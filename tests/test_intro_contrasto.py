@@ -1,6 +1,6 @@
 """Leggibilità dell'intro nel caso PEGGIORE (foto completamente bianca) in un vero browser.
 python -m tests.test_intro_contrasto  (serve playwright + Chromium; altrimenti SKIP)
-Per ognuna delle 7 slide misura il contrasto WCAG tra il testo (didascalia, sottotitolo, contatore) e lo sfondo più chiaro
+Per ognuna delle 6 slide misura il contrasto WCAG tra il testo (didascalia, sottotitolo, contatore) e lo sfondo più chiaro
 dietro di esso, e verifica che barre e pulsanti siano visibili (pulsante audio con sfondo scuro e testo chiaro)."""
 import glob
 import io
@@ -59,7 +59,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(400)
         pg.add_style_tag(content=".slide{opacity:0!important}.intro-stage{background:#fff!important}")   # foto peggiore: tutta bianca
         seen, last, change, t0, audio = set(), None, 0, time.time(), None
-        while len(seen) < 7 and time.time() - t0 < 80:
+        while len(seen) < 6 and time.time() - t0 < 80:
             num = pg.evaluate("document.getElementById('introNum').textContent")
             if num != last:
                 last, change = num, time.time()
@@ -77,7 +77,7 @@ with sync_playwright() as p:
                     fg = lum([float(x) for x in re.findall(r"[\d.]+", r["color"])[:3]])
                     worst[f"{name}:{k}"] = min(worst.get(f"{name}:{k}", 99), ratio(fg, bg))
             pg.wait_for_timeout(200)
-        check(f"{name}: tutte e 7 le slide verificate", len(seen) == 7, sorted(seen))
+        check(f"{name}: tutte e 6 le slide verificate", len(seen) == 6, sorted(seen))
         a = re.findall(r"[\d.]+", audio["bg"])
         check(f"{name}: pulsante audio su fondo scuro (non bianco) con testo chiaro", float(a[0]) < 40 and float(a[3] if len(a) > 3 else 1) > .6, audio)
         check(f"{name}: barre di avanzamento alte almeno 4px", audio is not None and pg.evaluate("document.querySelector('.intro-bars i').getBoundingClientRect().height") >= 4)

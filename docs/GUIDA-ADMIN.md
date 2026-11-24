@@ -28,7 +28,8 @@ Salva con **Salva tutto**. Un campo che non è nel modulo non viene mai azzerato
 - **Carica**: più file insieme (foto fino a 12 MB, video fino a 60 MB). Le foto vengono ottimizzate in automatico (versioni 400/800/1600 px WebP).
 - Per ogni elemento: titolo, didascalia, categoria (Eventi, Installazioni, Show Demo, Audio, Luci, Video, Progettazione, Meeting), caselle **Mostra in home / in galleria / nell'intro**, **In evidenza** (una sola: è la prima foto della hero), **Nascondi**, **Elimina**.
 - **Riordina** trascinando.
-- **Sincronizza cartella `foto/organizzate`**: pubblica le foto/video nuove copiate nelle sottocartelle `hero`, `galleria`, `installazioni`, `video` (succede anche a ogni avvio del sito).
+- **Sincronizza cartella `foto/organizzate`**: pubblica le foto/video nuove copiate nelle sottocartelle `hero`, `galleria`, `installazioni`, `video` (succede anche a ogni avvio del sito). Quelle spostate o cancellate dalla cartella spariscono dal sito. Il **primo video** (per ordine) è quello «In evidenza» nella sezione Show demo (oggi il reel America's Cup); accanto a `video-01.mp4` si può mettere `video-01.poster.jpg` come locandina, altrimenti si usa un fotogramma.
+- **Migliorare le foto prima di caricarle** (esposizione, colore, rumore, nitidezza leggeri, orientamento): `python -m backend.enhance_foto` — gli originali restano in `foto/_originali/`.
 - Il segnaposto «FOTO IN ARRIVO» compare finché non ci sono foto reali.
 
 ### 🧑‍🤝‍🧑 Team e Contatti (`/admin/m/team`)
@@ -83,16 +84,40 @@ L'URL del webhook Vapi da incollare nel pannello Vapi è `https://TUO-DOMINIO/we
 ---
 
 ## 5. GESTIONALE
-| Voce | Cosa fa |
-|---|---|
-| 👥 **Clienti** | Anagrafica: nome, telefono, email, note |
-| 🚚 **Fornitori** | Nome, categoria, contatti, note |
-| 🎛️ **Magazzino** | Attrezzature: categoria (audio/luci/video), quantità, stato (disponibile / in uso / in riparazione / fuori servizio) |
-| 🎤 **Eventi** | Calendario eventi: titolo, data, luogo, cliente, note + **assegna attrezzatura** all'evento (controlla le quantità) |
-| 🧾 **Preventivi/Fatture** | Crea il documento (cliente, voci `descrizione;quantità;prezzo`, note), scarica il **PDF**, cambia stato, elimina |
-| 💶 **Prima nota** | Entrate/uscite con totali |
+Il menu a sinistra (su telefono: pulsante in alto) mostra **solo le voci consentite al tuo ruolo**. Ruoli: **ADMIN** (tutto) e **COLLABORATORE** (agenda, richieste, galleria in sola bozza, materiale, eventi, assistente).
 
-> ⚠️ I PDF «fattura» sono documenti interni: **la fattura elettronica ufficiale** si emette con il tuo software/commercialista (SDI).
+| Voce | Cosa fa | Ruolo |
+|---|---|---|
+| **Dashboard** | Appuntamenti di oggi, nuove richieste, incassi del mese, prossimi eventi | tutti (incassi: solo admin) |
+| **Agenda** | Calendario mensile a colori; clic su un giorno: conferma, blocca/sblocca, note | tutti |
+| **Richieste** | Richieste e prenotazioni dal sito; cambio stato; «Invia riepilogo» su WhatsApp | tutti |
+| **Preventivi** | Crea il preventivo (voci `descrizione;quantità;prezzo`), PDF, stato, trasformalo in fattura | admin |
+| **Fatture** | Bozza, numero progressivo assegnato all'emissione, PDF elegante, stati (bozza/emessa/parziale/pagata/scaduta), stato SDI manuale. **Dati fiscali** (P.IVA, sede, IBAN, numerazione, IVA) in *Fatture > Dati fiscali* | admin |
+| **Acconti** | Pagamenti parziali (metodo, data, nota), residuo e stato calcolati da soli, riepilogo incassato/da incassare | admin |
+| **Clienti** | Anagrafica con indirizzo, P.IVA, CF, codice SDI, PEC | admin |
+| **Galleria** | Foto con didascalia obbligatoria, tipo evento e data; partono nascoste; solo l'admin pubblica o elimina | tutti (pubblica: admin) |
+| **Recensioni** | Richiesta dopo l'evento (link personale), stelle e testo, approvazione prima della pubblicazione | admin |
+| **Testi del sito** | Tutti i testi del sito in un solo modulo | admin |
+| **Tariffe** | Listino base; usato nei preventivi e (se «pubbliche») nella stima del configuratore | admin |
+| **Materiale** | Attrezzature, quantità e stato | tutti |
+| **Eventi** | Calendario eventi, attrezzatura assegnata con controllo quantità | tutti |
+| **Assistente e chat** | Chiamate e chat dell'assistente AI | tutti |
+| **WhatsApp** | Stato di Twilio, destinatari dei report, ultimi invii | admin |
+| **Statistiche** | Incassi per mese/anno, eventi per tipo, servizi richiesti, conversione richieste → confermati | admin |
+| **Report e visite** | Visite al sito e report | admin |
+| **Team e contatti** | Persone mostrate nel sito e destinatari delle notifiche | admin |
+| **Utenti e permessi** | Crea utenti, assegna il ruolo, disattiva, reimposta la password | admin |
+| **Registro attività** | Chi ha fatto cosa e quando (azioni sensibili) | admin |
+| **Impostazioni** | Dati societari, cifre del sito, SMTP, ecc. | admin |
+| **Backup** | Stato dell'ultimo backup (locale + copia cloud cifrata) | admin |
+| **Guide e PDF** | Libretto illustrativo e Guida per l'agenzia, da aprire o scaricare | admin |
+
+**Prima del primo uso compila:** *Fatture > Dati fiscali* (P.IVA, sede, IBAN, numerazione), *Tariffe* (i prezzi), `PUBLIC_URL` nel `.env` (link delle email di recensione) e crea gli utenti collaboratori.
+
+> ⚠️ I PDF «fattura» sono copie di cortesia: **la fattura elettronica ufficiale** si emette con il tuo software/commercialista (SDI). Dettagli in [`FATTURAZIONE-SDI.md`](FATTURAZIONE-SDI.md).
+
+### Kit di consegna (guide PDF, QR, video)
+`python -m backend.kit_consegna` genera in `consegna/` due guide PDF (Admin e Cliente), due QR da stampare, due video tutorial (verticale 9:16 e orizzontale 16:9) e un `LEGGIMI.txt`. Usa dati di prova: il database vero non viene toccato. Opzioni: `--url`, `--solo-pdf`, `--shots CARTELLA`.
 
 ---
 
@@ -110,6 +135,6 @@ L'URL del webhook Vapi da incollare nel pannello Vapi è `https://TUO-DOMINIO/we
 | Modalità `demo` / `production`, `SECRET_KEY`, HTTPS | file `.env` |
 | Testi di «Come lavoriamo» e delle FAQ, elenco tipi di evento e servizi dei form | `app/templates/index.html`, `backend/public.py` |
 | Musica e voce dell'intro | `app/static/media/music.mp3`, `voce.mp3`, `voce.json` |
-| Logo | `python -m backend.make_logo3d` e `app/static/img/` |
+| Logo | sostituisci `logo/lmcs-logo.png` e lancia `python -m backend.make_logo_assets` (rigenera icone, favicon, anteprime in `app/static/img/`) |
 | Assistente AI esterno (facoltativo) | `.env` (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`) |
 | Foto importate in blocco | cartella `foto/organizzate/` o `python importa_social.py` |

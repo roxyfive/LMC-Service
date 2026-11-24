@@ -45,6 +45,15 @@
   }), { threshold: .3 });
   $$('.lazyvid').forEach(v => vio.observe(v));
 
+  /* video elenco: la locandina si trasforma nel video solo al tocco (niente 200 MB scaricati in automatico); ne parte uno alla volta */
+  $$('.vid-play').forEach(b => b.addEventListener('click', () => {
+    $$('.lazyvid, .vid video').forEach(v => v.pause());
+    const v = document.createElement('video');
+    v.src = b.dataset.src; v.controls = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('aria-label', b.getAttribute('aria-label') || '');
+    v.poster = (b.querySelector('img') || {}).src || ''; v.className = 'vid-live';
+    b.replaceWith(v); v.play().catch(() => { });
+  }));
+
   /* ---------- portfolio + lightbox accessibile ---------- */
   $$('.filters .chip').forEach(b => b.addEventListener('click', () => {
     $$('.filters .chip').forEach(x => x.classList.remove('on')); b.classList.add('on');
@@ -214,6 +223,9 @@
   }));
   async function startVapi(emergency) {
     const c = await cfgReady; if (!c.vapi.enabled) return false;
+    /* privacy: la voce naturale manda l'audio a Vapi (USA): serve il OK esplicito, una volta per sessione; se rifiuta si usa la voce standard */
+    let ok = false; try { ok = sessionStorage.getItem('vapiOk') === '1'; } catch (e) { }
+    if (!ok) { if (!window.confirm('Per la voce naturale l\'audio viene elaborato dal servizio Vapi (USA). Vuoi continuare?\n\nSe annulli useremo la voce standard del tuo browser.')) return false; try { sessionStorage.setItem('vapiOk', '1'); } catch (e) { } }
     try {
       const bad = await ensureMic(); if (bad) { add('bot', bad); return true; }
       const Vapi = await loadVapi(); const v = new Vapi(c.vapi.public_key); vapiCall = v;
@@ -241,7 +253,7 @@
   async function initTools() {
     if (summaryShown) return; summaryShown = true;
     const c = await cfgReady;
-    renderSug(c.suggestions); vapiBtn.hidden = !c.vapi.enabled;
+    renderSug(c.suggestions); vapiBtn.hidden = !c.vapi.enabled; const vn = $('#vapiNote'); if (vn) vn.hidden = !c.vapi.enabled;
     if (!c.wa_ready && c.admin) {          // chi gestisce il sito vede come attivarlo
       waBtn.textContent = 'Configura WhatsApp'; waBtn.dataset.admin = '1';
     }
@@ -290,20 +302,33 @@
     if (/[?&]sos=1/.test(location.search)) setTimeout(open, 400);   // scorciatoia dell'app installata
   })();
 
+  /* ---------- La nostra storia: play al click (il file di 15 MB si scarica solo allora), controlli nativi + schermo intero ---------- */
+  (function () {
+    const box = $('#storiaPlayer'), v = $('#storiaVideo'), b = $('#storiaPlay'); if (!box || !v || !b) return;
+    const on = () => { box.classList.add('playing'); v.controls = true; };
+    const off = () => { box.classList.remove('playing'); v.controls = false; };
+    b.addEventListener('click', () => { v.preload = 'auto'; on(); v.play().catch(off); });
+    v.addEventListener('play', on); v.addEventListener('pause', () => { if (v.ended || v.currentTime === 0) off(); });
+    v.addEventListener('ended', () => { off(); v.currentTime = 0; v.load(); });
+    document.querySelectorAll('a[href="#storia"]').forEach(a => a.addEventListener('click', () => { setTimeout(() => { try { b.focus({ preventScroll: true }); } catch (e) { } }, 700); }));
+  })();
+
   /* ---------- configuratore evento (nessun prezzo: prepara la richiesta di preventivo) ---------- */
   (function () {
     const root = $('#conf'); if (!root) return;
     const val = { tipo: '', ospiti: '', servizi: new Set() }, out = $('#confOut'), go = $('#confGo');
     const HINT = {
       Audio: 'impianto audio dimensionato su sala e pubblico, microfoni e regia', Luci: 'luci d\'atmosfera e scenografiche con programmazione',
-      Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico', Videosorveglianza: 'telecamere e controllo degli spazi',
+      Video: 'ledwall/proiezioni e regia video', Allestimenti: 'palco, strutture e allestimento scenico',
       Progettazione: 'progetto tecnico su misura con sopralluogo'
     };
+    let PRICES = {};      // stima indicativa: solo se il titolare l'ha attivata in Admin › Tariffe
+    fetch('/api/tariffe', { cache: 'no-store' }).then(r => r.json()).then(d => { if (d.enabled) { PRICES = d.prices; render(); } }).catch(() => {});
     const render = () => {
       const s = [...val.servizi]; go.disabled = !(val.tipo && s.length);
       if (!val.tipo || !s.length) { out.innerHTML = '<p class="mut">Seleziona almeno tipo di evento e servizi: qui comparirà la tua proposta.</p>'; return; }
       out.innerHTML = '<h3>La tua proposta di partenza</h3><p><b>' + val.tipo + '</b>' + (val.ospiti ? ' · ' + val.ospiti + ' ospiti' : '') + '</p><ul>' +
-        s.map(x => '<li>' + (HINT[x] || x) + '</li>').join('') + '</ul><p class="mut">Verrà inserita nelle note del preventivo: la rifiniamo insieme dopo il tuo messaggio.</p>';
+        s.map(x => '<li>' + (HINT[x] || x) + '</li>').join('') + '</ul>' + (() => { const t = s.reduce((a, x) => a + (PRICES[x] || 0), 0); return t ? '<p><b>Stima indicativa: da € ' + t.toLocaleString('it-IT') + '</b> <span class="mut">(IVA esclusa, a seconda di sala, ospiti e allestimento: il preventivo è su misura)</span></p>' : ''; })() + '<p class="mut">Verrà inserita nelle note del preventivo: la rifiniamo insieme dopo il tuo messaggio.</p>';
     };
     $$('.opts', root).forEach(g => g.addEventListener('click', e => {
       const b = e.target.closest('.opt'); if (!b) return; const name = g.dataset.name, v = b.dataset.v, multi = g.classList.contains('multi');

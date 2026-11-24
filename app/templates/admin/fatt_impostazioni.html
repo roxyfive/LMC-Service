@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}{% block title %}Dati fiscali{% endblock %}{% block body %}
+<h1>Dati fiscali e numerazione</h1>
+{% if missing %}<div class="flash warn">Da compilare per emettere fatture complete: {{ missing|join(', ') }}.</div>{% endif %}
+<form method="post" class="form"><input type="hidden" name="csrf" value="{{ csrf }}">
+{% for k,l,t in fields %}<label {% if t=='area' or k in ('fat_regime','fat_sede') %}class="full"{% endif %}>{{ l }}
+{% if t=='area' %}<textarea name="{{ k }}" rows="2">{{ f[k] }}</textarea>{% elif t.startswith('select:') %}<select name="{{ k }}">{% for o in t[7:].split(',') %}<option {{ 'selected' if f[k]==o }}>{{ o }}</option>{% endfor %}</select>
+{% else %}<input name="{{ k }}" value="{{ f[k] }}" {% if t=='number' %}inputmode="decimal"{% endif %}>{% endif %}</label>{% endfor %}
+<button class="btn full" style="justify-self:start">Salva</button></form>
+<div class="panel"><p>Prossimo numero che verrà assegnato: <b class="num">{{ nxt }}</b>. Il numero è progressivo, senza buchi, e viene assegnato solo all'emissione. Se prima fatturavi con un altro programma, imposta «Prossimo numero» (es. 17 se l'ultima emessa è la 16).</p>
+<p class="mut">Guida alla fatturazione elettronica: <code>docs/FATTURAZIONE-SDI.md</code>. La numerazione, l'IVA e i dati qui sopra valgono per tutte le nuove fatture; quelle già emesse non cambiano.</p></div>
+{% endblock %}

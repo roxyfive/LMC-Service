@@ -4,6 +4,7 @@ Description=LMC Service (gunicorn)
 After=network.target
 
 [Service]
+# gunicorn >= 25: il «control socket» vuole scrivere in ~/.gunicorn (qui non scrivibile) e non serve: disattivato
 User=lmc
 Group=lmc
 WorkingDirectory=/srv/lmc
@@ -14,7 +15,8 @@ ExecStart=/srv/lmc/.venv/bin/gunicorn run:app \
     --workers 2 --threads 4 \
     --timeout 60 --graceful-timeout 30 \
     --max-requests 2000 --max-requests-jitter 200 \
-    --access-logfile - --error-logfile -
+    --access-logfile - --error-logfile - \
+    --no-control-socket
 Restart=always
 RestartSec=3
 # hardening: il servizio può scrivere solo in data/ e foto/

@@ -22,7 +22,7 @@ Al primo avvio, senza `ADMIN_PASSWORD` in `.env`, la password admin viene stampa
 ## WhatsApp, voce, report ed emergenza
 Assistente vocale (voce del browser o Vapi), riepilogo chat su WhatsApp (Twilio), report giornaliero/settimanale/mensile, pulsante Emergenza 24h.
 Tutto si configura da **Admin › Impostazioni** (o `.env`): vedi `docs/CONFIGURAZIONE-API.md`. Pagina **Admin › Report** per i numeri. Proposte future: `docs/PROPOSTE.md`.
-Logo 3D: `python -m backend.make_logo3d` (richiede scipy e fonttools; non serve per far girare il sito).
+Logo: sorgente unica `logo/lmcs-logo.png`; `python -m backend.make_logo_assets` rigenera icone PWA, favicon e anteprime social. I vecchi loghi sono in `_vecchi_loghi/`.
 
 ## Team e Contatti (da admin)
 Admin › **Team e Contatti**: nome, ruolo, telefono, email, nota, visibilità e ordine di ogni collaboratore. Si salva nel database: compare
@@ -30,19 +30,30 @@ nella sezione Contatti del sito e l'assistente risponde con questi dati ("numero
 Telefono principale, WhatsApp e orari si modificano in Admin › Testi. Numeri della sezione "In cifre": DEMO finché non si imposta `stats` nelle impostazioni.
 
 ## Design e voce
-Tema bianco puro (#ffffff, sezioni alterne #fafafa), antracite, oro e blu notte; nessun effetto scintillante. Titoli Montserrat ExtraBold, numeri e etichette Space Grotesk, testi Inter (font locali in `app/static/fonts/`, licenza OFL).
+Tema scuro morbido (grigio-nerastro): sfondo #16161c, sezioni alterne #1c1c22, testi bianchi, contorni e accenti rossi (#e11d14), tasto Emergenza rosso vivo; vale anche per l'intro (solo colori). Titoli Montserrat ExtraBold, numeri e etichette Space Grotesk, testi Inter (font locali in `app/static/fonts/`, licenza OFL). Il tema è l'ultimo blocco di `app/static/css/site.css` («TEMA NERO»).
 L'intro usa musica + didascalie animate: **nessuna voce sintetica del browser**. `app/static/media/voce.mp3` (voce italiana ElevenLabs, 44 s) è già inclusa e `voce.json` ne sincronizza le slide;
 per cambiarla vedi `docs/voce-script.md`. Test audio in un vero browser: `python -m tests.test_audio`. Analisi e ricerca del redesign: `docs/ANALISI-DESIGN.md`. Con `APP_MODE=demo` i testi/foto generici sono marcati DEMO.
 
 ## ⚠️ Foto DEMO da sostituire
-Le foto in `foto/organizzate/` (1 hero, 1 galleria, 3 installazioni) sono **immagini demo temporanee**, non lavori di LMC Service
-(vedi `foto/organizzate/CREDITI.md`). Per sostituirle: copia le foto vere nella stessa cartella **con lo stesso nome**
-(es. `hero/hero-01.jpg`) e riavvia il sito, oppure metti il materiale del cliente in `foto/da_social/` e lancia
-`python importa_social.py foto/da_social`. Dettagli in `foto/organizzate/LEGGIMI.md`.
+Le foto in `foto/organizzate/` sono **le foto reali del cliente** (25 foto + 6 video, credito Merette Uiterwaal, uso autorizzato sul sito del cliente: vedi `CREDITI.md`).
+Prima della pubblicazione sono state migliorate con `python -m backend.enhance_foto` (orientamento, esposizione, colore, rumore, nitidezza; originali in `foto/_originali/`, non su git).
+Controllo doppioni/qualità: `python -m backend.controllo_foto` (vedi `docs/CONTROLLO-FOTO.md`). Per aggiungerne: copiale nelle sottocartelle, lancia `python -m backend.enhance_foto`, riavvia il sito (o Admin › Foto › Sincronizza); sulla VPS basta `deploy/aggiorna.sh`. Dettagli in `foto/organizzate/LEGGIMI.md`.
 
 ## Foto e video reali da Instagram/Facebook
 `python importa_social.py foto/da_social/*.zip` → estrae, rinomina e smista in `foto/organizzate/`; poi riavvia il sito
 (o Admin › Foto › Sincronizza). Dettagli in `foto/organizzate/LEGGIMI.md`. Test: `python -m tests.test_foto`
+
+## Gestionale, ruoli e kit di consegna
+- Admin completo: dashboard, agenda, richieste, preventivi, fatture (PDF, numerazione, SDI), acconti, recensioni, galleria eventi, tariffe, statistiche, WhatsApp, utenti e registro attività. Guida: `docs/GUIDA-ADMIN.md`; proposte in attesa di ok: `docs/PROPOSTE-GESTIONALE.md`; fatturazione elettronica: `docs/FATTURAZIONE-SDI.md`.
+- Ruoli: **ADMIN** (tutto) e **COLLABORATORE** (agenda, richieste, galleria in bozza, materiale, eventi). Permessi controllati dal server (`backend/rbac.py`), azioni sensibili nel registro attività.
+- `python -m backend.kit_consegna` → cartella `consegna/` (non versionata) con 2 guide PDF, 2 QR da stampare, 2 video tutorial (9:16 e 16:9) e `LEGGIMI.txt`. Screenshot su database di prova. Voci narranti in `backend/kit_assets/audio/` (con `ELEVENLABS_API_KEY` nel `.env` le mancanti si generano da sole). Test: `python -m tests.test_kit`.
+- Da compilare dopo il deploy: *Fatture > Dati fiscali* (P.IVA, IBAN), *Tariffe*, `PUBLIC_URL` nel `.env`, utenti collaboratori.
+
+## Conformità (privacy, cookie, accessibilità)
+`docs/CONFORMITA.md` riassume la verifica; `python -m tests.test_conformita` la ripete (axe WCAG 2.2 AA, cookie, terze parti, conservazione dati, recensioni vere). `docs/CONFRONTO-CODEX.md` contiene il prompt per un secondo parere con Codex.
+
+## PDF per l'agenzia (2 file)
+`docs/Libretto-LMC.pdf` (libretto illustrativo: clienti, admin, collaboratori, specifiche) e `docs/Guida-Agenzia-LMC.pdf` (email e dominio, 3 pagine semplici). Si rigenerano con `python -m tools.libretto_shots CARTELLA` + `python -m tools.pdf_libretto CARTELLA docs/Libretto-LMC.pdf` e `python -m tools.pdf_agenzia`. Test: `python -m tests.test_pdf_consegna`.
 
 ## Rigenerare materiali
 `python -m backend.make_assets` (loghi/icone/musica) · `python video/make_video.py` · `python docs/make_pdf.py`

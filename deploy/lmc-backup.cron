@@ -1,5 +1,9 @@
-# /etc/cron.d/lmc-backup — backup notturno + controllo di mattina (fuso orario del server: Europe/Rome, lo imposta l'installer)
+# /etc/cron.d/lmc-backup — fuso orario del server: Europe/Rome (lo imposta l'installer)
 # m  h  g  M  gs  utente  comando
-30 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1
+# Backup notturno: se sul server esiste il guard condiviso (/usr/local/bin/lexpro-backup-guard.sh) l'installer aggiunge QUI la riga
+#   20 3 * * * root /usr/local/bin/lexpro-backup-guard.sh "LMC Service (Flask + foto/video)" /srv/lmc/deploy/backup.sh >> /var/log/backup-lmc.log 2>&1
+# altrimenti lancia direttamente backup.sh (riga sotto). Sul server di produzione LMC la riga di backup sta nel crontab di root come
+# quelle degli altri progetti (docs/DEPLOY.md, Parte 4.9) e in questo file resta solo il controllo delle 08:00.
+20 3 * * * root /srv/lmc/deploy/backup.sh >> /var/log/lmc-backup.log 2>&1
 # alle 08:00: se non risulta nessun backup riuscito nelle ultime 26 ore, avvisa (email + WhatsApp)
 0 8 * * * root /srv/lmc/deploy/backup-status.sh --check --alert >> /var/log/lmc-backup.log 2>&1

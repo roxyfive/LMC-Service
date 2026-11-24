@@ -22,7 +22,7 @@ def send_mail(to, subject, body):
         m = EmailMessage()
         m["From"] = os.getenv("MAIL_FROM") or os.getenv("SMTP_USER", "")
         m["To"] = to
-        m["Subject"] = subject
+        m["Subject"] = " ".join(str(subject).split())   # una sola riga: niente a-capo iniettati dai dati del cliente
         m.set_content(body)
         with smtplib.SMTP(host, int(os.getenv("SMTP_PORT", "587")), timeout=15) as s:
             s.starttls()
@@ -32,3 +32,16 @@ def send_mail(to, subject, body):
     except Exception as e:
         _log(f"ERRORE invio a {to}: {e}\n")
         return False
+
+
+def _footer():
+    from .db import get_setting
+    base = (os.getenv("PUBLIC_URL", "") or get_setting("sito_url", "") or "").strip().rstrip("/")
+    link = f"{base}/privacy" if base else "la pagina «Informativa privacy» del nostro sito"
+    return ("\n\n--\nTrattiamo i tuoi dati solo per gestire questa richiesta; non li cediamo a terzi per pubblicità. "
+            f"Informativa e diritti: {link}. Se non vuoi ricevere altre email da noi, rispondi a questo messaggio.")
+
+
+def send_cliente(to, subject, body):
+    """Email al cliente: come send_mail, con in fondo la nota privacy e come chiedere di non riceverne altre."""
+    return send_mail(to, subject, body + _footer())

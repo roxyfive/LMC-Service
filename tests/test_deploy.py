@@ -72,13 +72,13 @@ check("email inserita da admin compare nei contatti", "info@example.it" in home)
 
 # ---------- documentazione di go-live ----------
 guida = (ROOT / "docs" / "GUIDA-ADMIN.md").read_text()
-nav = open(ROOT / "app/templates/admin/base.html").read()
-labels = [re.sub(r"^[^A-Za-zÀ-ù]+", "", t).strip() for t in re.findall(r'<a href="/[^"]*"[^>]*>([^<]+)</a>', nav)]
+from backend.rbac import MENU        # il menu è generato dal ruolo: le voci sono elencate in rbac.MENU
+labels = [m[1] for m in MENU]
 missing = [l for l in labels if l and l.lower() not in guida.lower()]
 check("la guida admin copre tutte le voci del menu", labels and not missing, missing)
 check("checklist go-live con percorso e priorità per ogni voce", all(x in (ROOT / "docs" / "CHECKLIST-GO-LIVE.md").read_text() for x in ("Bloccante", "Dati societari", "ADMIN_PASSWORD", "SMTP", "APP_MODE=production", "Foto e video reali")))
 dep = (ROOT / "docs" / "DEPLOY.md").read_text()
-check("DEPLOY.md: IONOS, HTTPS, backup 7 giorni, ripristino, rclone, /health", all(x in dep for x in ("IONOS", "certbot", "7 giorni", "restore.sh", "rclone", "/health", "setup-vps.sh", "lmc-backup.conf", "--from-cloud", "backup-status.sh", "/etc/cron.d/lmc-backup", "03:30", "Key management", "verifica cloud ok")))
+check("DEPLOY.md: IONOS, HTTPS, backup 14 giorni, ripristino, rclone, /health", all(x in dep for x in ("IONOS", "certbot", "14 giorni", "restore.sh", "rclone", "/health", "setup-vps.sh", "lmc-backup.conf", "--from-cloud", "backup-status.sh", "/etc/cron.d/lmc-backup", "03:20", "Key management", "verifica cloud ok")))
 
 # ---------- segreti e git ----------
 gi = (ROOT / ".gitignore").read_text()
@@ -93,13 +93,14 @@ check("nessuna chiave/token nel codice versionato", leak == "", leak[:200])
 check(".env.example e env.production.example senza valori segreti", all(not re.search(r"^(SECRET_KEY|ADMIN_PASSWORD|TWILIO_AUTH_TOKEN|VAPI_API_KEY|AI_API_KEY)=\S", (ROOT / f).read_text(), re.M) for f in (".env.example", "deploy/env.production.example")))
 
 # ---------- script di deploy ----------
-for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh"):
+for sh in ("setup-vps.sh", "backup.sh", "restore.sh", "backup-status.sh", "lib-backup.sh", "verifica-vps.sh", "verifica-online.sh", "collega-dominio.sh", "aggiorna.sh"):
     check(f"deploy/{sh}: sintassi bash valida", subprocess.run(["bash", "-n", str(ROOT / "deploy" / sh)]).returncode == 0)
 svc = (ROOT / "deploy" / "lmc.service").read_text()
 check("lmc.service: gunicorn run:app su 127.0.0.1, EnvironmentFile, Restart", "gunicorn run:app" in svc and "127.0.0.1:8010" in svc and "EnvironmentFile=/srv/lmc/.env" in svc and "Restart=always" in svc)
+check("lmc.service: control socket di gunicorn disattivato (non scrivibile da lmc)", "--no-control-socket" in svc and "gunicorn>=25" in (ROOT / "requirements.txt").read_text())
 ng = (ROOT / "deploy" / "nginx-lmc.conf").read_text()
 check("nginx: gzip, cache statici, upload 200M, /health, rate limit webhook", all(x in ng for x in ("gzip on", "expires 7d", "client_max_body_size 200M", "location = /health", "zone=lmc_hooks")))
-check("manifest PWA con sfondo bianco", c.get("/manifest.webmanifest").get_json()["background_color"] == "#ffffff")
+check("manifest PWA con sfondo nero (tema del sito)", c.get("/manifest.webmanifest").get_json()["background_color"] == "#16161c")
 
 # ---------- backup, rotazione e ripristino reali (locale: la copia cloud è provata in test_backup_cloud) ----------
 work = Path(tempfile.mkdtemp(prefix="lmc_bk_"))
@@ -125,9 +126,9 @@ fresh.write_bytes(b"recente")
 os.utime(fresh, (time.time() - 3 * 86400,) * 2)
 r = subprocess.run(["bash", str(ROOT / "deploy" / "backup.sh")], env=env, capture_output=True, text=True)
 check("backup.sh (solo locale) termina con successo", r.returncode == 0, r.stdout + r.stderr)
-datas = [p for p in bdir.glob("lmc-data-*.tar.gz.enc") if "fresco" not in p.name and "2020" not in p.name]
-secs = list(bdir.glob("lmc-secrets-*.enc"))
-check("creati archivio dati e archivio segreti, entrambi cifrati", len(datas) == 1 and len(secs) == 1 and not list(bdir.glob("lmc-data-20*_*.tar.gz")))
+datas = [p for p in bdir.glob("lmc_2*.tar.gz.enc")]
+secs = list(bdir.glob("lmc_secrets_*.enc"))
+check("creati archivio dati e archivio segreti, entrambi cifrati", len(datas) == 1 and len(secs) == 1 and not list(bdir.glob("lmc_2*.tar.gz")))
 dec = lambda f: subprocess.run(f"openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:{work/'pass'} -in {f}", shell=True, capture_output=True).stdout
 names = subprocess.run(["tar", "-tz"], input=dec(datas[0]), capture_output=True).stdout.decode()
 check("l'archivio contiene database, uploads e foto", "./lmc.db" in names and "uploads/x.webp" in names and "foto/organizzate/hero/a.jpg" in names)
@@ -137,7 +138,7 @@ subprocess.run(["tar", "-xz", "-C", str(tmpdb), "./lmc.db"], input=dec(datas[0])
 con = sqlite3.connect(tmpdb / "lmc.db")
 check("il database nel backup è integro e contiene i dati", con.execute("PRAGMA integrity_check").fetchone()[0] == "ok" and con.execute("select count(*) from admin_users").fetchone()[0] >= 1)
 con.close()
-check("nei file di backup non c'è nulla in chiaro (.env, database)", all(b"token-molto-segreto" not in p.read_bytes() and b"SQLite format" not in p.read_bytes() for p in bdir.glob("lmc-*.enc")))
+check("nei file di backup non c'è nulla in chiaro (.env, database)", all(b"token-molto-segreto" not in p.read_bytes() and b"SQLite format" not in p.read_bytes() for p in bdir.glob("lmc*.enc")))
 check("il .env si decifra con la password", b"token-molto-segreto" in subprocess.run(["tar", "-xzO", "./.env"], input=dec(secs[0]), capture_output=True).stdout)
 check("rotazione: via i backup oltre 7 giorni, restano i recenti", not old.exists() and fresh.exists())
 check("cartella backup con permessi riservati (700)", oct(bdir.stat().st_mode & 0o777) == "0o700")
@@ -174,6 +175,7 @@ else:
             except Exception:
                 time.sleep(.5)
         body = urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5).read().decode()
+        vo = subprocess.run(["bash", str(ROOT / "deploy" / "verifica-online.sh"), f"http://127.0.0.1:{port}", "--no-system"], capture_output=True, text=True, timeout=120)
     finally:
         p.terminate()
         p.wait(timeout=10)
@@ -182,6 +184,7 @@ else:
     check("gunicorn parte e /health dice mode=production", hh is not None and '"mode":"production"' in hh.replace(" ", ""), hh)
     check("produzione: nessun bollino DEMO nella home", body is not None and "demo-tag" not in body and "foto e testi demo" not in body.lower())
     check("avvio in produzione: avviso se ADMIN_PASSWORD resta nel .env", "ADMIN_PASSWORD è ancora nel .env" in lg_txt)
+    check("verifica-online.sh: nessun problema bloccante su un sito in produzione", vo.returncode == 0 and "modalità production" in vo.stdout and "nessun bollino DEMO" in vo.stdout, vo.stdout[-700:])
     check("nessun dato sensibile nel log di avvio", "PrimoAvvio12345" not in lg_txt)
 
 print(f"\n{ok} ok, {fail} falliti")

@@ -1,20 +1,42 @@
-{% extends "admin/base.html" %}{% block body %}
-<h1>Agenda</h1>
+{% extends "admin/base.html" %}{% block title %}Dashboard{% endblock %}{% block body %}
+<h1>Ciao{% if user.name %}, {{ user.name.split()[0] }}{% endif %} 👋</h1>
 <div class="cards">
-  <div><b>{{ pend }}</b>appuntamenti da confermare</div>
-  <div><b>{{ new_q }}</b>preventivi nuovi</div>
-  <div><b>{{ agenda|length }}</b>appuntamenti futuri</div>
+  <div><a class="k" href="/admin/agenda?d={{ today }}"><b>{{ apps_today|length }}</b><span>appuntamenti oggi</span></a></div>
+  <div><a class="k" href="/admin/richieste"><b>{{ n_new_q + n_pend }}</b><span>richieste da gestire ({{ n_new_q }} preventivi · {{ n_pend }} appuntamenti)</span></a></div>
+  {% if is_admin %}<div><a class="k" href="/admin/acconti"><b>€ {{ incassi_mese|eur }}</b><span>incassi di {{ mese_label }}
+    {% if incassi_prev %}<small class="{{ 'up' if incassi_mese >= incassi_prev else 'down' }}">{{ '▲' if incassi_mese >= incassi_prev else '▼' }} mese scorso € {{ incassi_prev|eur }}</small>{% endif %}</span></a></div>
+  <div><a class="k" href="/admin/fatture?stato=emessa"><b>€ {{ da_incassare|eur }}</b><span>da incassare su fatture emesse{% if scadute %} · <span class="err">{{ scadute|length }} scadute</span>{% endif %}</span></a></div>{% endif %}
+  <div><a class="k" href="/admin/m/eventi"><b>{{ upcoming|length }}</b><span>eventi in arrivo (30 giorni)</span></a></div>
 </div>
-<h2>Prossimi appuntamenti</h2>
-<div class="scroll"><table><tr><th>Data</th><th>Ora</th><th>Cliente</th><th>Contatti</th><th>Evento</th><th>Stato</th><th></th></tr>
-{% for a in agenda %}<tr><td>{{ a.slot_date }}</td><td>{{ a.slot_time }}</td><td>{{ a.name }}</td><td>{{ a.phone }}<br>{{ a.email }}</td>
-<td>{{ a.event_type }} {{ a.event_date }}<br><span class="mut">{{ a.notes }}</span></td>
-<td><span class="badge {{ 'ok' if a.status=='confermato' else 'w' }}">{{ a.status }}</span></td>
-<td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato"><input type="hidden" name="csrf" value="{{ csrf }}">
-<button class="btn s" name="stato" value="confermato">Conferma</button> <button class="btn s d" name="stato" value="annullato">Annulla</button></form></td></tr>
-{% else %}<tr><td colspan="7" class="mut">Nessun appuntamento.</td></tr>{% endfor %}</table></div>
-<h2>Prossimi eventi</h2>
-<div class="scroll"><table><tr><th>Data</th><th>Evento</th><th>Luogo</th></tr>
-{% for e in evs %}<tr><td>{{ e.date }}</td><td><a href="/admin/m/eventi/{{ e.id }}">{{ e.title }}</a></td><td>{{ e.place }}</td></tr>
-{% else %}<tr><td colspan="3" class="mut">Nessun evento.</td></tr>{% endfor %}</table></div>
+
+<div class="grid2">
+<section class="panel"><h2>Appuntamenti di oggi</h2>
+{% for a in apps_today %}<div class="item"><div class="row"><b class="num">{{ a.slot_time }}</b> <b>{{ a.name }}</b> <span class="badge {{ 'ok' if a.status=='confermato' else 'w' }}">{{ a.status }}</span></div>
+  <div class="mut">{{ a.phone }} · {{ a.event_type }} {{ a.event_date|dmy }}</div></div>
+{% else %}<p class="mut">Nessun appuntamento oggi.</p>{% endfor %}
+<a class="btn s g" href="/admin/agenda">Apri l'agenda</a></section>
+
+<section class="panel"><h2>Richieste nuove</h2>
+{% for r in new_quotes %}<div class="item"><div class="row"><b>{{ r.name }}</b> <span class="badge red">nuova</span></div><div class="mut">{{ r.event_type }} {{ r.event_date|dmy }} · {{ r.place }} · {{ r.services }}</div></div>{% endfor %}
+{% for a in pend %}<div class="item"><div class="row"><b>{{ a.name }}</b> <span class="badge w">da confermare</span></div><div class="mut">{{ a.slot_date|dmy }} {{ a.slot_time }} · {{ a.event_type }}</div>
+  <form method="post" action="/admin/appuntamento/{{ a.id }}/stato" class="row" style="margin-top:.4rem"><input type="hidden" name="csrf" value="{{ csrf }}">
+  <button class="btn s" name="stato" value="confermato">Conferma</button><button class="btn s d" name="stato" value="annullato">Annulla</button></form></div>{% endfor %}
+{% if not new_quotes and not pend %}<p class="mut">Tutto in ordine: nessuna richiesta in attesa.</p>{% endif %}
+<a class="btn s g" href="/admin/richieste">Tutte le richieste</a></section>
+
+<section class="panel"><h2>Eventi in arrivo</h2>
+<div class="scroll"><table><tr><th>Data</th><th>Cosa</th><th>Dove / tipo</th></tr>
+{% for e in upcoming %}<tr><td class="nw num">{{ e.date|dmy }}</td><td>{{ e.label }} <span class="badge">{{ e.kind }}</span></td><td class="mut">{{ e.extra }}</td></tr>
+{% else %}<tr><td colspan="3" class="mut">Nessun evento nei prossimi 30 giorni.</td></tr>{% endfor %}</table></div></section>
+
+{% if is_admin %}<section class="panel"><h2>Da fare</h2>
+<ul style="margin:0;padding-left:1.1rem;display:grid;gap:.35rem">
+{% for i in scadute %}<li><a href="/admin/fatture/{{ i.id }}">Fattura {{ i.number }} scaduta</a> — {{ i.client_name }}, residuo € {{ i.resid|eur }}</li>{% endfor %}
+{% if bozze %}<li><a href="/admin/fatture?stato=bozza">{{ bozze }} fatture in bozza</a> da emettere</li>{% endif %}
+{% for d in acconti_aperti %}<li>Preventivo <a href="/admin/documenti#d{{ d.id }}">{{ d.number }}</a> ({{ d.client }}): acconto € {{ d.paid|eur }}, residuo € {{ d.resid|eur }}</li>{% endfor %}
+{% if recensioni_att %}<li><a href="/admin/recensioni">{{ recensioni_att }} recensioni</a> da approvare</li>{% endif %}
+{% if draft_photos %}<li><a href="/admin/foto?v=bozze">{{ draft_photos }} foto nascoste</a> da pubblicare</li>{% endif %}
+</ul>{% if not (scadute or bozze or acconti_aperti or recensioni_att or draft_photos) %}<p class="mut">Niente in sospeso. 🎉</p>{% endif %}</section>
+{% elif draft_photos %}<section class="panel"><h2>Galleria</h2><p>{{ draft_photos }} foto in attesa che il titolare le pubblichi.</p></section>{% endif %}
+</div>
 {% endblock %}

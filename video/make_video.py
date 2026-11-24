@@ -13,7 +13,9 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "video"
 MEDIA = ROOT / "app" / "static" / "media"
-LOGO = Image.open(ROOT / "logo" / "logo.png").convert("RGB")
+sys.path.insert(0, str(ROOT))
+from backend.make_logo_assets import scena_video
+LOGO = scena_video()   # nuovo logo su sfondo scuro 1672x941
 FONT = "C:/Windows/Fonts/arialbd.ttf"
 FPS = 25
 RED = (225, 6, 0)

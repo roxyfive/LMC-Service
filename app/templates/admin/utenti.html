@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}{% block title %}Utenti{% endblock %}{% block body %}
+<h1>Utenti e permessi</h1>
+{% if new %}<div class="flash" role="status"><b>Credenziali di {{ new.username }}</b> — annotale ora, non verranno più mostrate:<br><span class="pw">{{ new.password }}</span><br>È una password <b>temporanea</b>: al primo accesso verrà chiesto di sceglierne una propria.</div>{% endif %}
+<div class="grid2">
+<section class="panel"><h2 style="margin-top:0">Nuovo utente</h2>
+<form method="post" action="/admin/utenti/crea" class="form stack" style="border:0;padding:0;background:none"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label>Nome utente (per l'accesso)<input name="username" required minlength="3" maxlength="30" autocomplete="off" placeholder="es. marco"></label>
+<label>Nome e cognome<input name="name" maxlength="60"></label><label>Email<input name="email" type="email"></label>
+<label>Ruolo<select name="role">{% for k,l in roles.items() %}<option value="{{ k }}" {{ 'selected' if k=='collaboratore' }}>{{ l }}</option>{% endfor %}</select></label>
+<label>Password (vuoto = la genero io)<input name="password" type="text" autocomplete="off" minlength="10"></label>
+<button class="btn">Crea utente</button></form></section>
+<section class="panel"><h2 style="margin-top:0">Cosa può fare ciascun ruolo</h2>
+<table><tr><th></th><th>Admin</th><th>Collab.</th></tr>
+{% for l, a, c in [('Dashboard, agenda, richieste',1,1),('Galleria: caricare foto (restano nascoste)',1,1),('Galleria: pubblicare, eliminare',1,0),('Materiale, eventi e check-list',1,1),('Assistente e chat',1,1),('Preventivi, fatture, acconti',1,0),('Statistiche e incassi',1,0),('Tariffe, testi, impostazioni, backup',1,0),('Clienti, team, recensioni',1,0),('Utenti e registro attività',1,0)] %}
+<tr><td>{{ l }}</td><td>{{ '✅' if a else '—' }}</td><td>{{ '✅' if c else '⛔' }}</td></tr>{% endfor %}</table></section>
+</div>
+<h2>Utenti</h2>
+<div class="scroll"><table><tr><th>Utente</th><th>Ruolo</th><th>Ultimo accesso</th><th>Stato</th><th>Azioni</th></tr>
+{% for u in rows %}<tr><td><b>{{ u.username }}</b><br><span class="mut">{{ u.name }} {{ u.email }}</span></td>
+<td><form method="post" action="/admin/utenti/{{ u.id }}/modifica" style="display:flex;gap:.3rem;flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ csrf }}">
+<input type="hidden" name="name" value="{{ u.name }}"><input type="hidden" name="email" value="{{ u.email }}">
+<select name="role" aria-label="Ruolo">{% for k,l in roles.items() %}<option value="{{ k }}" {{ 'selected' if k==u.role }}>{{ l }}</option>{% endfor %}</select><button class="btn s g">Salva</button></form></td>
+<td class="nw num">{{ (u.last_login or '—')[:16] }}</td><td><span class="badge {{ 'ok' if u.active else 'no' }}">{{ 'attivo' if u.active else 'disattivato' }}</span>{% if u.must_change %} <span class="badge w">password temporanea</span>{% endif %}</td>
+<td class="nw"><form method="post" action="/admin/utenti/{{ u.id }}/attiva" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s {{ 'g' if u.active else '' }}" data-confirm="{{ 'Disattivare' if u.active else 'Riattivare' }} {{ u.username }}?">{{ 'Disattiva' if u.active else 'Riattiva' }}</button></form>
+<form method="post" action="/admin/utenti/{{ u.id }}/reset" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s o" data-confirm="Creare una nuova password temporanea per {{ u.username }}?">Reset password</button></form></td></tr>{% endfor %}</table></div>
+<p class="mut">Ogni azione sensibile (accessi, fatture, incassi, tariffe, utenti, impostazioni) è registrata in <a href="/admin/registro">Registro attività</a>.</p>
+{% endblock %}

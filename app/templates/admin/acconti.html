@@ -1,0 +1,23 @@
+{% extends "admin/base.html" %}{% from "admin/_macros.html" import stato_badge %}{% block title %}Acconti{% endblock %}{% block body %}
+<h1>Acconti e incassi</h1>
+<div class="cards"><div><b>€ {{ cards.mese|eur }}</b><span>incassato questo mese</span></div><div><b>€ {{ cards.anno|eur }}</b><span>incassato nel {{ today[:4] }}</span></div></div>
+<section class="panel" id="nuovo"><h2 style="margin-top:0">Registra un pagamento</h2>
+<form method="post" action="/admin/acconti/nuovo" class="form" style="margin:0"><input type="hidden" name="csrf" value="{{ csrf }}">
+<label class="full">A cosa si riferisce<select name="target" required><option value="">— scegli preventivo, fattura o evento —</option>
+{% for v,l in targets %}<option value="{{ v }}" {{ 'selected' if v==pre }}>{{ l }}</option>{% endfor %}</select></label>
+<label>Importo €<input name="amount" inputmode="decimal" required></label><label>Data<input type="date" name="date" value="{{ today }}"></label>
+<label>Metodo<select name="method">{% for m in methods %}<option>{{ m }}</option>{% endfor %}</select></label><label class="full">Note<input name="note" placeholder="es. acconto alla conferma"></label>
+<button class="btn" style="justify-self:start">Registra</button></form></section>
+
+<h2>Situazione pratiche</h2>
+<div class="scroll"><table><tr><th>Tipo</th><th>N.</th><th>Cliente</th><th class="r">Totale</th><th class="r">Versato</th><th class="r">Residuo</th><th>Stato</th></tr>
+{% for r in open_rows %}<tr><td>{{ r.kind }}</td><td><a href="{{ r.url }}">{{ r.number }}</a></td><td>{{ r.client or '—' }}</td><td class="r num">€ {{ r.total|eur }}</td><td class="r num">€ {{ r.paid|eur }}</td><td class="r num">€ {{ (r.resid if r.resid>0 else 0)|eur }}</td><td>{{ stato_badge(r.state) }}</td></tr>
+{% else %}<tr><td colspan="7" class="mut">Nessuna pratica.</td></tr>{% endfor %}</table></div>
+
+<h2>Incassi registrati <small class="mut"><a href="/admin/acconti?mese={{ today[:7] }}">questo mese</a> · <a href="/admin/acconti?mese=tutti">tutti</a></small></h2>
+<div class="scroll"><table><tr><th>Data</th><th>Riferimento</th><th class="r">Importo</th><th>Metodo</th><th>Note</th><th>Da</th><th></th></tr>
+{% for p in pays %}<tr><td class="nw num">{{ p.date|dmy }}</td><td>{% if p.inv_number %}Fattura {{ p.inv_number }}{% elif p.doc_number %}Preventivo {{ p.doc_number }}{% elif p.ev_title %}Evento {{ p.ev_title }}{% else %}—{% endif %}</td>
+<td class="r nw num"><b>€ {{ p.amount|eur }}</b></td><td>{{ p.method }}</td><td class="mut">{{ p.note }}</td><td class="mut">{{ p.created_by }}</td>
+<td><form method="post" action="/admin/acconti/{{ p.id }}/elimina"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn s d" data-confirm="Eliminare questo incasso?">✕</button></form></td></tr>
+{% else %}<tr><td colspan="7" class="mut">Nessun incasso in questo periodo.</td></tr>{% endfor %}</table></div>
+{% endblock %}
