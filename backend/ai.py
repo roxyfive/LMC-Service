@@ -49,7 +49,7 @@ def knowledge():
         f"Contatti e team: {team}",
         f"Telefono principale: {s.get('telefono') if _real(s.get('telefono')) else 'non indicato'} | Email: {s.get('email') if _real(s.get('email')) else 'non indicata'} | Orari: {s.get('orari') if _real(s.get('orari')) else 'non indicati'}",
         "Preventivo: si compila il modulo 'Richiedi preventivo' (tipo evento, data, luogo, ospiti, servizi); il titolare risponde. Nessun prezzo è pubblicato.",
-        "Appuntamento: si sceglie giorno e ora nel calendario del sito; arriva conferma via email e si può modificare o annullare dal link ricevuto.",
+        "Appuntamento: si sceglie giorno e ora nel calendario del sito; il titolare ricontatta per confermare e, dopo l'invio, il sito mostra un link per modificare o annullare la richiesta.",
     ])
 
 

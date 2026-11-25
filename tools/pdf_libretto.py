@@ -44,7 +44,7 @@ def d_mappa():
     L._arrow(d, 89 * mm, 66 * mm, 89 * mm, 62.8 * mm, GRIGIO)
     L._arrow(d, 89 * mm, 36 * mm, 89 * mm, 32.8 * mm, GRIGIO)
     # servizi esterni
-    ext = [("Email (SMTP)", ["conferme e avvisi", "da attivare"], AMBRA, 80), ("WhatsApp (Twilio)", ["avvisi al team", "opzionale"], colors.HexColor("#3a3a44"), 59),
+    ext = [("Email (SMTP)", ["conferme e avvisi", "non attivo (scelta)"], colors.HexColor("#3a3a44"), 80), ("WhatsApp (Twilio)", ["avvisi al team", "opzionale"], colors.HexColor("#3a3a44"), 59),
            ("Assistente vocale (Vapi)", ["voce naturale", "opzionale"], colors.HexColor("#3a3a44"), 38), ("Backup su cloud", ["copia cifrata", "ogni notte"], VERDE, 11)]
     for t, r_, col, y in ext:
         L._box(d, 134 * mm, y * mm, 40 * mm, 21 * mm, t, r_, col, fs=8.6)
@@ -341,7 +341,7 @@ def pagina_come_leggere():
             Spacer(1, 4 * mm),
             nota("Le schermate del gestionale mostrano <b>dati di esempio</b> (nomi, importi e richieste inventati): nessun dato reale di clienti compare in questo libretto.", "info"),
             Spacer(1, 3 * mm),
-            nota("Alcune funzioni sono pronte ma <b>da attivare</b>: l'invio delle email (SMTP), il dominio .it e i dati fiscali. Sono elencate nella Parte 6.", "attenzione")]
+            nota("Alcune funzioni sono pronte ma <b>non attive</b>: l'invio delle email (SMTP) e il dominio .it, per scelta del titolare, e i dati fiscali da completare. Sono elencate nella Parte 6.", "attenzione")]
     return out
 
 
@@ -433,9 +433,9 @@ story += cl("Configuratore e preventivo", "In pochi tocchi il cliente descrive l
 story += [PageBreak()]
 story += cl("Prenotare un appuntamento o chiedere un preventivo", "Due moduli affiancati: uno per fissare una chiamata o un incontro, uno per descrivere l'evento e ricevere un preventivo.", "sito-form",
             "A sinistra «Prenota un appuntamento» (con giorno e orario liberi), a destra «Richiedi un preventivo».",
-            ["Per prenotare scegli un <b>giorno</b>: gli orari liberi compaiono da soli (i giorni chiusi o pieni non si possono scegliere).", "Compila nome, telefono ed email; la data dell'evento e le note sono facoltative.",
+            ["Per prenotare scegli un <b>giorno</b>: gli orari liberi compaiono da soli (i giorni chiusi o pieni non si possono scegliere).", "Compila nome e telefono (l'email è facoltativa); la data dell'evento e le note sono facoltative.",
              "Leggi la riga di informativa, spunta la <b>presa visione della privacy</b> e premi «Conferma appuntamento» o «Invia richiesta».",
-             "Riceverai una conferma e, il giorno prima, un promemoria: puoi spostare o annullare dal link nell'email."],
+             "Il titolare ti ricontatta per confermare. Dopo l'invio compare un link per spostare o annullare la richiesta: salvalo. (Con le email attive lo ricevi anche per email, insieme a un promemoria.)"],
             [("info", "Per rispondere ti servono solo i dati necessari: li conserviamo 24 mesi e non li cediamo a terzi (dettagli nell'informativa privacy).")])
 story += [PageBreak()]
 story += cl("Contatti, emergenza 24 ore e assistente AI", "Telefono, WhatsApp, email, social e due strumenti per le urgenze: il tasto Emergenza e l'assistente automatico.", "sito-contatti",
@@ -513,7 +513,7 @@ story += ad("Agenda", "Il calendario mensile con i giorni colorati. È collegato
              "<b>Dettaglio del giorno</b> scelto: appuntamenti con <i>Conferma</i>, <i>Annulla</i>, <i>WhatsApp</i> e <i>Fattura</i>; sotto <i>Azioni rapide</i>: <b>Blocca il giorno</b> con un motivo (ferie, evento già pieno) e <b>Note del giorno</b> (appunti interni)."],
             ["Tocca un giorno nel calendario: a destra compare il dettaglio.", "Per chiudere un giorno scrivi il motivo e premi <b>«Blocca il giorno»</b>; per riaprirlo premi «Sblocca il giorno».",
              "Scrivi appunti per il team nelle <b>Note del giorno</b> e premi «Salva nota»: si vede chi ha modificato per ultimo.", "Gli orari fissi e le chiusure ricorrenti si impostano da «Orari e giorni di chiusura ricorrenti»."],
-            [("info", "Il cliente riceve un promemoria email il giorno prima di ogni appuntamento confermato (con le email attive).")], ruoli=("ADMIN", "COLLABORATORE"))
+            [("info", "Con le email attive il cliente riceve un promemoria il giorno prima di ogni appuntamento confermato; oggi le email non sono attive, quindi il titolare lo avvisa lui.")], ruoli=("ADMIN", "COLLABORATORE"))
 story += [PageBreak()]
 story += ad("Richieste", "Qui arrivano i moduli compilati sul sito: appuntamenti e preventivi. Da qui parte tutto il flusso della pratica.", "admin-richieste",
             ["<b>Tabella Appuntamenti</b>: quando, cliente (con telefono ed email), evento, stato. Cambia lo stato dal menu e premi <i>Salva</i>.",
@@ -783,7 +783,7 @@ story += te("Servizi esterni", "Il sito funziona da solo; questi servizi si aggi
              ["IONOS (VPS)", "Ospita sito, dati e backup locali", "Attivo", "Nessuno (è il server)"],
              ["Let's Encrypt", "Certificato HTTPS, si rinnova da solo", "Attivo", "Solo il nome del sito"],
              ["Spazio cloud (Google Drive)", "Seconda copia dei backup, fuori dal server", "Attivo", "Solo file cifrati (AES-256): illeggibili senza la password di cifratura"],
-             ["Server email (SMTP)", "Conferme, promemoria, avvisi, recensioni", "<b>Da attivare</b>", "Email del cliente, solo per le sue comunicazioni"],
+             ["Server email (SMTP)", "Conferme, promemoria, avvisi, recensioni", "<b>Non attivo (scelta del titolare)</b>", "Email del cliente, solo per le sue comunicazioni"],
              ["Twilio / WhatsApp", "Avvisi al team, report, riepiloghi", "Opzionale (non attivo)", "Nome, telefono e sintesi della richiesta, solo se invii tu"],
              ["Vapi", "Assistente vocale «Voce naturale»", "Opzionale (non attivo)", "Audio della conversazione, solo dopo conferma"],
              ["DuckDNS", "Indirizzo gratuito lmcservice.duckdns.org", "Attivo (provvisorio)", "Nessuno"]], [34 * mm, 58 * mm, 32 * mm, 50 * mm]), Spacer(1, 3 * mm),
@@ -809,17 +809,17 @@ story += PT(6, "Prossimi passi\ne manutenzione", "Cosa resta da completare, le a
             ["Cosa resta da completare", "Routine di manutenzione", "Se qualcosa non va", "Glossario"], ROSSO)
 story += sez("Cosa resta da completare", ["ADMIN", "TECNICO"], "Il sistema è online e funziona. Queste voci lo rendono completo.", [
     tabella([["#", "Cosa", "Perché", "Chi", "Quando"],
-             ["1", "<b>Email del sito (SMTP)</b>", "Senza, nessuna conferma o avviso parte", "Pasquale crea la password per le app; tecnico o agenzia la inserisce", "Subito, 15 minuti"],
+             ["1", "<b>Email del sito (SMTP)</b> · scelta del titolare: non attiva", "Il titolare controlla le richieste dal pannello; ai clienti il sito non promette email", "Pasquale, se cambia idea (15 minuti)", "Facoltativo"],
              ["2", "Dati fiscali (P.IVA, sede, IBAN)", "Fatture e preventivi completi", "Pasquale", "Prima della prima fattura"],
              ["3", "Tariffe (prezzi del listino)", "I preventivi partono da qui", "Pasquale", "Prima di usare i preventivi"],
              ["4", "Account dei collaboratori", "Un accesso personale per ognuno", "Pasquale (Utenti)", "Quando serve"],
              ["5", "Orari reali in Disponibilità", "I clienti prenotano solo negli orari veri", "Pasquale", "Subito"],
-             ["6", "Dominio .it", "Indirizzo professionale e email col dominio", "Pasquale decide; agenzia", "Se aderisce"],
+             ["6", "Dominio .it · scelta del titolare: per ora no", "Il sito resta sull'indirizzo attuale e funziona", "Pasquale, se cambia idea", "Facoltativo"],
              ["7", "Salvare la password di cifratura dei backup fuori dal server", "Senza, i backup non si riaprono", "Pasquale", "Subito"],
              ["8", "WhatsApp (Twilio) e assistente vocale (Vapi)", "Avvisi immediati e voce naturale", "Opzionale", "Più avanti"],
              ["9", "Rilettura dei sottotitoli del video", "Controllo umano di nomi e parole", "Titolare", "Prima di promuovere il video"]],
             [7 * mm, 52 * mm, 49 * mm, 38 * mm, 28 * mm]), Spacer(1, 3 * mm),
-    nota("Il punto 1 si spiega passo per passo nella <b>Guida per l'agenzia</b> (secondo PDF), insieme al dominio .it.", "info")])
+    nota("Pasquale ha scelto di non attivare per ora email e dominio .it: le richieste si gestiscono dal pannello Admin (Dashboard e Richieste). Se cambia idea, i passi sono nella <b>Guida per l'agenzia</b> (secondo PDF).", "info")])
 story += [PageBreak()]
 story += sez("Routine di manutenzione", ["ADMIN"], "Poche abitudini regolari tengono il sistema sano e i dati al sicuro.", [
     tabella([["Quando", "Cosa fare", "Dove"],
