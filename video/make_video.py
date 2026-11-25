@@ -1,5 +1,6 @@
-"""Genera i video con ffmpeg + Pillow + voce italiana di Windows (SAPI "Elsa").
-Uso:  python video/make_video.py          (loop sito + intro 16:9 e 9:16 + tutorial)
+"""Genera i video con ffmpeg + Pillow.
+Uso:  python video/make_video.py            (loop sito + intro 16:9 e 9:16 + tutorial; voce italiana di Windows SAPI "Elsa")
+      python video/make_video.py --riusa    (qualsiasi sistema: rifà solo le immagini col logo nuovo e tiene voce, musica e tempi dei video già pubblicati)
 Musica: app/static/media/music.mp3 (sintetizzata, royalty-free)."""
 import json
 import random
@@ -14,9 +15,29 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "video"
 MEDIA = ROOT / "app" / "static" / "media"
 sys.path.insert(0, str(ROOT))
-from backend.make_logo_assets import scena_video
-LOGO = scena_video()   # nuovo logo su sfondo scuro 1672x941
-FONT = "C:/Windows/Fonts/arialbd.ttf"
+from backend.make_logo_assets import scena_video, background, load
+import numpy as np
+
+
+def con_fasci(im):
+    """Aggiunge all'immagine scura 5 fasci di luce rossi dall'alto (atmosfera da palco): il logo resta bianco e leggibile."""
+    w, h = im.size
+    y, x = np.mgrid[0:h, 0:w].astype(np.float32)
+    arr = np.asarray(im.convert("RGB"), np.float32)
+    luce = np.zeros((h, w), np.float32)
+    for ox, ang, larg, forza in ((0.10, 0.30, 0.10, 0.9), (0.30, 0.12, 0.08, 0.7), (0.50, 0.0, 0.07, 1.0), (0.70, -0.12, 0.08, 0.7), (0.90, -0.30, 0.10, 0.9)):
+        dx = x - ox * w
+        theta = np.arctan2(dx, y + 1)               # angolo dalla verticale, origine in alto
+        luce += forza * np.exp(-(((theta - ang) / larg) ** 2)) * np.clip(1 - y / (h * 1.05), 0, 1) ** 0.9
+    luce = np.clip(luce, 0, 1.2)[..., None]
+    arr = arr + luce * np.array((190, 12, 6), np.float32) * 0.55
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB")
+
+
+LOGO = con_fasci(scena_video())   # nuovo logo (bianco) su sfondo nero con fasci rossi, 1672x941 (loop del sito)
+SFONDO = con_fasci(background(1672, 941))   # lo stesso sfondo senza logo (dietro alle scritte)
+LOCKUP = load()[0]   # logo completo trasparente
+FONT = str(ROOT / "backend" / "kit_assets" / "fonts" / "Inter-Bold.ttf")
 FPS = 25
 RED = (225, 6, 0)
 
@@ -47,15 +68,15 @@ def frame(w, h, text, idx, logo_big=False, sub=None):
     """Fotogramma statico 1.25x (per lo zoom): sfondo dal logo, fasci rossi, testo."""
     W, H = int(w * 1.25), int(h * 1.25)
     rnd = random.Random(idx * 11)
-    lw, lh = LOGO.size
+    lw, lh = SFONDO.size
     crop_w = min(lw, int(lh * W / H))
     x0 = rnd.randint(0, lw - crop_w)
-    bg = LOGO.crop((x0, 0, x0 + crop_w, lh)).resize((W, H), Image.LANCZOS).filter(ImageFilter.GaussianBlur(6 if h > w else 1))
+    bg = SFONDO.crop((x0, 0, x0 + crop_w, lh)).resize((W, H), Image.LANCZOS).filter(ImageFilter.GaussianBlur(6 if h > w else 1))
     im = ImageEnhance.Brightness(bg).enhance(0.55)
     if logo_big:
-        lg = LOGO.copy()
-        lg.thumbnail((int(W * 0.78), int(H * 0.5)), Image.LANCZOS)
-        im.paste(lg, ((W - lg.width) // 2, int(H * 0.12)))
+        lg = LOCKUP.copy()
+        lg.thumbnail((int(W * 0.62), int(H * 0.5)), Image.LANCZOS)
+        im.paste(lg, ((W - lg.width) // 2, int(H * 0.12)), lg)
     d = ImageDraw.Draw(im)
     fs = int(W * (0.06 if h > w else 0.045))
     font = ImageFont.truetype(FONT, fs)
@@ -116,10 +137,49 @@ def build(lines, name, w, h, music_vol=0.30, logo_first_last=True, sub_last=None
     print("creato", out.name)
 
 
+def segmenti(path):
+    """Durata di ogni scena di un video già pubblicato: le dissolvenze al nero (0,5 s) segnano i punti di giunzione."""
+    r = subprocess.run(["ffmpeg", "-i", str(path), "-vf", "blackdetect=d=0.02:pix_th=0.12", "-an", "-f", "null", "-"], capture_output=True, text=True)
+    import re
+    nere = [(float(a), float(b)) for a, b in re.findall(r"black_start:([0-9.]+) black_end:([0-9.]+)", r.stderr)]
+    tot = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)], capture_output=True, text=True).stdout)
+    tagli = [round((a + b) / 2 * FPS) / FPS for a, b in nere if a > 0.05]
+    pt = [0.0] + tagli + [tot]
+    return [pt[i + 1] - pt[i] for i in range(len(pt) - 1)]
+
+
+def riusa(lines, name, w, h, sub_last=None, logo_first_last=True):
+    """Rifà solo le immagini (logo nuovo) di un video esistente e tiene la sua colonna audio (voce + musica) e i suoi tempi."""
+    vecchio = OUT / f"{name}.mp4"
+    durate = segmenti(vecchio)
+    assert len(durate) == len(lines), (name, len(durate), len(lines))
+    tmp = Path(tempfile.mkdtemp(prefix="lmcvid_"))
+    lst = []
+    for i, (d, line) in enumerate(zip(durate, lines)):
+        big = logo_first_last and i in (0, len(lines) - 1)
+        png = frame(w, h, line, i, logo_big=big, sub=(sub_last if i == len(lines) - 1 else None))
+        seg = tmp / f"s{i}.mp4"
+        n = round(d * FPS)
+        zexpr = f"1+0.10*on/{n}" if i % 2 == 0 else f"1.10-0.10*on/{n}"
+        run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-i", str(png), "-vf",
+             f"zoompan=z='{zexpr}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={n}:s={w}x{h}:fps={FPS},"
+             f"fade=t=in:st=0:d=0.5,fade=t=out:st={d-0.5:.2f}:d=0.5,format=yuv420p",
+             "-t", f"{d:.2f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", str(seg)])
+        lst.append(f"file '{seg.as_posix()}'")
+    (tmp / "v.txt").write_text("\n".join(lst))
+    run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(tmp / "v.txt"), "-c", "copy", str(tmp / "video.mp4")])
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(vecchio), "-vn", "-c:a", "copy", str(tmp / "audio.m4a")])
+    nuovo = tmp / "nuovo.mp4"
+    run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(tmp / "video.mp4"), "-i", str(tmp / "audio.m4a"), "-map", "0:v", "-map", "1:a", "-c", "copy", "-shortest", "-movflags", "+faststart", str(nuovo)])
+    nuovo.replace(vecchio)
+    print("rifatto", vecchio.name, [round(x, 2) for x in durate])
+
+
 def loops():
     """3 loop brevi (Ken Burns / pulsazione luci) per la sezione Show demo."""
     MEDIA.mkdir(parents=True, exist_ok=True)
-    src = ROOT / "app" / "static" / "img" / "logo-1600.webp"
+    src = Path(tempfile.gettempdir()) / "lmc_loop_src.png"
+    LOGO.save(src)
     n = 6 * FPS
     fx = [(f"1+0.12*on/{n}", "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)", ""),
           (f"1.12-0.12*on/{n}", "iw/2-(iw/zoom/2)", "ih/2-(ih/zoom/2)", ",hue=h=10*sin(2*PI*t/3)"),
@@ -136,12 +196,13 @@ if __name__ == "__main__":
     base = json.loads((ROOT / "contenuti" / "testi.json").read_text(encoding="utf-8"))
     loops()
     righe = base["intro_righe"]
-    build(righe, "intro_orizzontale_1080p", 1920, 1080, sub_last="LMC SERVICE · NAPOLI")
-    build(righe, "intro_verticale_1080p", 1080, 1920, sub_last="LMC SERVICE · NAPOLI")
+    f = riusa if "--riusa" in sys.argv else build
+    f(righe, "intro_orizzontale_1080p", 1920, 1080, sub_last="LMC SERVICE · NAPOLI")
+    f(righe, "intro_verticale_1080p", 1080, 1920, sub_last="LMC SERVICE · NAPOLI")
     tutorial = ["Come prenotare con LMC Service.", "Apri il sito e scegli: prenota un appuntamento.",
                 "Seleziona il giorno e l'orario libero, inserisci i tuoi dati e conferma.",
                 "Ti arriva un'email con il link per modificare o annullare.",
                 "Ti serve un preventivo? Compila la richiesta con evento, data, luogo e servizi.",
                 "Hai domande? Scrivi o parla con l'assistente, attivo tutti i giorni a ogni ora.",
                 "LMC Service. Audio, video, luci."]
-    build(tutorial, "tutorial_clienti_orizzontale", 1920, 1080, sub_last="La Music Company Service")
+    f(tutorial, "tutorial_clienti_orizzontale", 1920, 1080, sub_last="La Music Company Service")
