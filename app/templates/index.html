@@ -27,7 +27,7 @@
 <link rel="preload" href="/static/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>document.documentElement.className+=' js'</script>
 <noscript><style>.intro{display:none!important}</style></noscript>
-<link rel="stylesheet" href="/static/css/site.css">
+<link rel="stylesheet" href="{{ asset('/static/css/site.css') }}">
 {% set tel = s.telefono if s.telefono and '[DA' not in s.telefono else '' %}
 {% set mail = s.email if s.email and '[DA' not in s.email else '' %}
 {% set orari = s.orari if s.orari and '[DA' not in s.orari else '' %}
@@ -447,6 +447,6 @@
 </div>
 <div id="install" class="install" hidden><span>Installa l'app LMC Service</span><button id="installBtn" class="btn btn-gold">Installa l'app</button><button id="installX" class="chip" aria-label="Non installare l'app">✕</button></div>
 
-<script src="/static/js/site.js" defer></script>
+<script src="{{ asset('/static/js/site.js') }}" defer></script>
 </body>
 </html>

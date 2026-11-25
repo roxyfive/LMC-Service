@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>La tua recensione | {{ s.brand_short or s.brand }}</title><meta name="robots" content="noindex">
-<link rel="stylesheet" href="/static/css/site.css">
+<link rel="stylesheet" href="{{ asset('/static/css/site.css') }}">
 <style>.starpick{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:.2rem}.starpick input{position:absolute;opacity:0}
 .starpick label{font-size:2.4rem;line-height:1;color:#ffffff33;cursor:pointer;padding:.1rem}.starpick input:checked~label,.starpick label:hover,.starpick label:hover~label{color:#ffb020}
 .starpick input:focus-visible+label{outline:2px solid #fff;outline-offset:2px}</style></head>

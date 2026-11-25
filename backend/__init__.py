@@ -37,6 +37,15 @@ def create_app():
     app.register_blueprint(adm)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
+    def asset(path):
+        """URL di un file statico con la data di modifica: quando il file cambia cambia l'indirizzo, quindi i browser (e il service worker)
+        non restano mai con una copia vecchia di CSS e JavaScript (nginx le tiene in cache fino a 7 giorni)."""
+        try:
+            return f"{path}?v={int((config.ROOT / 'app' / path.lstrip('/')).stat().st_mtime)}"
+        except OSError:
+            return path
+    app.jinja_env.globals["asset"] = asset
+
     @app.after_request
     def headers(r):
         r.headers["X-Content-Type-Options"] = "nosniff"

@@ -95,5 +95,10 @@ check("manifest: icone any e maskable presenti", {i["purpose"] for i in man["ico
 check("intro: logo completo (con scritte) in alto a sinistra", 'class="intro-logo" src="/static/img/logo-completo-420.webp"' in home.get_data(as_text=True))
 from PIL import Image
 check("icone app: 192, 512, maskable e apple-touch con le scritte (non solo il disco)", all(Image.open(ROOT / "app/static/img" / f).size == sz for f, sz in (("icon-192.png", (192, 192)), ("icon-512.png", (512, 512)), ("icon-maskable-512.png", (512, 512)), ("apple-touch-icon.png", (180, 180)))))
+html = home.get_data(as_text=True)
+m = re.search(r'/static/js/site\.js\?v=(\d+)', html)
+check("CSS e JavaScript con versione nell'indirizzo (niente copie vecchie in cache)", m and re.search(r'/static/css/site\.css\?v=\d+', html))
+check("l'indirizzo con ?v= si apre (200)", c.get(f"/static/js/site.js?v={m.group(1)}").status_code == 200)
+check("anche admin e pagine di servizio usano file con versione", "admin.css?v=" in c.get("/admin/login").get_data(as_text=True) and "site.css?v=" in c.get("/privacy").get_data(as_text=True))
 print(f"\n{ok} ok, {fail} falliti")
 raise SystemExit(1 if fail else 0)
