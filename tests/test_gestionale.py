@@ -113,6 +113,27 @@ no_pages = ["/admin/fatture", "/admin/fatture/nuova", "/admin/fatture/impostazio
             "/admin/report", "/admin/m/clienti", "/admin/m/team", "/admin/m/prima-nota", "/admin/m/fornitori", "/admin/disponibilita", "/admin/documenti/1.pdf"]
 denied = [(p, col.get(p).status_code) for p in no_pages]
 check("collaboratore: NON accede a fatture, acconti, statistiche, tariffe, impostazioni, utenti (403)", all(s == 403 for _p, s in denied), denied)
+# eliminare richieste (solo titolare)
+_d = (date.today() + timedelta(days=9)).isoformat()
+ex("INSERT INTO appointments(token,name,phone,email,slot_date,slot_time,consent) VALUES('tk-elimina','Prova Elimina','3331112222','','"+_d+"','09:00',1)")
+_ai = q("SELECT id FROM appointments WHERE token='tk-elimina'", one=True)["id"]
+ex("INSERT INTO quotes(name,phone,email,consent) VALUES('Prova Preventivo','3331112222','',1)")
+_qi = q("SELECT id FROM quotes WHERE name='Prova Preventivo'", one=True)["id"]
+check("la pagina Richieste del titolare ha il pulsante Elimina; quella del collaboratore no", "/elimina" in text(adm.get("/admin/richieste")) and "/elimina" not in text(col.get("/admin/richieste")))
+check("collaboratore: non può eliminare richieste (403)", post(col, f"/admin/richieste/appuntamento/{_ai}/elimina").status_code == 403 and q("SELECT 1 FROM appointments WHERE id=?", (_ai,), one=True))
+check("tipo sconosciuto: 404", post(adm, f"/admin/richieste/altro/{_ai}/elimina").status_code == 404)
+ex("INSERT INTO appointments(token,name,phone,email,slot_date,slot_time,consent) VALUES('tk-fattura','Con Fattura','3331112222','','"+_d+"','10:00',1)")
+_fi = q("SELECT id FROM appointments WHERE token='tk-fattura'", one=True)["id"]
+with app.app_context():
+    billing.new_invoice(billing.client_for("Con Fattura", "3331112222", ""), [{"desc": "Service", "qty": 1, "price": 100}], "", "appt", _fi)
+r = post(adm, f"/admin/richieste/appuntamento/{_fi}/elimina", follow_redirects=True)
+check("richiesta con fattura collegata: non si elimina, il pannello spiega perché", q("SELECT 1 FROM appointments WHERE id=?", (_fi,), one=True) and "fattura collegata" in text(r))
+r = post(adm, f"/admin/richieste/appuntamento/{_ai}/elimina")
+check("titolare elimina un appuntamento", r.status_code == 302 and not q("SELECT 1 FROM appointments WHERE id=?", (_ai,), one=True))
+r = post(adm, f"/admin/richieste/preventivo/{_qi}/elimina")
+check("titolare elimina un preventivo", r.status_code == 302 and not q("SELECT 1 FROM quotes WHERE id=?", (_qi,), one=True))
+check("l'eliminazione resta nel registro attività", "richiesta eliminata" in text(adm.get("/admin/registro")))
+check("richiesta già eliminata: 404", post(adm, f"/admin/richieste/appuntamento/{_ai}/elimina").status_code == 404)
 mc = text(col.get("/admin/"))
 check("menu collaboratore: solo le voci consentite", "/admin/agenda" in mc and "/admin/foto" in mc and "/admin/fatture" not in mc and "/admin/utenti" not in mc and "/admin/statistiche" not in mc and "/admin/tariffe" not in mc)
 check("dashboard collaboratore: nessun importo", "incassi di" not in mc and "da incassare" not in mc)

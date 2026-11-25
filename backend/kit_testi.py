@@ -95,6 +95,7 @@ ADMIN = [
          passi=["Apri Richieste: le nuove sono in evidenza.",
                 "Tocca una richiesta per vedere tutti i dettagli: evento, data, luogo, servizi, note.",
                 "«Riepilogo» invia su WhatsApp un riepilogo della richiesta alla persona di turno (serve Twilio attivo: se non lo è, il sito ti avvisa).",
+                "«Elimina» (solo il titolare) toglie una richiesta di prova o falsa, dopo una conferma; se c'è già una fattura collegata non si elimina: usa lo stato «annullato».",
                 "Cambia lo stato (in attesa, confermato, annullato). Confermando, la data entra in Agenda.",
                 "In Preventivi crei un documento con le voci di prezzo (prese da Tariffe) e lo scarichi in PDF.",
                 "Un preventivo accettato si trasforma in fattura con un clic."],

@@ -7,7 +7,8 @@
 <td><form method="post" action="/admin/appuntamento/{{ a.id }}/stato" class="row" style="display:flex;gap:.4rem;flex-wrap:wrap"><input type="hidden" name="csrf" value="{{ csrf }}">
 <select name="stato" aria-label="Stato">{% for s in ['in attesa','confermato','annullato','completato'] %}<option {{ 'selected' if s==a.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">Salva</button>
 <button class="btn s g" formaction="/admin/richieste/appuntamento/{{ a.id }}/whatsapp" title="Invia il riepilogo su WhatsApp al team di turno" data-confirm="Inviare il riepilogo su WhatsApp a chi è di turno?">📲 Riepilogo</button>
-{% if is_admin %}<a class="btn s o" href="/admin/fatture/nuova?da=appt:{{ a.id }}">Fattura</a>{% endif %}</form></td></tr>
+{% if is_admin %}<a class="btn s o" href="/admin/fatture/nuova?da=appt:{{ a.id }}">Fattura</a>
+<button class="btn s d" formaction="/admin/richieste/appuntamento/{{ a.id }}/elimina" data-confirm="Eliminare questa richiesta? Non si può annullare.">✕ Elimina</button>{% endif %}</form></td></tr>
 {% else %}<tr><td colspan="5" class="mut">Nessuna richiesta.</td></tr>{% endfor %}</table></div>
 <h2>Preventivi</h2>
 <div class="scroll"><table><tr><th>Ricevuta</th><th>Cliente</th><th>Evento</th><th>Servizi</th><th>Stato</th><th>Azioni</th></tr>
@@ -18,6 +19,7 @@
 <select name="stato" aria-label="Stato">{% for s in ['nuova','in lavorazione','inviata','confermata','chiusa'] %}<option {{ 'selected' if s==r.status }}>{{ s }}</option>{% endfor %}</select> <button class="btn s">Salva</button>
 <button class="btn s g" formaction="/admin/richieste/preventivo/{{ r.id }}/whatsapp" data-confirm="Inviare il riepilogo su WhatsApp a chi è di turno?">📲 Riepilogo</button>
 {% if is_admin %}<a class="btn s o" href="/admin/preventivo/{{ r.id }}/crea-preventivo">Fai il preventivo</a>
-<button class="btn s g" formaction="/admin/preventivo/{{ r.id }}/cliente">+ Cliente</button>{% endif %}</form></td></tr>
+<button class="btn s g" formaction="/admin/preventivo/{{ r.id }}/cliente">+ Cliente</button>
+<button class="btn s d" formaction="/admin/richieste/preventivo/{{ r.id }}/elimina" data-confirm="Eliminare questo preventivo ricevuto? Non si può annullare.">✕ Elimina</button>{% endif %}</form></td></tr>
 {% else %}<tr><td colspan="6" class="mut">Nessun preventivo.</td></tr>{% endfor %}</table></div>
 {% endblock %}

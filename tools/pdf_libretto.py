@@ -518,6 +518,7 @@ story += [PageBreak()]
 story += ad("Richieste", "Qui arrivano i moduli compilati sul sito: appuntamenti e preventivi. Da qui parte tutto il flusso della pratica.", "admin-richieste",
             ["<b>Tabella Appuntamenti</b>: quando, cliente (con telefono ed email), evento, stato. Cambia lo stato dal menu e premi <i>Salva</i>.",
              "<b>Riepilogo</b>: invia su WhatsApp un riepilogo della richiesta alla persona «di turno» (o a un numero che scegli). Richiede Twilio attivo: altrimenti il sito te lo segnala.",
+             "<b>Elimina</b> (solo il titolare): toglie una richiesta di prova o falsa, dopo una conferma. Se c'è già una fattura collegata non si elimina: cambia lo stato in «annullato». L'azione resta nel Registro attività.",
              "<b>Fai il preventivo</b>: apre la pagina Preventivi già collegata al cliente. Nella stessa riga <i>+ Cliente</i> crea la scheda anagrafica."],
             ["Apri Richieste: le nuove sono in evidenza.", "Leggi i dettagli (evento, data, luogo, servizi, note) e chiama o scrivi al cliente.",
              "Cambia lo stato: per gli appuntamenti <i>in attesa, confermato, annullato, completato</i>; per i preventivi <i>nuova, in lavorazione, inviata, chiusa</i>.",
