@@ -10,6 +10,11 @@ def _log(text):
         f.write(text)
 
 
+def mail_attiva():
+    """True se il sito può davvero spedire email (SMTP configurato). Altrimenti i messaggi finiscono solo in data/outbox.log."""
+    return bool(os.getenv("SMTP_HOST"))
+
+
 def send_mail(to, subject, body):
     """Invia via SMTP se configurato, altrimenti scrive in data/outbox.log."""
     if not to:

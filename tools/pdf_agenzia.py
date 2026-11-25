@@ -235,6 +235,7 @@ el += [Paragraph("In breve", h1), Paragraph("Il sito è online e funziona. Manca
                  "<b>1. Email del sito</b>: oggi non parte nessuna email, né ai clienti né a Pasquale<br/><b>2. Dominio .it</b>: un indirizzo più professionale (facoltativo)"]],
                [87 * mm, 87 * mm]),
        Spacer(1, 5 * mm), diagramma_marcia(),
+       avviso("<b>Aggiornamento.</b> Pasquale Toppi ha scelto di non attivare per ora né le email né il dominio: il sito resta com'è e le richieste si gestiscono dal pannello Admin. Questa guida resta per quando vorrà cambiare idea.", ARANCIO, "#fff4e8"), Spacer(1, 3 * mm),
        Paragraph("Cosa chiediamo all'agenzia", h2),
        tabella([["Passo", "Cosa serve", "Chi decide"],
                 ["1. Email", "Un account email da cui il sito possa spedire. La soluzione più semplice è usare quello di Pasquale (anche Gmail).", "Pasquale: basta il suo consenso"],

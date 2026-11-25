@@ -92,7 +92,13 @@
     const d = Object.fromEntries(new FormData(bf)); d.consent = bf.consent.checked;
     if (!d.date || !d.time) return setMsg(bf, 'Scegli giorno e orario.', false);
     const r = await post('/api/appuntamento', d);
-    if (r.ok) { setMsg(bf, 'Richiesta inviata! Controlla l\'email: contiene il link per modificare o annullare.', true); bf.reset(); timeSel.innerHTML = '<option value="">Scegli prima il giorno</option>'; }
+    if (r.ok) {
+      if (r.data.mail) setMsg(bf, 'Richiesta inviata! Controlla l\'email: contiene il link per modificare o annullare.', true);
+      else {     // senza email attive: nessuna promessa di conferma via email, il link per gestire la richiesta si mostra qui
+        setMsg(bf, 'Richiesta ricevuta! Ti contatteremo noi per confermare. Salva questo link per modificarla o annullarla: ', true);
+        if (r.data.link) { const a = document.createElement('a'); a.href = r.data.link; a.textContent = 'gestisci la tua richiesta'; $('.msg', bf).appendChild(a); }
+      }
+      bf.reset(); timeSel.innerHTML = '<option value="">Scegli prima il giorno</option>'; }
     else setMsg(bf, r.data.error || 'Errore, riprova.', false);
   });
   const qf = $('#quoteForm');

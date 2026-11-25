@@ -10,7 +10,7 @@ from flask import (Blueprint, render_template, request, jsonify, send_from_direc
 from .db import q, ex, get_setting, all_settings
 from .config import UPLOADS, CATEGORIES
 from .security import check_csrf, csrf_token, current_user
-from .mailer import send_mail, send_cliente
+from .mailer import mail_attiva, send_mail, send_cliente
 from . import ai
 from . import vetrina
 from . import notify, metrics
@@ -98,7 +98,7 @@ def index():
     return render_template("index.html", emg=emg, s=s, gallery=gallery, home=home, intro=intro, videos=videos, v=v,
                            hero=hero, reviews=reviews, cats=[c for c in CATEGORIES if c in used],
                            has_placeholder=any(m["placeholder"] for m in gallery), event_types=EVENT_TYPES,
-                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"), mesi=__import__("backend.retention", fromlist=["mesi"]).mesi())
+                           services=SERVICES, demo=(os.getenv("APP_MODE", "demo") == "demo"), mail_on=mail_attiva(), mesi=__import__("backend.retention", fromlist=["mesi"]).mesi())
 
 
 @bp.route("/media/<name>")
@@ -126,8 +126,8 @@ def api_appuntamento():
         return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
-    if not name or not _valid_phone(phone) or not _valid_email(email):
-        return jsonify(error="Compila nome, telefono ed email validi."), 400
+    if not name or not _valid_phone(phone) or ((email or mail_attiva()) and not _valid_email(email)):
+        return jsonify(error="Compila nome e telefono validi" + (" ed email." if mail_attiva() else " (l'email è facoltativa).")), 400
     if not d.get("consent"):
         return jsonify(error="Serve il consenso al trattamento dei dati."), 400
     day, hh = _clean(d.get("date"), 10), _clean(d.get("time"), 5)
@@ -148,7 +148,7 @@ def api_appuntamento():
     _notify_request(f"📅 Nuova richiesta di appuntamento dal sito\n{name} – {phone}\n{day} alle {hh}\nEvento: {d.get('event_type')} il {d.get('event_date')}")
     send_mail(os.getenv("OWNER_EMAIL"), f"Nuovo appuntamento: {name} {day} {hh}",
               f"{name} – {phone} – {email}\nEvento: {d.get('event_type')} il {d.get('event_date')}\nNote: {d.get('notes')}")
-    return jsonify(ok=True, token=token, link=link)
+    return jsonify(ok=True, token=token, link=link, mail=bool(email) and mail_attiva())
 
 
 @bp.route("/appuntamento/<token>", methods=["GET", "POST"])
@@ -185,8 +185,8 @@ def api_preventivo():
         return jsonify(error="Troppe richieste: riprova tra qualche minuto."), 429
     d = request.get_json(silent=True) or {}
     name, phone, email = _clean(d.get("name"), 80), _clean(d.get("phone"), 30), _clean(d.get("email"), 120)
-    if not name or not _valid_phone(phone) or not _valid_email(email):
-        return jsonify(error="Compila nome, telefono ed email validi."), 400
+    if not name or not _valid_phone(phone) or ((email or mail_attiva()) and not _valid_email(email)):
+        return jsonify(error="Compila nome e telefono validi" + (" ed email." if mail_attiva() else " (l'email è facoltativa).")), 400
     if not d.get("consent"):
         return jsonify(error="Serve il consenso al trattamento dei dati."), 400
     services = ", ".join(x for x in (d.get("services") or []) if x in SERVICES)
