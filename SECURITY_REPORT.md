@@ -28,7 +28,7 @@ Non applicabili / non controllati: Supabase, Vercel, Netlify, n8n (il progetto n
 ### Medi
 1. **Mancavano CSP e Permissions-Policy; HSTS non automatico.** → *Corretto*.
 2. **Richieste pubbliche senza limite di dimensione (fino a 200 MB) né rate limit su appuntamenti e preventivi** (spam, riempimento agenda, consumo memoria). → *Corretto*.
-3. **VPS: `setup-vps.sh` non configura firewall (ufw), fail2ban né blocco accesso SSH con password.** → *Da fare da te*.
+3. **VPS: `setup-vps.sh` non configura firewall (ufw), fail2ban né blocco accesso SSH con password.** → *Lo script non lo fa, ma sulla VPS reale è già tutto attivo (verificato il 25/11/2026, vedi «Verifica della VPS» in fondo).*
 
 ### Bassi
 4. Pagine admin senza `Cache-Control: no-store` (dopo il logout restavano nella cache del browser). → *Corretto*.
@@ -53,7 +53,7 @@ Non applicabili / non controllati: Supabase, Vercel, Netlify, n8n (il progetto n
 Verifica dopo le correzioni: test del progetto `test_ui` 31/31, `test_foto` 24/24, `test_e2e` 41/41, `test_team` 18/18, `test_whatsapp` 59/59, `test_social` 12/12, `test_deploy` 35/36. L'unico errore (`creati archivio dati e archivio segreti, entrambi cifrati`) c'è **anche sul codice originale** (backup cifrato con strumenti bash su Windows) e non dipende dalle modifiche. `pip-audit` ancora pulito.
 
 ## Cosa resta da fare a te
-1. **Sulla VPS**: attivare firewall (`ufw allow OpenSSH`, `ufw allow 'Nginx Full'`, `ufw enable`), installare `fail2ban`, in `/etc/ssh/sshd_config` mettere `PasswordAuthentication no` e `PermitRootLogin prohibit-password` (prima verifica di entrare con la chiave SSH!). Sono comandi sul server: dimmi e li prepariamo insieme.
+1. ~~Sulla VPS: firewall, fail2ban, SSH solo con chiave~~ → già a posto, verificato il 25/11/2026 (vedi «Verifica della VPS»).
 2. Controllare nel `.env` di produzione: `APP_MODE=production`, `COOKIE_SECURE=1`, `TRUST_PROXY=1`, `ADMIN_PASSWORD` **rimossa** dopo il primo accesso, password admin cambiata (min. 10 caratteri), `SECRET_KEY` impostata o `data/secret.key` nei backup.
 3. Dopo il deploy aprire il sito e controllare con https://securityheaders.com che compaiano gli header nuovi.
 4. Completare l'informativa privacy e decidere i tempi di conservazione dei dati.
@@ -83,4 +83,19 @@ Ripetuti pip-audit (nessuna vulnerabilità), bandit (solo falsi positivi: SQL co
 **Ancora aperto**
 - Video `loop1-3.mp4` (galleria della home) e `video/*.mp4` contengono ancora il vecchio logo nei fotogrammi: vanno rigenerati.
 - Host header: con `TRUST_PROXY=1` i link nelle email usano l'host ricevuto; conviene un `server` predefinito in nginx che scarta host sconosciuti (o `TRUSTED_HOSTS` in Flask).
-- Punti VPS del primo report (firewall, fail2ban, SSH solo con chiave) e informativa privacy con segnaposto: da fare.
+- Informativa privacy con segnaposto: da fare. (I punti VPS del primo report risultano già a posto: vedi sotto.)
+
+---
+
+## Verifica della VPS (25/11/2026)
+Controlli di sola lettura fatti insieme sulla VPS reale. Il primo report ipotizzava che mancassero queste protezioni, perché non potevo vederla: **sono già attive.**
+
+| Controllo | Esito |
+|---|---|
+| Firewall `ufw` | attivo; aperte solo le porte previste (22, 80, 443 e quelle degli altri progetti ospitati) |
+| Sito LMC (gunicorn, porta 8010) | in ascolto solo su `127.0.0.1`: si raggiunge solo da nginx |
+| SSH, `sshd -T` | `passwordauthentication no`, `pubkeyauthentication yes`, `permitrootlogin without-password` |
+| `fail2ban` (jail `sshd`) | attivo: 724 tentativi falliti, 57 indirizzi bloccati in totale, 15 bloccati al momento del controllo |
+| Aggiornamenti di sicurezza automatici (`unattended-upgrades`) | attivo |
+
+**Ancora aperto (basso rischio):** in nginx manca un `server` predefinito che scarta gli host sconosciuti (punto 10). Lo si può fare insieme al passaggio al dominio .it, perché nginx va comunque toccato e serve anche altri progetti sulla stessa VPS. Le altre porte aperte nel firewall (3000, 8080, 7001, 8543, 4310, 8443, 9443) non sono di LMC e non sono state toccate.
