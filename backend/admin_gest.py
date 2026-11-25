@@ -758,3 +758,23 @@ def guida_pdf(nome):
     if not f.exists():
         abort(404)
     return send_file(f, mimetype="application/pdf", download_name=nome, as_attachment=request.args.get("scarica") == "1")
+
+
+# ====================================================================== ELIMINA RICHIESTE (solo titolare)
+@bp.route("/richieste/<kind>/<int:i>/elimina", methods=["POST"])
+@admin_required
+def richiesta_elimina(kind, i):
+    """Elimina un appuntamento o un preventivo ricevuto dal sito (per le prove o per le richieste finte).
+    Se esiste già una fattura legata a quella richiesta non si elimina: si può annullare, così resta lo storico."""
+    tab, src = {"appuntamento": ("appointments", "appt"), "preventivo": ("quotes", "quote")}.get(kind, (None, None))
+    if not tab:
+        abort(404)
+    r = q(f"SELECT name FROM {tab} WHERE id=?", (i,), one=True)
+    if not r:
+        abort(404)
+    if q("SELECT 1 FROM invoices WHERE source_type=? AND source_id=?", (src, i), one=True):
+        flash("Non si può eliminare: esiste una fattura collegata a questa richiesta. Puoi cambiarne lo stato in «annullato».")
+        return redirect(url_for("admin.richieste"))
+    ex(f"DELETE FROM {tab} WHERE id=?", (i,))
+    audit("richiesta eliminata", f"{kind} #{i} – {r['name']}")
+    return redirect(url_for("admin.richieste"))
